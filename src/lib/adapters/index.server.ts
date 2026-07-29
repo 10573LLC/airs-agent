@@ -1,5 +1,5 @@
 // Adapter registry. Selection is environment driven; nothing here is
-// Lovable-specific. Adding an implementation = adding a case.
+// builder-specific. Adding an implementation = adding a case.
 import { createPostgresAdapter } from "./postgres.server";
 import type { DatabaseAdapter } from "./types";
 

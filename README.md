@@ -1,29 +1,34 @@
-# Welcome to your Lovable project
+# AIRS Agent
 
-This project was built with [Lovable](https://lovable.dev).
+Secure, incident-based airspace coordination for public-safety agencies.
 
-## Build with Lovable
+AIRS Agent lets separate agencies open temporary incident rooms, share approved airspace
+information, coordinate drone and crewed-aircraft operations, and end that sharing when the
+incident closes.
 
-Open your project in the [Lovable editor](https://lovable.dev) and keep building.
+**Status:** foundation only. No authentication and no application features yet — see
+`BUILD_AUDIT.md` for the verified state of every claim.
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: connect the project to GitHub and every change made in Lovable is committed straight to your repository.
-- **Full ownership**: this code is yours. Push to your repository and your changes sync back into Lovable, ready for your next prompt.
+## Stack
 
-## Development
+- React 19 + TypeScript
+- TanStack Start (Vite 8, Nitro `node-server` build output)
+- PostgreSQL 16 with forced row-level security for tenant isolation
+- Docker / docker compose for packaging
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+No hosted builder service is required to install, test, build, run or deploy this repository.
+
+## Quick start
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+git clone https://github.com/anconison/airs-agent.git
+cd airs-agent
+npm install
+cp .env.example .env        # then edit DATABASE_URL
+npm run db:migrate && npm run db:seed
+npm run test
+npm run build && node .output/server/index.mjs
 ```
 
-## Built with
-
-- TanStack Start
-- TypeScript
-- React
-- Tailwind CSS
+Full instructions: `LOCAL_SETUP.md`. Architecture: `ARCHITECTURE.md`. Schema: `DATABASE.md`.
+Security posture and known gaps: `SECURITY.md`.

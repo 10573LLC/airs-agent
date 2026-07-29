@@ -73,3 +73,24 @@ No policy exists for a case = access denied. That is the default-deny guarantee.
 
 Numbered, forward-only SQL files under `db/migrations/`. A migration runner that records applied
 versions is **NOT YET IMPLEMENTED**; today files are applied in filename order.
+## Foundation Portability Verification — 2026-07-29
+
+Reproducibility run on a brand-new empty database:
+
+- **Environment:** local, self-managed cluster created with `initdb` in this sandbox (not hosted,
+  not builder-managed).
+- **PostgreSQL version:** 17.9 (`show server_version`). Target is 16; 16 was **NOT** exercised here.
+- **Required extensions:** `pgcrypto` only, created by the migration itself.
+- **Required privileges to migrate:** superuser (or a role able to `CREATE EXTENSION pgcrypto` and
+  `CREATE ROLE`). Migrations create the `airs_app` role, the `airs` schema, all tables, grants and
+  policies — nothing is assumed to exist beforehand.
+- **Migration order:** `db/migrations/0001_init.sql`, then `db/migrations/0002_roles_seed.sql`.
+- **Migration command:** `npm run db:migrate` (`psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f …`).
+- **Seed command:** `npm run db:seed` (`db/seed/demo_orgs.sql`).
+- **Test command:** `npm run db:test` → `db/tests/rls_matrix.sql` (47 checks) + `db/tests/role_parity.sql`.
+- **Role assumptions:** the application connects as `airs_app` (NOLOGIN by default; give it a
+  password locally or via `APP_DB_PASSWORD` in Docker). It is neither owner nor superuser, so
+  `FORCE ROW LEVEL SECURITY` always applies.
+
+Result: applied cleanly on the first attempt, seed loaded, 47/47 isolation checks passed,
+role parity 9 roles / 14 permissions / 34 grants.

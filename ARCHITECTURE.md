@@ -131,3 +131,16 @@ See BUILD_AUDIT.md §3 for the full dependency register. Summary of where lock-i
 3. Cloudflare-Worker-only APIs in the Lovable preview runtime — avoided by keeping server code to
    standard Node/Web APIs.
 4. Any future use of a builder connector or managed realtime service without an adapter.
+## Foundation Portability Verification — 2026-07-29
+
+The build toolchain no longer contains any builder-specific package. `vite.config.ts` composes the
+standard plugin set directly: `@tailwindcss/vite`, `vite-tsconfig-paths`, `tanstackStart` (with
+client import protection and `src/server.ts` as the SSR entry), `nitro/vite`, `@vitejs/plugin-react`.
+
+The Nitro deployment preset is `node-server` by default and configurable with `NITRO_PRESET`, so
+`npm run build` produces `.output/server/index.mjs`, runnable with plain `node` on any host, in the
+Docker image, or on any Node PaaS. Cloudflare/Workers output remains available via
+`NITRO_PRESET=cloudflare-module` but is not required.
+
+Remaining builder artifacts (`AGENTS.md` banner, `.lovable/`, `.workspace/`) are metadata and
+documentation only; nothing in install, build, test, run or deploy reads them.

@@ -1,5 +1,5 @@
 {
-  "name": "tanstack_start_ts",
+  "name": "airs-agent",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "db:migrate": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/migrations/0001_init.sql -f db/migrations/0002_roles_seed.sql",
-    "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/seed/demo_orgs.sql"
+    "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/seed/demo_orgs.sql",
+    "db:test": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/tests/rls_matrix.sql -f db/tests/role_parity.sql"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -72,7 +73,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.32.0",
-    "@lovable.dev/vite-tanstack-config": "^2.8.0",
     "@types/node": "^22.16.5",
     "@types/pg": "^8.20.0",
     "@types/react": "^19.2.0",

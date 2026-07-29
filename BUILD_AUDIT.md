@@ -208,3 +208,44 @@ Docker build, the production build output, retention, audit writes, authenticati
 - **Migrations added:** `0001_init.sql`, `0002_roles_seed.sql`
 - **Packages added:** `pg`; dev: `@types/pg`, `vitest`
 - **Packages removed:** none
+---
+
+## Foundation Portability Verification — 2026-07-29
+
+Environment: Linux sandbox, Node 22 / npm 10.9.4 / bun 1.3.3, PostgreSQL **17.9** (only server
+binary available here — PostgreSQL 16 is the documented target and was NOT exercised),
+**no Docker daemon**, no network install from a clean cache.
+
+| Verification item | Status | Evidence | Exact command or file | Remaining limitation |
+| --- | --- | --- | --- | --- |
+| `@lovable.dev/vite-tanstack-config` removed from `package.json` | VERIFIED | absent from devDependencies | `bun remove @lovable.dev/vite-tanstack-config`; `rg -i lovable package.json` → 0 hits | none |
+| Removed from lockfile | VERIFIED | `rg -ci lovable bun.lock` → 0 | `bun.lock` | lockfile is bun-format; no `package-lock.json` is committed |
+| Builder registry mirror URLs removed from lockfile | VERIFIED | all resolutions now `https://registry.npmjs.org/` | `bun.lock` | re-resolution from a clean cache NOT executed (no clean network install here) |
+| Portable Vite/TanStack config replaces it | VERIFIED | `vite.config.ts` uses `vite`, `@tanstack/react-start/plugin/vite`, `@vitejs/plugin-react`, `@tailwindcss/vite`, `vite-tsconfig-paths`, `nitro/vite` | `vite.config.ts` | dev-time builder preview/HMR bridge plugins are gone by design |
+| Production build without builder services | VERIFIED | `✓ built in 315ms`, output `.output/server/index.mjs` (Nitro `node-server`) | `npm run build` | build ran with a warm `node_modules`, not from a clean install |
+| No source file references the builder | VERIFIED | `src/lib/lovable-error-reporting.ts` deleted; `__root.tsx` meta replaced with AIRS Agent metadata | `rg -in lovable src public *.ts *.json *.toml README.md` → 0 hits | see "Remaining occurrences" below |
+| Automated unit tests | VERIFIED | 14/14 passing (9 authorize, 5 role parity) | `npm run test` | no integration/HTTP tests yet |
+| Migrations on a brand-new empty database | VERIFIED | fresh cluster + empty `airs` DB, all files applied, exit 0 | `psql -f db/migrations/0001_init.sql -f db/migrations/0002_roles_seed.sql -f db/seed/demo_orgs.sql` | executed on PostgreSQL 17.9, not 16 |
+| Migrations self-contained (no manual pre-created objects) | VERIFIED | `0001_init.sql` creates `pgcrypto`, role `airs_app`, schema, tables, policies | `db/migrations/0001_init.sql` | needs a superuser (or `pgcrypto` pre-installed + `CREATEROLE`) to apply |
+| Forced RLS on all 9 tenant tables, CRUD matrix | VERIFIED | **47/47 checks PASS**, incl. no-context deny, APD↔County isolation both directions, `org_id` move denied, partner read-only, revocation, audit immutability | `psql -f db/tests/rls_matrix.sql` | test rolls back; it does not run in CI yet |
+| Superuser / owner bypass behaviour documented | VERIFIED | matrix check 47 records `bypass` when the runner is a superuser; `FORCE` binds the table owner | `db/tests/rls_matrix.sql`, `SECURITY.md` | app must never connect as owner/superuser — enforced only by configuration |
+| Nine roles consistent between TypeScript and SQL | VERIFIED | parity test compares keys, display names, permission keys and all 34 grants | `npm run test` (`tests/role-parity.test.ts`), `db/tests/role_parity.sql` (9/14/34) | TS side is compared against the seed file; live-DB comparison is a separate SQL script |
+| Health endpoint against a real database | VERIFIED | `HTTP/1.1 200 {"status":"ok","database":"reachable"}` from the built server connecting as `airs_app` | `node .output/server/index.mjs` + `curl localhost:3000/api/public/health` | PostgreSQL 17.9 |
+| Docker image build | NOT VERIFIED | no Docker daemon in this environment | `docker compose build` / `docker compose up --build` | must be run by you; see LOCAL_SETUP.md §4 |
+| `docker-compose.yml` correctness | PARTIALLY VERIFIED | reviewed and corrected: init SQL now mounted as **individual files** (mounted directories are ignored by the postgres entrypoint, so migrations previously never ran), owner role renamed `airs_owner`, app connects as `airs_app`, credentials required from `.env`, persistent volume, db healthcheck, `depends_on: service_healthy` | `docker-compose.yml` | not executed |
+| Dockerfile hardening | PARTIALLY VERIFIED | non-root `USER node`, `HEALTHCHECK` on `/api/public/health`, `NITRO_PRESET=node-server`, chowned copies | `Dockerfile` | not executed |
+| `.dockerignore` | VERIFIED (file created) | excludes `node_modules`, `.git`, `.env*`, build output, tool dirs | `.dockerignore` | effect not observed (no build run) |
+| No secrets committed | VERIFIED | repo-wide scan for password/secret/key/token/DSN patterns returned only placeholders, docs and env-var *names* | `rg -in "(password\|secret\|api[_-]?key\|token\|private[-_]key\|postgres://[^ ]*:[^ @]*@)" .` | `LOCAL_SETUP.md` documents the throwaway local password `localdev` (intentional, local-only) |
+| `.gitignore` / `.env.example` | VERIFIED | `.env`, `.env.*` ignored (`!.env.example`); example contains `CHANGE_ME` placeholders only | `.gitignore`, `.env.example` | none |
+| Clean install from GitHub on a new machine | NOT VERIFIED | this sandbox is the working tree, not a fresh clone, and has a pre-populated package cache | `git clone …` → `npm install` (see LOCAL_SETUP.md §0) | must be run by you |
+| Commit to `anconison/airs-agent` | BLOCKED | I cannot execute git commands; commits are produced by the platform sync of this change set | — | commit hash is visible in the repo after sync, not obtainable here |
+
+### Remaining occurrences of "lovable" in the repository
+
+| Location | Kind | Operational dependency? |
+| --- | --- | --- |
+| `AGENTS.md` (`<!-- LOVABLE:BEGIN -->` block) | Documentation/metadata for the editor sync | No |
+| `.lovable/project.json`, `.workspace/` | Builder metadata, not read by application code or the build | No |
+| `BUILD_AUDIT.md`, `ARCHITECTURE.md`, `LOCAL_SETUP.md`, this file | Documentation | No |
+
+No operational builder dependency remains in install, build, test, run or deploy paths.

@@ -1,18 +1,27 @@
+# Full stack: PostgreSQL 16 + the application, no builder services involved.
+#   cp .env.example .env   # then set POSTGRES_PASSWORD and APP_DB_PASSWORD
+#   docker compose up --build
 services:
   db:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: airs
-      POSTGRES_PASSWORD: airs
+      POSTGRES_USER: airs_owner
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: airs
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
     ports:
       - "5432:5432"
     volumes:
+      # Persistent database storage.
       - airs_pgdata:/var/lib/postgresql/data
-      - ./db/migrations:/docker-entrypoint-initdb.d/01-migrations:ro
-      - ./db/seed:/docker-entrypoint-initdb.d/02-seed:ro
+      # Applied once, in this order, on first start of an empty data directory.
+      # Mounted as individual files: the entrypoint ignores mounted directories.
+      - ./db/migrations/0001_init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
+      - ./db/migrations/0002_roles_seed.sql:/docker-entrypoint-initdb.d/02_roles_seed.sql:ro
+      - ./db/seed/demo_orgs.sql:/docker-entrypoint-initdb.d/03_demo_orgs.sql:ro
+      - ./db/init/04_app_role_login.sh:/docker-entrypoint-initdb.d/04_app_role_login.sh:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U airs"]
+      test: ["CMD-SHELL", "pg_isready -U airs_owner -d airs"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -23,11 +32,12 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://airs:airs@db:5432/airs
+      # The application always connects as the unprivileged airs_app role so
+      # row-level security is enforced (owners and superusers would bypass it).
+      DATABASE_URL: postgres://airs_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/airs
       DB_DRIVER: postgres
-      AUTH_DRIVER: local
-      REALTIME_DRIVER: postgres_listen_notify
       NODE_ENV: production
+      PORT: "3000"
     ports:
       - "3000:3000"
 

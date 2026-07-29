@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: airs
+      POSTGRES_PASSWORD: airs
+      POSTGRES_DB: airs
+    ports:
+      - "5432:5432"
+    volumes:
+      - airs_pgdata:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d/01-migrations:ro
+      - ./db/seed:/docker-entrypoint-initdb.d/02-seed:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airs"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://airs:airs@db:5432/airs
+      DB_DRIVER: postgres
+      AUTH_DRIVER: local
+      REALTIME_DRIVER: postgres_listen_notify
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+
+volumes:
+  airs_pgdata:

@@ -1,0 +1,75 @@
+# AIRS Agent — Database
+
+PostgreSQL 16. Schema `airs`. All SQL is plain, portable DDL with no vendor extensions
+(only `pgcrypto` for `gen_random_uuid()`, which ships with core PostgreSQL).
+
+## Applying
+
+```bash
+psql "$DATABASE_URL" -f db/migrations/0001_init.sql
+psql "$DATABASE_URL" -f db/migrations/0002_roles_seed.sql
+psql "$DATABASE_URL" -f db/seed/demo_orgs.sql
+```
+
+`docker compose up` applies all three automatically on first start.
+
+## Tables (IMPLEMENTED)
+
+| Table | PK | Tenant field | Key FKs |
+| --- | --- | --- | --- |
+| `airs.organizations` | `id uuid` | *is the tenant* | — |
+| `airs.users` | `id uuid` | `org_id` | `org_id -> organizations` |
+| `airs.roles` | `key text` | reference data (no tenant) | — |
+| `airs.permissions` | `key text` | reference data (no tenant) | — |
+| `airs.role_permissions` | `(role_key, permission_key)` | reference data (no tenant) | both FKs |
+| `airs.user_roles` | `id uuid` | `org_id` | `user_id`, `role_key`, `granted_by` |
+| `airs.incidents` | `id uuid` | `org_id` | `created_by -> users` |
+| `airs.incident_shares` | `id uuid` | `org_id` (owner) | `incident_id`, `partner_org_id`, `granted_by` |
+| `airs.aircraft` | `id uuid` | `org_id` | `org_id` |
+| `airs.airspace_operations` | `id uuid` | `org_id` | `incident_id`, `aircraft_id`, `approved_by`, `created_by` |
+| `airs.audit_events` | `id bigserial` | `org_id` | `actor_user_id` |
+| `airs.retention_policies` | `org_id uuid` | `org_id` | `org_id -> organizations` |
+
+Tables without tenant isolation: `roles`, `permissions`, `role_permissions` only. These are global
+read-only reference data containing no agency information; `airs_app` holds `SELECT` and no write grant.
+
+## Columns of note
+
+- `incidents`: `title`, `status` (open/closed/archived), `classification` (public/restricted/sensitive),
+  `opened_at`, `closed_at`, `retain_until`.
+- `incident_shares`: `scope` (read/contribute), `granted_at`, `revoked_at` (null = active).
+- `airspace_operations`: `status` (proposed/approved/active/completed/cancelled), `area_geojson jsonb`,
+  `altitude_floor_ft`, `altitude_ceiling_ft` (CHECK ceiling >= floor), `starts_at`, `ends_at`.
+- `audit_events`: `action`, `resource_type`, `resource_id`, `outcome` (allow/deny/error), `detail jsonb`,
+  `ip_address inet`, `occurred_at`. Index: `(org_id, occurred_at DESC)`.
+- `users`: `email_address`, `display_name`, `status`, `external_subject` (IdP subject), unique per `(org_id, email_address)`.
+
+## Row-level security (IMPLEMENTED)
+
+Every tenant table has `ENABLE` + `FORCE ROW LEVEL SECURITY`. The application connects as `airs_app`,
+which is neither superuser nor table owner, so RLS is never bypassed. Tenant context is set per
+transaction with `SET LOCAL airs.org_id` / `airs.user_id`; helper functions `airs.current_org_id()`
+and `airs.current_user_id()` read them.
+
+| Table | Policy | Effect |
+| --- | --- | --- |
+| organizations | `org_self` (SELECT) | only your own org row |
+| users, user_roles, aircraft, retention_policies | `tenant_rw` | `org_id = current_org_id()` for read and write |
+| incidents | `tenant_or_shared_read`, `tenant_write/update/delete` | own tenant, plus read of incidents shared to you with `revoked_at IS NULL` |
+| incident_shares | `share_visibility`, `share_owner_write/update` | owner or partner may read; only owner may create/revoke |
+| airspace_operations | `ops_read`, `ops_write`, `ops_update` | own tenant, plus read via active share |
+| audit_events | `audit_insert`, `audit_read` | insert + read within tenant; no UPDATE/DELETE policy = immutable |
+
+No policy exists for a case = access denied. That is the default-deny guarantee.
+
+## Seed data (IMPLEMENTED)
+
+- 9 roles, 14 permissions, 34 role-permission grants (`0002_roles_seed.sql`).
+- 2 fully separated demo tenants (`db/seed/demo_orgs.sql`): Albany Police Department
+  (`11111111-1111-4111-8111-111111111111`) and Albany County (`22222222-2222-4222-8222-222222222222`),
+  each with a default retention policy. No shared rows between them.
+
+## Migrations
+
+Numbered, forward-only SQL files under `db/migrations/`. A migration runner that records applied
+versions is **NOT YET IMPLEMENTED**; today files are applied in filename order.

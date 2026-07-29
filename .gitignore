@@ -30,3 +30,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files (never commit real credentials)
+.env
+.env.*
+!.env.example
+
+# Local PostgreSQL data directories used for verification runs
+pgdata/

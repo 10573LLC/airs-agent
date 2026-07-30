@@ -131,6 +131,12 @@ CREATE POLICY account_self_write ON airs.accounts FOR UPDATE
   USING (id = airs.current_account_id() OR lower(email) = lower(coalesce(airs.ctx('airs.login_email'), '~none~')))
   WITH CHECK (id = airs.current_account_id() OR lower(email) = lower(coalesce(airs.ctx('airs.login_email'), '~none~')));
 
+-- Password recovery: an unexpired reset token hash reveals exactly its own row.
+CREATE POLICY account_reset_read ON airs.accounts FOR SELECT
+  USING (password_reset_token_hash IS NOT NULL
+         AND password_reset_token_hash = coalesce(airs.ctx('airs.password_reset_hash'), '~none~')
+         AND password_reset_expires_at > now());
+
 -- sessions: the presented token, or every session of the current account.
 CREATE POLICY session_read ON airs.sessions FOR SELECT
   USING (token_hash = coalesce(airs.ctx('airs.session_token_hash'), '~none~')

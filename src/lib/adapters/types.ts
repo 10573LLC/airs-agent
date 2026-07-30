@@ -10,6 +10,16 @@ export interface DatabaseAdapter {
     ctx: { orgId: string; userId: string },
     fn: (q: QueryRunner) => Promise<T>,
   ): Promise<T>;
+  /**
+   * Runs `fn` inside a transaction with an arbitrary set of `airs.*` session
+   * GUCs applied via SET LOCAL, so they are discarded when the transaction
+   * ends and can never leak to the next borrower of a pooled connection.
+   * Only keys in the `airs.` namespace are accepted.
+   */
+  withContext<T>(
+    settings: Record<string, string | null | undefined>,
+    fn: (q: QueryRunner) => Promise<T>,
+  ): Promise<T>;
   close(): Promise<void>;
 }
 

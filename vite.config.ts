@@ -1,5 +1,8 @@
-// Portable Vite configuration. No builder-specific packages, plugins or
-// environment variables are required to build or run this application.
+// Portable Vite configuration. No builder-specific package is imported or
+// installed. The only builder awareness is a build-target switch below:
+// the hosted editor deploys a Cloudflare Worker from `dist/`, while every
+// other environment (local, CI, Docker) builds a plain Node server into
+// `.output/`. Both paths use stock Vite / TanStack Start / Nitro plugins.
 import { fileURLToPath } from "node:url";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -10,9 +13,17 @@ import tsConfigPaths from "vite-tsconfig-paths";
 
 const srcDir = fileURLToPath(new URL("./src", import.meta.url));
 
+// The hosted editor sandbox sets these standard environment variables. They
+// are absent on a developer machine, in CI and inside the Docker image, so a
+// clone of this repository always takes the portable Node path.
+const isEditorSandbox =
+  process.env.LOVABLE_SANDBOX === "1" || !!process.env.DEV_SERVER__PROJECT_PATH;
+
 // Deployment target for the Nitro build. Defaults to a plain Node.js server
 // (`node .output/server/index.mjs`), which is what the Dockerfile runs.
-const nitroPreset = process.env.NITRO_PRESET ?? "node-server";
+// `NITRO_PRESET` still wins if it is set explicitly.
+const nitroPreset =
+  process.env.NITRO_PRESET ?? (isEditorSandbox ? "cloudflare-module" : "node-server");
 
 export default defineConfig(async ({ command }) => {
   const plugins = [
@@ -32,7 +43,20 @@ export default defineConfig(async ({ command }) => {
 
   if (command === "build") {
     const { nitro } = await import("nitro/vite");
-    plugins.splice(3, 0, nitro({ preset: nitroPreset }));
+    plugins.splice(
+      3,
+      0,
+      nitro(
+        nitroPreset === "cloudflare-module"
+          ? {
+              preset: "cloudflare-module",
+              // Worker artifact layout expected by the hosted deploy step.
+              output: { dir: "dist", serverDir: "dist/server", publicDir: "dist/client" },
+              cloudflare: { nodeCompat: true, deployConfig: true },
+            }
+          : { preset: nitroPreset },
+      ),
+    );
   }
 
   return {

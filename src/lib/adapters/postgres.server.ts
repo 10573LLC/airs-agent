@@ -4,6 +4,7 @@
 import type { DatabaseAdapter, QueryRunner } from "./types";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const GUC = /^airs\.[a-z_]+$/;
 
 export function createPostgresAdapter(connectionString: string): DatabaseAdapter {
   let poolPromise: Promise<any> | undefined;
@@ -19,6 +20,30 @@ export function createPostgresAdapter(connectionString: string): DatabaseAdapter
   }
 
   return {
+    async withContext(settings, fn) {
+      const pool = await getPool();
+      const client = await pool.connect();
+      try {
+        await client.query("BEGIN");
+        for (const [name, value] of Object.entries(settings)) {
+          if (value == null || value === "") continue;
+          if (!GUC.test(name)) throw new Error(`Refusing to set non-airs GUC: ${name}`);
+          // SET LOCAL is transaction scoped: safe with pooled connections.
+          await client.query("SELECT set_config($1, $2, true)", [name, value]);
+        }
+        const runner: QueryRunner = {
+          query: async (sql, params) => (await client.query(sql, params ?? [])).rows,
+        };
+        const result = await fn(runner);
+        await client.query("COMMIT");
+        return result;
+      } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw error;
+      } finally {
+        client.release();
+      }
+    },
     async withTenant(ctx, fn) {
       if (!UUID.test(ctx.orgId) || !UUID.test(ctx.userId)) {
         throw new Error("withTenant requires valid uuid orgId and userId");

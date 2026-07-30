@@ -265,18 +265,10 @@ export function createLocalAuthAdapter(): AuthAdapter {
 
     async completePasswordReset(token, newPassword) {
       const tokenHash = await hashToken(token);
-      // The reset token identifies the account; the login_email context is
-      // derived from the row itself, so no e-mail enumeration is possible.
+      // The reset token alone identifies the account (see the
+      // account_reset_read RLS policy), so no e-mail enumeration is possible.
       const hash = await hashPassword(newPassword);
-      const rows = await db.withContext({ "airs.reset_lookup": tokenHash }, async () => []);
-      void rows;
-      const updated = await db.withContext({ "airs.account_id": null }, async () => null);
-      void updated;
-      // Reset consumption needs an account context: resolve it through the
-      // account's own e-mail by presenting the token hash as the login context.
-      const found = await db.withContext({ "airs.login_email": token }, async () => null);
-      void found;
-      return await applyPasswordReset(tokenHash, hash);
+      return applyPasswordReset(tokenHash, hash);
     },
 
     async upsertIdentity({ email, displayName, password, externalIssuer, externalSubject }) {

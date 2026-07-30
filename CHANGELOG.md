@@ -2,6 +2,24 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Lovable Editor Compatibility Repair] 2026-07-30
+
+### Fixed
+- Editor "Build unsuccessful" status. The hosted build step expects a Cloudflare Worker artifact at
+  `dist/server` + `dist/client`, but the portable config produced a Node server at `.output/` for
+  every environment, so no deployable artifact existed. Nothing failed to compile.
+
+### Changed
+- `vite.config.ts`: Nitro build target is now environment-aware. Default remains `node-server` →
+  `.output/`; only when `LOVABLE_SANDBOX=1` / `DEV_SERVER__PROJECT_PATH` is present does it build
+  `cloudflare-module` → `dist/`. `NITRO_PRESET` overrides both.
+
+### Notes
+- No package added, restored or removed; no builder dependency exists in the project.
+- Verified: `npm install` (exit 0), `npm run test` (14/14), `npm run build` (`.output/server/index.mjs`),
+  `npm run build:dev` in-sandbox (`dist/client` + `dist/server`), dev preview HTTP 200.
+- No database, RLS, Docker or test file was modified.
+
 ## [Stage 1 — Foundation] 2026-07-29
 
 ### Added

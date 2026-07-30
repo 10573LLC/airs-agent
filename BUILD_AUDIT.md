@@ -249,3 +249,85 @@ binary available here — PostgreSQL 16 is the documented target and was NOT exe
 | `BUILD_AUDIT.md`, `ARCHITECTURE.md`, `LOCAL_SETUP.md`, this file | Documentation | No |
 
 No operational builder dependency remains in install, build, test, run or deploy paths.
+
+---
+
+# Lovable Editor Compatibility Repair — 2026-07-30 (UTC)
+
+## 1. Exact original error
+
+The editor reported **"Build unsuccessful" / "Build error"** with no compiler diagnostic, because
+no compilation ever failed. `npm install`, `npm run build`, `npm run build:dev`, `npm run test`
+(14/14) and the built Node server all succeeded locally, and the Vite dev server logged a clean
+start with no errors:
+
+```
+VITE v8.1.5  ready in 2327 ms  →  http://localhost:8080/   (ssr) connected.
+```
+
+The failure was therefore **not a compile error but a missing build artifact**: the editor's build
+step looks for a Cloudflare Worker bundle at `dist/server` + `dist/client`, and after the
+portability stage the build wrote a Node server to `.output/` instead. With `dist/` absent the
+pipeline had nothing to deploy and reported the build as unsuccessful.
+
+## 2. Root cause
+
+Confirmed by inspecting the removed preset (`npm pack @lovable.dev/vite-tanstack-config@2.8.1`,
+`package/dist/index.js`). When the sandbox environment variables `LOVABLE_SANDBOX=1` /
+`DEV_SERVER__PROJECT_PATH` are present, the preset **forces** this Nitro configuration:
+
+```js
+nitroOpts.preset = "cloudflare-module";
+nitroOpts.output = { dir: "dist", serverDir: "dist/server", publicDir: "dist/client" };
+nitroOpts.cloudflare = { nodeCompat: true, deployConfig: true };
+```
+
+The Stage-2 portable `vite.config.ts` hard-coded `preset: "node-server"` (output `.output/`) for
+every environment. Both markers are set in the editor sandbox (verified: `LOVABLE_SANDBOX=1`,
+`DEV_SERVER__PROJECT_PATH=/dev-server`), so the editor build produced the wrong artifact layout.
+
+## 3. Files changed
+
+| Path | Change |
+| --- | --- |
+| `vite.config.ts` | Build target is now environment-aware. Default is unchanged (`node-server` → `.output/`). When `LOVABLE_SANDBOX=1` or `DEV_SERVER__PROJECT_PATH` is set, and only then, the Nitro preset becomes `cloudflare-module` with `output: { dir: "dist", serverDir: "dist/server", publicDir: "dist/client" }` and `cloudflare: { nodeCompat: true, deployConfig: true }`. An explicit `NITRO_PRESET` still overrides both. |
+| `BUILD_AUDIT.md`, `LOCAL_SETUP.md`, `CHANGELOG.md` | This documentation. |
+
+No database, RLS, Docker, test or other documentation file was modified. No application source
+file was touched.
+
+## 4. Packages restored or removed
+
+**None.** No package was added, restored or removed. `@lovable.dev/vite-tanstack-config` and its
+transitive builder plugins remain absent from `package.json`, `bun.lock` and `node_modules`.
+`npm install` reported `added 1 package, removed 1 package, changed 7 packages` — ordinary semver
+drift within existing public dependencies, no builder package.
+
+| Question | Answer |
+| --- | --- |
+| Does any builder-specific dependency remain? | **No.** The repair is pure standard Vite/Nitro configuration reading two environment variables. |
+| Is it development-only? | Not applicable — no dependency exists. The env-var branch is inert outside the editor: neither variable is set on a developer machine, in CI, or in the Docker image. |
+| Is builder code imported by application source? | No. `rg -in lovable src/` → 0 hits. |
+| Is anything required after cloning outside the editor? | No. A fresh clone builds `node-server` → `.output/` with public npm packages only. |
+
+## 5. Verification results
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Install | `npm install` | **PASS** (exit 0) |
+| Tests | `npm run test` | **PASS** — 14/14 (`tests/authorize.test.ts` 9, `tests/role-parity.test.ts` 5) |
+| Portable production build | `NITRO_PRESET=node-server npm run build` | **PASS** — `✓ built in 458ms`, `.output/server/index.mjs` present |
+| Portable server boots | `PORT=3111 node .output/server/index.mjs` + `curl /api/public/health` | **PASS** — HTTP 503 `{"status":"degraded","database":"unconfigured"}` (expected with no `DATABASE_URL`; returns 200 `{"status":"ok","database":"reachable"}` when the DSN is set, per the Stage-2 verification) |
+| Editor build | `npm run build:dev` inside the sandbox | **PASS** — exit 0; generated `dist/client/`, `dist/server/index.mjs`, `dist/server/wrangler.json`, `dist/nitro.json`, `.wrangler/deploy/config.json` |
+| Editor preview | Vite dev server on `:8080` | **PASS** — HTTP 200, no errors in the dev-server log |
+
+## 6. Remaining portability limitation
+
+- The `cloudflare-module` branch is exercised only inside the editor sandbox; it is dead code in a
+  clone. It is retained solely so the hosted preview keeps building.
+- `dist/` and `.wrangler/` are git-ignored, so the Worker artifact never enters the repository.
+- Unchanged from Stage 2: the Docker image build is still **NOT VERIFIED** (no Docker daemon here),
+  a clean clone-and-install on a new machine is still unverified, and PostgreSQL was exercised on
+  17.9 rather than the documented 16 target.
+- Non-operational builder metadata (`AGENTS.md` block, `.lovable/`, `.workspace/`) still exists and
+  is read by no install, build, test, run or deploy path.

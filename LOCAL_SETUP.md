@@ -117,3 +117,22 @@ curl -s localhost:3000/api/public/health
 The app image runs as the non-root `node` user and has a container `HEALTHCHECK`. Database init
 files are mounted individually into `/docker-entrypoint-initdb.d/` (mounted *directories* are
 ignored by the postgres entrypoint — the previous compose file therefore never applied migrations).
+
+## Build targets (why `vite.config.ts` branches)
+
+`vite.config.ts` selects a Nitro preset from the environment. Nothing needs to be installed or
+configured for this — it is stock Vite/Nitro configuration and no builder package is a dependency.
+
+| Environment | Detected by | Preset | Output | Run with |
+| --- | --- | --- | --- | --- |
+| Your machine, CI, Docker (**default**) | neither variable set | `node-server` | `.output/` | `node .output/server/index.mjs` |
+| Hosted Lovable editor preview only | `LOVABLE_SANDBOX=1` or `DEV_SERVER__PROJECT_PATH` set | `cloudflare-module` | `dist/client` + `dist/server` | managed by the editor |
+
+Force either target explicitly with `NITRO_PRESET`, which overrides the detection:
+
+```bash
+NITRO_PRESET=node-server npm run build      # portable Node build (what the Dockerfile does)
+```
+
+After cloning this repository outside Lovable, neither variable exists, so `npm run build` always
+produces the portable Node server. `dist/` and `.wrangler/` are git-ignored and never committed.

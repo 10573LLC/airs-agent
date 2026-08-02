@@ -451,3 +451,19 @@ signed-in UI behaviour therefore remains **PARTIALLY VERIFIED** (service-level o
 Invoking it directly as `airs_app` fails while creating fixtures — FORCE RLS rejecting an
 unprivileged `INSERT INTO airs.accounts` — which is correct behaviour. Documented in
 `LOCAL_SETUP.md`; no code or test was changed.
+
+## Stage 5 — Incident Room Lifecycle (2026-08-02)
+
+| Verification item | Status | Evidence | Exact command or file | Remaining limitation |
+| --- | --- | --- | --- | --- |
+| Incident room data model | COMPLETE | 3 tables, forced RLS, immutability triggers | `db/migrations/0005_incident_rooms.sql` | payload tables (airspace, telemetry) arrive in later stages |
+| Lifecycle states + transitions | COMPLETE | draft→scheduled→active⇄paused→closing→closed→archived, server-enforced | `src/lib/incidents/lifecycle.ts`, `incidents.server.ts` | no scheduled auto-activation; expiration closes only |
+| Immutable ownership | VERIFIED | `UPDATE ... SET org_id` rejected as `airs_app` | `db/tests/incident_rls.sql` | — |
+| Participation + access levels | COMPLETE | invite/accept/approve/restrict/revoke/remove/withdraw | `src/lib/incidents/participation.server.ts` | invitation delivery (email) not implemented; token returned once in the UI |
+| Trusted-agency eligibility | COMPLETE | approved-only; no emergency bypass | `src/lib/incidents/trust.server.ts` | partner organizations are selected by ID (no directory endpoint yet) |
+| Closure revokes sharing | VERIFIED | closure revokes grants + expires invitations in one transaction | `closeIncident` in `src/lib/incidents/incidents.server.ts` | — |
+| Partner isolation under RLS | VERIFIED | 26 assertions as unprivileged `airs_app` | `npm run db:test` (82 ok, exit 0) | — |
+| Role/permission parity | VERIFIED | 9 roles / 23 permissions / 52 grants on both sides | `db/tests/role_parity.sql`, `tests/role-parity.test.ts` | — |
+| Time-based expiration | IMPLEMENTED, NOT SCHEDULED | `airs.expire_incident_state()` audits every change | `db/migrations/0005_incident_rooms.sql` | no scheduler/endpoint wired yet; must be invoked by cron |
+| Typecheck | PASS | no errors | `bunx tsgo --noEmit` | — |
+| Unit tests | PASS | 14 passed, 25 integration skipped without `DATABASE_URL` | `npx vitest run` | integration suite not exercised in this run |

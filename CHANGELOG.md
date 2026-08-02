@@ -109,3 +109,17 @@ clean-clone install.
 - `auditIdentityEvent()` writes only to organizations with an ACTIVE membership and no longer lets
   an audit failure break sign-in or sign-out.
 - `npm run db:migrate` applies 0001–0004; `npm run db:test` also runs `auth_rls.sql`.
+
+## Stage 5 — Incident Room Lifecycle
+
+- `db/migrations/0005_incident_rooms.sql`: trusted agencies, incident rooms, incident participation,
+  immutability triggers, forced RLS, invitation-side read helpers and a scheduled expiration routine.
+- `src/lib/incidents/`: pure lifecycle model (`lifecycle.ts`) plus server services for rooms
+  (`incidents.server.ts`), participation (`participation.server.ts`) and trust (`trust.server.ts`).
+- `src/lib/api/incidents.functions.ts`: validated transport layer; the browser never supplies
+  ownership, participation state or access decisions.
+- `src/routes/incidents.index.tsx` and `src/routes/incidents.$incidentId.tsx`: room list, invitation
+  inbox, lifecycle controls, participant roster and per-room audit history.
+- RBAC extended to 23 permissions / 52 grants, in parity across SQL and TypeScript.
+- Tests: `db/tests/incident_rls.sql` (26 incident assertions; 82 across the SQL suite) and the
+  existing vitest suites, all passing.

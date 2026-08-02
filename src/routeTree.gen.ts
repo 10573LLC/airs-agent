@@ -13,6 +13,7 @@ import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as IncidentsIndexRouteImport } from './routes/incidents.index'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
@@ -37,6 +38,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IncidentsIndexRoute = IncidentsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => IncidentsRoute,
+} as any)
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
@@ -60,15 +66,16 @@ export interface FileRoutesByFullPath {
   '/incidents': typeof IncidentsRouteWithChildren
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/incidents/': typeof IncidentsIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
-  '/incidents': typeof IncidentsRouteWithChildren
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/incidents': typeof IncidentsIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
 }
 export interface FileRoutesById {
@@ -79,6 +86,7 @@ export interface FileRoutesById {
   '/incidents': typeof IncidentsRouteWithChildren
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/incidents/': typeof IncidentsIndexRoute
   '/api/public/health': typeof ApiPublicHealthRoute
 }
 export interface FileRouteTypes {
@@ -90,15 +98,16 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/incidents/$incidentId'
     | '/invite/$token'
+    | '/incidents/'
     | '/api/public/health'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/console'
-    | '/incidents'
     | '/incidents/$incidentId'
     | '/invite/$token'
+    | '/incidents'
     | '/api/public/health'
   id:
     | '__root__'
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/incidents/$incidentId'
     | '/invite/$token'
+    | '/incidents/'
     | '/api/public/health'
   fileRoutesById: FileRoutesById
 }
@@ -150,6 +160,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/incidents/': {
+      id: '/incidents/'
+      path: '/'
+      fullPath: '/incidents/'
+      preLoaderRoute: typeof IncidentsIndexRouteImport
+      parentRoute: typeof IncidentsRoute
+    }
     '/invite/$token': {
       id: '/invite/$token'
       path: '/invite/$token'
@@ -176,10 +193,12 @@ declare module '@tanstack/react-router' {
 
 interface IncidentsRouteChildren {
   IncidentsIncidentIdRoute: typeof IncidentsIncidentIdRoute
+  IncidentsIndexRoute: typeof IncidentsIndexRoute
 }
 
 const IncidentsRouteChildren: IncidentsRouteChildren = {
   IncidentsIncidentIdRoute: IncidentsIncidentIdRoute,
+  IncidentsIndexRoute: IncidentsIndexRoute,
 }
 
 const IncidentsRouteWithChildren = IncidentsRoute._addFileChildren(

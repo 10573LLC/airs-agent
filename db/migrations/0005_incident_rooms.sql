@@ -315,7 +315,10 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = airs, pg_catalog AS $$
      AND (o = airs.current_org_id()
           OR EXISTS (SELECT 1 FROM airs.incident_participants p
                       WHERE (p.org_id = o AND p.partner_org_id = airs.current_org_id())
-                         OR (p.partner_org_id = o AND p.org_id = airs.current_org_id())))
+                         OR (p.partner_org_id = o AND p.org_id = airs.current_org_id()))
+          OR EXISTS (SELECT 1 FROM airs.trusted_agencies t
+                      WHERE (t.org_id = o AND t.partner_org_id = airs.current_org_id())
+                         OR (t.partner_org_id = o AND t.org_id = airs.current_org_id())))
 $$;
 REVOKE ALL ON FUNCTION airs.related_org_name(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION airs.related_org_name(uuid) TO airs_app;

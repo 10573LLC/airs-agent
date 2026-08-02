@@ -255,10 +255,10 @@ export async function listAuditEvents(
         outcome: string;
         occurredAt: string;
         actor: string | null;
-        detail: Record<string, unknown>;
+        detail: string;
       }>(
         `SELECT a.id::text AS id, a.action, a.resource_type AS "resourceType", a.outcome,
-                a.occurred_at AS "occurredAt", u.display_name AS actor, a.detail
+                a.occurred_at AS "occurredAt", u.display_name AS actor, a.detail::text AS detail
            FROM airs.audit_events a
            LEFT JOIN airs.users u ON u.id = a.actor_user_id
           WHERE a.org_id = airs.current_org_id()

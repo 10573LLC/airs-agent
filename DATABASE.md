@@ -94,3 +94,28 @@ Reproducibility run on a brand-new empty database:
 
 Result: applied cleanly on the first attempt, seed loaded, 47/47 isolation checks passed,
 role parity 9 roles / 14 permissions / 34 grants.
+
+## Migration 0004 — organization-context guard (2026-07-30)
+
+`db/migrations/0004_org_context_guard.sql` redefines `airs.current_org_id()` as a
+`STABLE SECURITY DEFINER` function. Behaviour:
+
+| `airs.org_id` | `airs.account_id` | Result |
+| --- | --- | --- |
+| unset / malformed | any | `NULL` (every policy denies) |
+| set | unset | the organization id (migrations, tenant-only tests, jobs) |
+| set | set, ACTIVE membership exists | the organization id |
+| set | set, membership invited/suspended/revoked or absent | `NULL` |
+| set | set, valid `airs.invite_token_hash` for that org | the organization id (redemption) |
+
+`SECURITY DEFINER` is required because the lookup reads `airs.memberships`, whose own policies call
+this function; running it as the owner avoids recursion. `audit_identity_insert` was tightened in
+the same migration to require an ACTIVE membership.
+
+Apply order is now `0001 -> 0002 -> 0003 -> 0004` (`npm run db:migrate`).
+
+## Identity-plane test
+
+`npm run db:test` now runs `db/tests/rls_matrix.sql`, `db/tests/role_parity.sql` and
+`db/tests/auth_rls.sql`. The last one creates its fixtures as the owner, then runs all 59
+assertions after `SET ROLE airs_app`, and rolls everything back — it leaves no rows behind.

@@ -101,3 +101,65 @@ revocation, a partner cannot revoke or forge shares, and the audit log cannot be
 
 Repo-wide scan for credential patterns found placeholders and env-var names only. `.env` and
 `.env.*` are git-ignored (`!.env.example`). `.env.example` contains `CHANGE_ME` placeholders.
+
+## Authentication and Authorization Enforcement — 2026-07-30
+
+Sections above that said "NOT YET IMPLEMENTED" for authentication and "not yet wired into request
+handling" for authorization are superseded by this section.
+
+### Enforcement chain — IMPLEMENTED
+
+Every protected operation goes through `withAuthorized()` in
+`src/lib/auth/authorize.server.ts`:
+
+```
+session cookie (opaque token) -> airs.sessions row (SHA-256 hash, unexpired, unrevoked)
+  -> account -> requested organization -> ACTIVE membership -> assigned role
+  -> required permission (authorize(), default deny) -> SET LOCAL airs.* GUCs
+  -> unprivileged airs_app connection under FORCE ROW LEVEL SECURITY -> audit event
+```
+
+A browser-supplied organization id is never trusted: it is only accepted after an active
+membership for the resolved account is found. Both allow and deny outcomes are audited.
+
+### Credentials and tokens
+
+- Passwords: PBKDF2-HMAC-SHA256, 210 000 iterations, 16-byte random salt, Web Crypto only
+  (`src/lib/auth/password.ts`). Verification is constant-time over the derived key.
+- Session and invitation tokens: 32 random bytes, base64url. Only the SHA-256 hash is stored;
+  the clear-text value exists in the response body and the cookie, never in the database or the
+  audit log (asserted in `tests/auth-integration.test.ts`).
+- Session cookie: `httpOnly`, `SameSite=Lax`, `Secure` in production, expiry mirrored from the row.
+  The cookie carries no state — revocation and expiry are re-read on every request.
+
+### Organization-context guard — IMPLEMENTED (migration 0004)
+
+`airs.current_org_id()` no longer returns whatever `airs.org_id` contains. When an account
+context is present it returns the organization **only** if that account holds an ACTIVE membership
+in it, or is redeeming an invitation for it. A malformed GUC yields NULL. This makes the database
+independently refuse a tenant pivot even if application code were to forward a client-supplied
+organization id. Invited, suspended and revoked memberships establish no context at all.
+
+### Invitations
+
+Single-use, hashed, expiring, revocable and re-issuable. Organization and role come from the
+stored row; the acceptance request cannot influence either, and acceptance requires the
+authenticated account's e-mail to equal the invited address. Previews require a session and mask
+the recipient address, so a leaked link cannot be used to harvest e-mails or enumerate agencies.
+
+### Evidence
+
+- `db/tests/auth_rls.sql` — 59 assertions executed as `airs_app` (asserted to hold neither
+  SUPERUSER nor BYPASSRLS), covering default deny, cross-tenant read/write/update/delete,
+  non-active memberships, malformed and unapproved GUCs, invitation-token scoping, append-only
+  audit, and context lifetime across COMMIT/ROLLBACK on a reused connection.
+- `tests/auth-integration.test.ts` — 25 tests against a live PostgreSQL through the real chain.
+
+### Remaining gaps (unchanged or new)
+
+1. No MFA/TOTP enrolment flow, no password reset delivery, no account lockout threshold.
+2. No rate limiting on sign-in; failed attempts are counted but not acted on.
+3. Invitation delivery is out of band — the token is shown once to the inviting administrator.
+4. No CSRF token: mutations are same-origin server functions with a `SameSite=Lax` cookie.
+5. Superusers still bypass RLS; the application must never hold superuser or owner credentials.
+6. Signed-in UI verified through service-level integration tests, not an in-browser walkthrough.

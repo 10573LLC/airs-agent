@@ -275,8 +275,8 @@ describe.skipIf(!enabled)("tenant isolation through the enforced chain", () => {
     const orgs = new Set(
       (
         await admin.query<{ org_id: string }>(
-          `SELECT DISTINCT org_id FROM airs.audit_events WHERE id = ANY($1::uuid[])`,
-          [eventsA.map((e) => e.id)],
+          `SELECT DISTINCT org_id FROM airs.audit_events WHERE id = ANY($1::bigint[])`,
+          [eventsA.map((e) => String(e.id))],
         )
       ).rows.map((r) => r.org_id),
     );

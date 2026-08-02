@@ -776,7 +776,8 @@ export interface LifecycleAuditRow {
   occurredAt: string;
   actorUserId: string | null;
   actorName: string | null;
-  detail: Record<string, unknown>;
+  /** Serialized JSON: kept as text so the RPC boundary stays plain-serializable. */
+  detail: string;
 }
 
 export async function readIncidentAudit(
@@ -791,7 +792,8 @@ export async function readIncidentAudit(
       q.query<LifecycleAuditRow>(
         `SELECT a.id::text AS id, a.action, a.outcome,
                 to_json(a.occurred_at)#>>'{}' AS "occurredAt",
-                a.actor_user_id AS "actorUserId", u.display_name AS "actorName", a.detail
+                a.actor_user_id AS "actorUserId", u.display_name AS "actorName",
+                a.detail::text AS detail
            FROM airs.audit_events a
            LEFT JOIN airs.users u ON u.id = a.actor_user_id
           WHERE a.resource_type = 'incident_room' AND a.resource_id = $1

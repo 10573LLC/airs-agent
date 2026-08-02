@@ -12,7 +12,7 @@ import { hashToken, randomToken } from "@/lib/auth/tokens";
 import type { RequestMeta } from "@/lib/auth/types";
 
 import { withIncidentAction } from "./incidents.server";
-import { ACCESS_LEVELS, type AccessLevel } from "./lifecycle";
+import { ACCESS_LEVELS, type AccessLevel, type IncidentAction } from "./lifecycle";
 import { assertInvitationEligibility } from "./trust.server";
 
 export interface ParticipantRow {
@@ -93,8 +93,6 @@ export interface InvitePartnerInput {
   invitationExpiresAt: string;
   participationExpiresAt?: string | null;
   requiresApproval?: boolean;
-  /** Documented one-time path for a non-trusted agency. Always audited. */
-  emergency?: boolean;
   reason?: string | null;
 }
 
@@ -124,12 +122,8 @@ export async function invitePartner(
       const participationExpiresAt = input.participationExpiresAt
         ? futureTimestamp(input.participationExpiresAt, "participation expiration")
         : null;
-      const emergency = input.emergency === true;
-      if (emergency && !ctx.permissions.has("org.manage")) {
-        // the emergency path is reserved for an originating-org administrator
-        throw new AccessError("forbidden");
-      }
-      const eligibility = await assertInvitationEligibility(q, ctx.orgId, partnerOrgId, emergency);
+      // Eligibility is approved-trust only; there is no emergency bypass.
+      const eligibility = await assertInvitationEligibility(q, ctx.orgId, partnerOrgId);
 
       const raw = randomToken(32);
       const tokenHash = await hashToken(raw);
@@ -202,7 +196,7 @@ type OwnerParticipantAction =
 
 const OWNER_ACTION_MAP: Record<
   OwnerParticipantAction,
-  { incidentAction: Parameters<typeof withIncidentAction>[0]["action"]; audit: string }
+  { incidentAction: IncidentAction; audit: string }
 > = {
   revoke_invitation: { incidentAction: "invite_partner", audit: "incident.invitation_revoked" },
   approve_partner: { incidentAction: "approve_partner", audit: "incident.participant_approved" },
@@ -421,15 +415,18 @@ export async function partnerParticipationAction(
         if (row.invitationStatus !== "pending") throw new AccessError("participation_inactive");
         if (row.expired) throw new AccessError("participation_inactive");
         newStatus = row.requiresApproval ? "pending_approval" : "active";
+        // token_hash is deliberately left untouched: the participation guard
+        // forbids a partner organization from editing its own grant fields.
+        // The token is already spent because invitation_status leaves 'pending'.
         sql = `SET invitation_status = 'accepted', participation_status = $3,
-                   accepted_at = now(), accepted_by_user = $4, token_hash = NULL,
+                   accepted_at = now(), accepted_by_user = $4,
                    approved_at = CASE WHEN $3 = 'active' THEN now() ELSE NULL END,
                    updated_at = now()`;
       } else if (action === "decline") {
         if (row.invitationStatus !== "pending") throw new AccessError("participation_inactive");
         newStatus = "declined";
         sql = `SET invitation_status = 'declined', participation_status = $3,
-                   token_hash = NULL, updated_at = now()`;
+                   updated_at = now()`;
       } else {
         if (!["active", "restricted", "pending_approval"].includes(row.participationStatus)) {
           throw new AccessError("participation_inactive");

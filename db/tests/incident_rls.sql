@@ -174,10 +174,12 @@ BEGIN
     'an archived room is frozen');
 
   -- expiry on an open room
-  UPDATE airs.incident_participants
-     SET participation_status = 'active', revoked_at = NULL,
-         expires_at = now() - interval '1 minute', incident_id = room2
-   WHERE id = part;
+  INSERT INTO airs.incident_participants
+       (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
+        invitation_status, participation_status, requires_approval,
+        invitation_expires_at, accepted_at, approved_at, expires_at)
+       VALUES (room2, org_a, org_b, org_a, 'operational', 'accepted', 'active', false,
+               now() + interval '2 days', now(), now(), now() - interval '1 minute');
   PERFORM set_config('airs.org_id', org_b::text, true);
   SELECT count(*) INTO n FROM airs.incident_rooms WHERE id = room2;
   PERFORM pg_temp.ok(n = 0, 'expired participation conveys no visibility');

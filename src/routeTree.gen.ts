@@ -9,12 +9,18 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 
+const IncidentsRoute = IncidentsRouteImport.update({
+  id: '/incidents',
+  path: '/incidents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ConsoleRoute = ConsoleRouteImport.update({
   id: '/console',
   path: '/console',
@@ -45,6 +51,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
+  '/incidents': typeof IncidentsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/public/health': typeof ApiPublicHealthRoute
 }
@@ -52,6 +59,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
+  '/incidents': typeof IncidentsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/public/health': typeof ApiPublicHealthRoute
 }
@@ -60,6 +68,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
+  '/incidents': typeof IncidentsRoute
   '/invite/$token': typeof InviteTokenRoute
   '/api/public/health': typeof ApiPublicHealthRoute
 }
@@ -69,15 +78,23 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/console'
+    | '/incidents'
     | '/invite/$token'
     | '/api/public/health'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/console' | '/invite/$token' | '/api/public/health'
+  to:
+    | '/'
+    | '/auth'
+    | '/console'
+    | '/incidents'
+    | '/invite/$token'
+    | '/api/public/health'
   id:
     | '__root__'
     | '/'
     | '/auth'
     | '/console'
+    | '/incidents'
     | '/invite/$token'
     | '/api/public/health'
   fileRoutesById: FileRoutesById
@@ -86,12 +103,20 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   ConsoleRoute: typeof ConsoleRoute
+  IncidentsRoute: typeof IncidentsRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/incidents': {
+      id: '/incidents'
+      path: '/incidents'
+      fullPath: '/incidents'
+      preLoaderRoute: typeof IncidentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/console': {
       id: '/console'
       path: '/console'
@@ -134,6 +159,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   ConsoleRoute: ConsoleRoute,
+  IncidentsRoute: IncidentsRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
 }

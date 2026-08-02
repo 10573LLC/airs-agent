@@ -24,7 +24,7 @@ INSERT INTO airs.permissions (key, description) VALUES
   ('incident.resume',           'Resume a paused incident room'),
   ('incident.archive',          'Archive a closed incident room'),
   ('incident.invite_partner',   'Invite a trusted partner organization to an incident room'),
-  ('incident.approve_partner',  'Approve a partner organization''s participation'),
+  ('incident.approve_partner',  'Approve a partner organization participation request'),
   ('incident.restrict_partner', 'Restrict or suspend a participating organization'),
   ('incident.remove_partner',   'Remove a participating organization from the room'),
   ('incident.view_participants','View the participating organizations of an incident room')

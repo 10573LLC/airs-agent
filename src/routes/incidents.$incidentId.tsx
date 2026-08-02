@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
+import { DENY_MESSAGES, Denied, Panel } from "@/components/incident-ui";
 import {
   activateIncidentFn,
   archiveIncidentFn,
@@ -26,8 +27,6 @@ import {
   TRUST_STATUSES,
   type AccessLevel,
 } from "@/lib/incidents/lifecycle";
-
-import { DENY_MESSAGES, Denied, Panel } from "./incidents";
 
 export const Route = createFileRoute("/incidents/$incidentId")({
   head: () => ({

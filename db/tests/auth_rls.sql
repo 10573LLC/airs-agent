@@ -17,11 +17,8 @@
 \set ON_ERROR_STOP on
 \timing off
 
-BEGIN;
-
--- ---------------------------------------------------------------------------
--- 1. Fixtures (administrative role — NOT part of the isolation assertions)
--- ---------------------------------------------------------------------------
+-- Assertion helpers are created outside the fixture transaction so they
+-- survive the ROLLBACK and remain available to section 3.
 CREATE OR REPLACE FUNCTION pg_temp.ok(cond boolean, label text) RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -44,6 +41,11 @@ BEGIN
   RAISE EXCEPTION 'AUTH-RLS FAIL: % — statement was NOT rejected', label;
 END $$;
 
+BEGIN;
+
+-- ---------------------------------------------------------------------------
+-- 1. Fixtures (administrative role — NOT part of the isolation assertions)
+-- ---------------------------------------------------------------------------
 CREATE TEMP TABLE ids (k text PRIMARY KEY, v uuid);
 -- Fixture ids are readable by the assertion role; they carry no tenant data.
 GRANT SELECT ON ids TO airs_app;

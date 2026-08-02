@@ -19,7 +19,11 @@ export type Decision =
   | { allowed: false; reason: "no_principal" | "tenant_mismatch" | "missing_permission" };
 
 /** Permissions a partner org may exercise on a shared incident. Everything else is denied. */
-const SHARED_PERMISSIONS: readonly PermissionKey[] = ["incident.read", "airspace.read"];
+const SHARED_PERMISSIONS: readonly PermissionKey[] = [
+  "incident.read",
+  "incident.view_participants",
+  "airspace.read",
+];
 
 export function permissionsForRoles(roles: readonly RoleKey[]): Set<PermissionKey> {
   const out = new Set<PermissionKey>();

@@ -42,8 +42,8 @@ DECLARE
   room2 uuid;
   part  uuid;
 BEGIN
-  INSERT INTO airs.organizations (id, slug, name)
-       VALUES (org_c, 'test-untrusted-agency', 'Untrusted Test Agency');
+  INSERT INTO airs.organizations (id, slug, name, agency_type)
+       VALUES (org_c, 'test-untrusted-agency', 'Untrusted Test Agency', 'law_enforcement');
 
   INSERT INTO airs.trusted_agencies (org_id, partner_org_id, status)
        VALUES (org_a, org_b, 'approved');

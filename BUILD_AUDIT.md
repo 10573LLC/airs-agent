@@ -370,3 +370,84 @@ Environment: PostgreSQL 17.9 on 127.0.0.1:5599, database `airs`, application rol
 | Suite runs without a database | **VERIFIED** | 14 passed, 25 skipped | `npx vitest run` | DB tests need `TEST_DATABASE_URL` + `TEST_ADMIN_DATABASE_URL` |
 | Documentation updated | **VERIFIED** | Dated sections added | `SECURITY.md`, `DATABASE.md`, `ARCHITECTURE.md`, `CHANGELOG.md`, `BUILD_AUDIT.md` | — |
 | Signed-in browser walkthrough | **NOT VERIFIED** | Editor dev server has no `DATABASE_URL`; `/console` renders the generic "Session required" state | — | Run locally per `LOCAL_SETUP.md` to exercise the signed-in UI |
+
+## Authentication and Authorization Enforcement — closure verification, 2026-08-02
+
+Validation-and-documentation pass only. No authentication feature was added, no existing work was
+redesigned, and no Incident Room Lifecycle work was started.
+
+Environment: fresh PostgreSQL **17.9** cluster (`initdb`, port 5433, database `airs_closure`,
+created for this pass and not reused from any earlier run). Migration/fixture role: `postgres`
+(cluster owner/superuser). Application/test role: `airs_app` — `rolsuper = f`, `rolbypassrls = f`
+(`select rolname, rolsuper, rolbypassrls from pg_roles where rolname like 'airs%'` → `airs_app|f|f`).
+Node 22, npm, vitest 4.1.10.
+
+### Command results
+
+| # | Exact command | Exit code | Result |
+| --- | --- | --- | --- |
+| 1 | `npm install` | 0 | `added 1 package, removed 1 package, and changed 6 packages in 3s`; two `npm notice operation is not supported.` lines (sandbox filesystem notice, not a dependency problem). `git status` shows **no change** to `package.json` or `package-lock.json`. No dependency altered. |
+| 2a | `npx vitest run` (no database) | 0 | 14 passed, 25 skipped (3 files: 1 skipped) |
+| 2b | `TEST_DATABASE_URL=… TEST_ADMIN_DATABASE_URL=… npx vitest run` | 0 | 39 passed, 0 failed, 0 skipped |
+| 3 | `npx tsgo --noEmit` | 0 | 0 diagnostics |
+| 4 | `npm run build` (portable; `LOVABLE_SANDBOX`/`DEV_SERVER__PROJECT_PATH` unset) | 0 | `.output/` — server entry `.output/server/index.mjs`, client assets `.output/public/assets` (+ `favicon.ico`, `robots.txt`), `.output/nitro.json`. No warnings beyond Nitro's informational preview/deploy hints. |
+| 5 | `npm run build:dev` (editor) | 0 | `dist/` — `dist/server/` **present** (`dist/server/index.mjs`), `dist/client/` **present** (`assets`, `_headers`, `favicon.ico`, `robots.txt`), deployment config artifact `dist/server/wrangler.json` **present** (plus `dist/nitro.json`, `.wrangler/deploy/config.json`). Informational note only: `[nitro] Using auto generated worker name: airs-agent`. |
+| 6 | Preview `curl -o /dev/null -w '%{http_code}'` on `:8080` | 0 | `/` 200 · `/auth` 200 · `/console` 200 · `/invite/test-invalid-token` 200 |
+| 7a | `psql … -f db/migrations/0001_init.sql` (fresh DB) | 0 | applied |
+| 7b | `… 0002_roles_seed.sql` | 0 | applied |
+| 7c | `… 0003_auth.sql` | 0 | applied |
+| 7d | `… 0004_org_context_guard.sql` | 0 | applied |
+| 7e | `… db/seed/demo_orgs.sql` | 0 | Albany Police Department + Albany County seeded |
+| 7f | `psql … -f db/tests/auth_rls.sql` | 0 | **59/59** assertions, `AUTH-RLS: all assertions passed` |
+| 7g | `psql … -f db/tests/rls_matrix.sql` | 0 | tenant CRUD matrix passed |
+| 7h | `psql … -f db/tests/role_parity.sql` | 0 | `role model parity: 9 roles, 14 permissions, 34 grants` |
+| 7i | live-DB `npx vitest run` against the fresh database | 0 | 39/39 (25 authentication integration tests included) |
+
+Test-count breakdown (item 2): foundation tests **14** (`tests/authorize.test.ts` 9,
+`tests/role-parity.test.ts` 5) — unchanged in count and all passing; authentication integration
+tests **25** (`tests/auth-integration.test.ts`). Live-database totals: 39 passed / 0 failed /
+0 skipped. No-database totals: 14 passed / 0 failed / 25 skipped.
+
+Build portability: the portable build emits a plain Node server started with
+`node .output/server/index.mjs`. No Lovable package is present in `package.json`, and no Lovable
+runtime service is required to run it. The `cloudflare-module` branch is entered only when the
+editor sandbox environment variables are present.
+
+### Preview verification (item 6)
+
+Preview started successfully (Vite dev server, `:8080`). Playwright load of each route, console and
+page-error listeners attached:
+
+- `/auth` — renders "Sign in" form. No console errors, no page errors.
+- `/console` — unauthenticated access is **denied**, not silently rendered: the page shows the
+  "Session required" state with a "Go to sign in" link. No console errors, no page errors.
+- `/invite/test-invalid-token` — renders the session-gated prompt ("Sign in with the account this
+  invitation was sent to…"). No console errors, no page errors.
+
+**The editor preview has no `DATABASE_URL`.** Server functions therefore cannot reach a database,
+so `/console` also reports the generic server-side failure text alongside the deny state. No
+database-backed sign-in or organization session was exercised in the browser; interactive
+signed-in UI behaviour therefore remains **PARTIALLY VERIFIED** (service-level only).
+
+### Closure status corrections
+
+| Item | Status | Evidence | Why not VERIFIED |
+| --- | --- | --- | --- |
+| Interactive signed-in user interface | **PARTIALLY VERIFIED** | Routes render, deny states correct; flows proven by `tests/auth-integration.test.ts` | No database-backed browser sign-in session was exercised |
+| MFA | **PARTIALLY VERIFIED** (not implemented) | Password-only local adapter; adapter seam allows an OIDC/MFA driver | No second factor exists |
+| Rate limiting | **PARTIALLY VERIFIED** (not implemented) | — | No throttle on sign-in or invitation endpoints |
+| Account lockout | **PARTIALLY VERIFIED** (not implemented) | — | No failed-attempt threshold |
+| Password-reset delivery | **PARTIALLY VERIFIED** (not implemented) | — | No mail transport; invitation tokens are delivered out of band |
+| CSRF protection | **PARTIALLY VERIFIED** | Same-origin server functions + `SameSite=Lax`, `HttpOnly`, `Secure` in production | No per-request CSRF token |
+| Docker runtime | **PARTIALLY VERIFIED** | `Dockerfile`, `docker-compose.yml` reviewed; non-root user | No Docker daemon available; image never built or run |
+| Clean-clone verification | **PARTIALLY VERIFIED** | `npm install` clean in place; lockfile unchanged | No fresh `git clone` into an empty directory was installed and built |
+| Fresh empty-database reproduction | **VERIFIED** | New cluster, 0001→0004 + seed, 59/59 RLS assertions, 39/39 tests | PostgreSQL 17.9, not the documented 16 target |
+| Foundation tests unchanged | **VERIFIED** | 14/14 pass, same two suites | — |
+| Portable + editor builds | **VERIFIED** | `.output/server/index.mjs`; `dist/server` + `dist/client` + `dist/server/wrangler.json` | Worker artifact path is only exercised inside the sandbox |
+
+### Note recorded during this pass
+
+`db/tests/auth_rls.sql` must be run with the migration/owner DSN (as `npm run db:test` does).
+Invoking it directly as `airs_app` fails while creating fixtures — FORCE RLS rejecting an
+unprivileged `INSERT INTO airs.accounts` — which is correct behaviour. Documented in
+`LOCAL_SETUP.md`; no code or test was changed.

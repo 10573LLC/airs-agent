@@ -192,7 +192,7 @@ export function createLocalAuthAdapter(): AuthAdapter {
           expires_at: string;
           revoked_at: string | null;
         }>(
-          `SELECT id, account_id, active_org_id, expires_at, revoked_at
+          `SELECT id, account_id, active_org_id, to_json(expires_at)#>>'{}' AS expires_at, to_json(revoked_at)#>>'{}' AS revoked_at
              FROM airs.sessions WHERE token_hash = $1`,
           [tokenHash],
         ),
@@ -243,6 +243,50 @@ export function createLocalAuthAdapter(): AuthAdapter {
       );
       if (rows.length) await auditIdentityEvent(accountId, "auth.session_revoked", "allow", meta);
       return rows.length;
+    },
+
+    async listSessions(accountId, currentToken) {
+      const currentHash = currentToken ? await hashToken(currentToken) : null;
+      const rows = await db.withContext({ "airs.account_id": accountId }, (q) =>
+        q.query<{
+          id: string;
+          token_hash: string;
+          issued_at: string;
+          last_seen_at: string;
+          expires_at: string;
+          revoked_at: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+        }>(
+          `SELECT id, token_hash, to_json(issued_at)#>>'{}' AS issued_at, to_json(last_seen_at)#>>'{}' AS last_seen_at,
+                  to_json(expires_at)#>>'{}' AS expires_at, to_json(revoked_at)#>>'{}' AS revoked_at,
+                  host(ip_address) AS ip_address, user_agent
+             FROM airs.sessions WHERE account_id = $1 ORDER BY issued_at DESC`,
+          [accountId],
+        ),
+      );
+      return rows.map((r) => ({
+        sessionId: r.id,
+        issuedAt: r.issued_at,
+        lastSeenAt: r.last_seen_at,
+        expiresAt: r.expires_at,
+        revokedAt: r.revoked_at,
+        current: currentHash !== null && r.token_hash === currentHash,
+        ipAddress: r.ip_address,
+        userAgent: r.user_agent,
+      }));
+    },
+
+    async revokeSession(accountId, sessionId, meta) {
+      const rows = await db.withContext({ "airs.account_id": accountId }, (q) =>
+        q.query<{ id: string }>(
+          `UPDATE airs.sessions SET revoked_at = now()
+            WHERE id = $1 AND account_id = $2 AND revoked_at IS NULL RETURNING id`,
+          [sessionId, accountId],
+        ),
+      );
+      if (rows.length) await auditIdentityEvent(accountId, "auth.session_revoked", "allow", meta);
+      return rows.length > 0;
     },
 
     async startPasswordReset(email) {

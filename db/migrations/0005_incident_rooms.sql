@@ -402,6 +402,7 @@ BEGIN
        SET data_expired_at = now(), updated_at = now()
      WHERE data_expired_at IS NULL AND temp_data_expires_at IS NOT NULL
        AND temp_data_expires_at <= now()
+       AND status <> 'archived'
     RETURNING id, org_id
   ), a AS (
     INSERT INTO airs.audit_events (org_id, actor_user_id, action, resource_type, resource_id,

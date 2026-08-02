@@ -194,7 +194,9 @@ END $$;
 
 -- 2c. Identity context only (account A, no organization chosen) --------------
 DO $$
-DECLARE a uuid := (SELECT v FROM ids WHERE k='acct_a');
+DECLARE
+  a uuid := (SELECT v FROM ids WHERE k='acct_a');
+  n int;
 BEGIN
   PERFORM set_config('airs.account_id', a::text, true);
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.accounts) = 1, 'account context: only own account row visible');
@@ -205,10 +207,9 @@ BEGIN
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.sessions) = 1, 'account context: only own sessions visible');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.sessions WHERE id = (SELECT v FROM ids WHERE k='session_b')) = 0,
     'account context: other account sessions invisible by known id');
-  PERFORM pg_temp.denied(
-    format('UPDATE airs.sessions SET revoked_at = now() WHERE id = %L',
-           (SELECT v FROM ids WHERE k='session_b')),
-    'account context: cannot revoke another account session (or affects 0 rows)');
+  UPDATE airs.sessions SET revoked_at = now() WHERE id = (SELECT v FROM ids WHERE k='session_b');
+  GET DIAGNOSTICS n = ROW_COUNT;
+  PERFORM pg_temp.ok(n = 0, 'account context: revoking another account session affects 0 rows');
 END $$;
 
 -- 2d. Organization A context: organization B is unreachable ------------------

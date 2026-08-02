@@ -174,33 +174,75 @@ export async function regenerateInvitation(
   return { ...result, token: inviteToken };
 }
 
-/** Read-only preview of an invitation, for the acceptance page. */
-export async function previewInvitation(inviteToken: string) {
+/** Masks a recipient address so a preview cannot be used to harvest e-mails. */
+export function maskEmail(email: string): string {
+  const [local = "", domain = ""] = email.split("@");
+  const head = local.slice(0, 1);
+  return `${head}${"•".repeat(Math.max(local.length - 1, 1))}@${domain}`;
+}
+
+export interface InvitationPreview {
+  orgName: string;
+  roleKey: RoleKey;
+  expiresAt: string;
+  /** Masked invited address — never the raw address of another person. */
+  maskedEmail: string;
+  /** True when the authenticated account is the intended recipient. */
+  recipientMatches: boolean;
+}
+
+/**
+ * Read-only preview for the acceptance page. Requires an authenticated caller,
+ * and only discloses the organization and role once the invitation has passed
+ * every validity check. The stored token hash is never returned.
+ */
+export async function previewInvitation(
+  sessionToken: string | null,
+  inviteToken: string,
+): Promise<InvitationPreview> {
+  const auth = await requireSession(sessionToken);
+  if (!inviteToken || inviteToken.length < 16) throw new AccessError("invitation_invalid");
   const tokenHash = await hashToken(inviteToken);
   const db = getDatabase();
-  const rows = await db.withContext({ "airs.invite_token_hash": tokenHash }, (q) =>
-    q.query<{
+  const row = await db.withContext({ "airs.invite_token_hash": tokenHash }, async (q) => {
+    // The invitation itself is reachable only through its token hash (RLS).
+    const found = await q.query<{
+      org_id: string;
       email: string;
       role_key: RoleKey;
       status: string;
       expires_at: string;
-      org_name: string;
+      expired: boolean;
     }>(
-      `SELECT i.email, i.role_key, i.status, to_json(i.expires_at)#>>'{}' AS expires_at, o.name AS org_name
-         FROM airs.invitations i
-         JOIN airs.organizations o ON o.id = i.org_id
-        WHERE i.token_hash = $1`,
+      `SELECT org_id, email, role_key, status,
+              to_json(expires_at)#>>'{}' AS expires_at,
+              (expires_at <= now()) AS expired
+         FROM airs.invitations
+        WHERE token_hash = $1`,
       [tokenHash],
-    ),
-  );
-  const row = rows[0];
+    );
+    const invite = found[0];
+    if (!invite) return null;
+    // The organization row is only reachable with a tenant context, and the
+    // only thing that authorises this one is the invitation we just resolved
+    // from the presented token — never a client-supplied organization id.
+    await q.query("SELECT set_config('airs.org_id', $1, true)", [invite.org_id]);
+    const org = await q.query<{ name: string }>(
+      `SELECT name FROM airs.organizations WHERE id = $1`,
+      [invite.org_id],
+    );
+    return { ...invite, org_name: org[0]?.name ?? "" };
+  });
   if (!row) throw new AccessError("invitation_invalid");
+  if (row.status === "accepted") throw new AccessError("invitation_used");
+  if (row.status === "revoked") throw new AccessError("invitation_revoked");
+  if (row.status !== "pending" || row.expired) throw new AccessError("invitation_expired");
   return {
-    email: row.email,
-    roleKey: row.role_key,
-    status: row.status,
-    expiresAt: row.expires_at,
     orgName: row.org_name,
+    roleKey: row.role_key,
+    expiresAt: row.expires_at,
+    maskedEmail: maskEmail(row.email),
+    recipientMatches: row.email.toLowerCase() === auth.account.email.toLowerCase(),
   };
 }
 

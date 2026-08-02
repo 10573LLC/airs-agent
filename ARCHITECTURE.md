@@ -144,3 +144,33 @@ Docker image, or on any Node PaaS. Cloudflare/Workers output remains available v
 
 Remaining builder artifacts (`AGENTS.md` banner, `.lovable/`, `.workspace/`) are metadata and
 documentation only; nothing in install, build, test, run or deploy reads them.
+
+## Request path with authentication (2026-07-30)
+
+```
+browser
+  |  TanStack server function (src/lib/api/auth.functions.ts)
+  |    reads the httpOnly airs_session cookie, never a client-supplied identity
+  v
+withAuthorized()  src/lib/auth/authorize.server.ts
+  |  AuthAdapter.resolve(token)      src/lib/auth/local-adapter.server.ts
+  |  resolveMembership(ctx, orgId)   active membership only
+  |  authorize(principal, request)   pure, default deny  src/lib/rbac/authorize.ts
+  v
+DatabaseAdapter.withContext({ airs.org_id, airs.user_id, airs.account_id })
+  |  SET LOCAL inside a transaction -> discarded on COMMIT/ROLLBACK (pool safe)
+  v
+PostgreSQL as airs_app under FORCE ROW LEVEL SECURITY
+  |  airs.current_org_id() re-checks the membership (migration 0004)
+  v
+recordAudit() in the same transaction  -> airs.audit_events
+```
+
+Portability is unchanged: the auth driver is selected by `AUTH_DRIVER` behind the `AuthAdapter`
+contract (`local` today, OIDC later), and no Lovable-specific service is on this path.
+
+### Routes added
+
+- `/auth` — sign-in; accepts an optional same-origin `?redirect=` path only.
+- `/invite/$token` — invitation acceptance (`ssr: false`, `noindex`); organization and role are
+  displayed read-only from the server-validated invitation.

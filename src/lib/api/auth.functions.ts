@@ -233,7 +233,8 @@ export const previewInvitationFn = createServerFn({ method: "GET" })
   .handler(async ({ data }) =>
     guard(async () => {
       const { previewInvitation } = await import("@/lib/auth/invitations.server");
-      return previewInvitation(data.token);
+      const { token } = await serverCtx();
+      return previewInvitation(token, data.token);
     }),
   );
 

@@ -61,7 +61,11 @@ async function loadMemberships(accountId: string): Promise<MembershipView[]> {
   });
 }
 
-/** Writes an identity-plane audit event into every org the account belongs to. */
+/**
+ * Writes an identity-plane audit event into every organization where the
+ * account holds an ACTIVE membership. Suspended/revoked/invited memberships are
+ * excluded, matching the audit_identity_insert policy (migration 0004).
+ */
 async function auditIdentityEvent(
   accountId: string,
   action: string,
@@ -70,9 +74,9 @@ async function auditIdentityEvent(
   detail: Record<string, unknown> = {},
 ) {
   const db = getDatabase();
-  const memberships = await loadMemberships(accountId);
+  const memberships = (await loadMemberships(accountId)).filter((m) => m.status === "active");
   if (memberships.length === 0) return;
-  await db.withContext({ "airs.account_id": accountId }, async (q) => {
+  const write = db.withContext({ "airs.account_id": accountId }, async (q) => {
     for (const m of memberships) {
       await recordAudit(q, {
         orgId: m.orgId,
@@ -85,6 +89,10 @@ async function auditIdentityEvent(
         correlationId: meta.correlationId ?? null,
       });
     }
+  });
+  // An audit failure must never turn a deny into an allow, nor break sign-out.
+  await write.catch((error) => {
+    console.error("identity audit write failed", error);
   });
 }
 

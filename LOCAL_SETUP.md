@@ -136,3 +136,27 @@ NITRO_PRESET=node-server npm run build      # portable Node build (what the Dock
 
 After cloning this repository outside Lovable, neither variable exists, so `npm run build` always
 produces the portable Node server. `dist/` and `.wrangler/` are git-ignored and never committed.
+
+## Running the authentication tests (2026-07-30)
+
+```bash
+# 1. schema + demo organizations
+export DATABASE_URL="postgres://postgres@127.0.0.1:5432/airs"
+npm run db:migrate      # 0001 -> 0004
+npm run db:seed
+
+# 2. give the unprivileged application role a login
+psql "$DATABASE_URL" -c "ALTER ROLE airs_app LOGIN PASSWORD 'choose-a-password';"
+
+# 3. RLS proofs (matrix + role parity + identity plane)
+npm run db:test
+
+# 4. unit + integration tests
+export TEST_DATABASE_URL="postgres://airs_app:choose-a-password@127.0.0.1:5432/airs"
+export TEST_ADMIN_DATABASE_URL="$DATABASE_URL"
+npm test
+```
+
+`npm test` without `TEST_DATABASE_URL` still runs the unit suites and skips the database-backed
+tests. The application itself must be started with `DATABASE_URL` pointing at the **airs_app**
+role — never at a superuser or the table owner, or RLS would be bypassed.

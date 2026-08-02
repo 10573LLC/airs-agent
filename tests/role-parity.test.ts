@@ -15,18 +15,28 @@ import {
   type RoleKey,
 } from "../src/lib/rbac/roles";
 
-const sql = readFileSync(join(process.cwd(), "db/migrations/0002_roles_seed.sql"), "utf8");
+// The role model is seeded by 0002 and extended by later migrations, so every
+// migration that touches roles/permissions is parsed here.
+const SEED_FILES = [
+  "db/migrations/0002_roles_seed.sql",
+  "db/migrations/0005_incident_rooms.sql",
+];
+const sources = SEED_FILES.map((f) => readFileSync(join(process.cwd(), f), "utf8"));
 
-function block(afterMarker: string): string {
-  const start = sql.indexOf(afterMarker);
-  if (start === -1) throw new Error(`seed file is missing: ${afterMarker}`);
-  const end = sql.indexOf("ON CONFLICT", start);
-  return sql.slice(start, end === -1 ? undefined : end);
+function blocks(afterMarker: string): string {
+  return sources
+    .map((sql) => {
+      const start = sql.indexOf(afterMarker);
+      if (start === -1) return "";
+      const end = sql.indexOf("ON CONFLICT", start);
+      return sql.slice(start, end === -1 ? undefined : end);
+    })
+    .join("\n");
 }
 
-const rolesBlock = block("INSERT INTO airs.roles");
-const permissionsBlock = block("INSERT INTO airs.permissions");
-const grantsBlock = block("INSERT INTO airs.role_permissions");
+const rolesBlock = blocks("INSERT INTO airs.roles");
+const permissionsBlock = blocks("INSERT INTO airs.permissions");
+const grantsBlock = blocks("INSERT INTO airs.role_permissions");
 
 const sqlRoles = new Map<string, string>(
   [...rolesBlock.matchAll(/\(\s*'([a-z_]+)'\s*,\s*'([^']+)'\s*,\s*'[^']*'\s*\)/g)].map((m) => [

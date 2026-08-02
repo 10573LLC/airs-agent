@@ -17,6 +17,11 @@ export type AccessCode =
   | "invitation_revoked"
   | "invitation_used"
   | "invitation_wrong_recipient"
+  | "incident_not_found"
+  | "incident_state_invalid"
+  | "incident_stale_version"
+  | "partner_not_eligible"
+  | "participation_inactive"
   | "invalid_input";
 
 const STATUS: Record<AccessCode, number> = {
@@ -34,6 +39,11 @@ const STATUS: Record<AccessCode, number> = {
   invitation_revoked: 400,
   invitation_used: 400,
   invitation_wrong_recipient: 403,
+  incident_not_found: 404,
+  incident_state_invalid: 409,
+  incident_stale_version: 409,
+  partner_not_eligible: 403,
+  participation_inactive: 403,
   invalid_input: 400,
 };
 

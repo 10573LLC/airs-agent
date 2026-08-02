@@ -119,3 +119,26 @@ Apply order is now `0001 -> 0002 -> 0003 -> 0004` (`npm run db:migrate`).
 `npm run db:test` now runs `db/tests/rls_matrix.sql`, `db/tests/role_parity.sql` and
 `db/tests/auth_rls.sql`. The last one creates its fixtures as the owner, then runs all 59
 assertions after `SET ROLE airs_app`, and rolls everything back — it leaves no rows behind.
+
+## Migration 0005 — incident rooms (Stage 5)
+
+`db/migrations/0005_incident_rooms.sql` adds three tenant tables, all with `ENABLE` +
+`FORCE ROW LEVEL SECURITY` and `airs_app` grants:
+
+| Table | Tenant field | Purpose |
+| --- | --- | --- |
+| `airs.trusted_agencies` | `org_id` (owner) | eligibility only — never access |
+| `airs.incident_rooms` | `org_id` (originating agency, immutable) | the temporary room |
+| `airs.incident_participants` | `org_id` (owner) + `partner_org_id` | one row per partner agency |
+
+Room states: `draft → scheduled → active ⇄ paused → closing → closed → archived`.
+Ownership is immutable (`incident_room_guard`), closed rooms cannot reopen, archived rooms are frozen.
+A partner may only accept/decline/withdraw its own row (`incident_participant_guard`).
+
+Helpers (all `SECURITY DEFINER`, executable by `airs_app` only):
+`airs.has_incident_access(uuid)` (the single definition of partner visibility),
+`airs.pending_incident_invitations()`, `airs.related_org_name(uuid)`,
+`airs.expire_incident_state()` (time-based sweep that only ever removes access and audits every change).
+
+Role model is now 9 roles / 23 permissions / 52 grants. Apply order: `0001 → 0002 → 0003 → 0004 → 0005`.
+`npm run db:test` additionally runs `db/tests/incident_rls.sql`.

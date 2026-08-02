@@ -53,7 +53,7 @@ export async function listInvitations(
     async (_ctx, q) =>
       q.query<InvitationRow>(
         `SELECT id, email, role_key AS "roleKey", status,
-                expires_at AS "expiresAt", created_at AS "createdAt"
+                expires_at::text AS "expiresAt", created_at::text AS "createdAt"
            FROM airs.invitations
           WHERE org_id = airs.current_org_id()
           ORDER BY created_at DESC`,
@@ -100,7 +100,7 @@ export async function createInvitation(
       const rows = await q.query<{ id: string; expires_at: string }>(
         `INSERT INTO airs.invitations (org_id, email, role_key, token_hash, invited_by, expires_at)
          VALUES ($1,$2,$3,$4,$5, now() + ($6 || ' seconds')::interval)
-         RETURNING id, expires_at`,
+         RETURNING id, expires_at::text AS expires_at`,
         [ctx.orgId, email, input.roleKey, tokenHash, ctx.userId, String(ttl)],
       );
       return { invitationId: rows[0].id, expiresAt: rows[0].expires_at };
@@ -164,7 +164,7 @@ export async function regenerateInvitation(
                 expires_at = now() + ($4 || ' seconds')::interval,
                 updated_at = now()
           WHERE id = $1 AND org_id = $2 AND status = 'pending'
-          RETURNING id, email, expires_at`,
+          RETURNING id, email, expires_at::text AS expires_at`,
         [invitationId, ctx.orgId, tokenHash, String(DEFAULT_TTL_SECONDS)],
       );
       if (rows.length === 0) throw new AccessError("tenant_mismatch");
@@ -186,7 +186,7 @@ export async function previewInvitation(inviteToken: string) {
       expires_at: string;
       org_name: string;
     }>(
-      `SELECT i.email, i.role_key, i.status, i.expires_at, o.name AS org_name
+      `SELECT i.email, i.role_key, i.status, i.expires_at::text AS expires_at, o.name AS org_name
          FROM airs.invitations i
          JOIN airs.organizations o ON o.id = i.org_id
         WHERE i.token_hash = $1`,

@@ -192,7 +192,7 @@ export function createLocalAuthAdapter(): AuthAdapter {
           expires_at: string;
           revoked_at: string | null;
         }>(
-          `SELECT id, account_id, active_org_id, expires_at, revoked_at
+          `SELECT id, account_id, active_org_id, expires_at::text AS expires_at, revoked_at::text AS revoked_at
              FROM airs.sessions WHERE token_hash = $1`,
           [tokenHash],
         ),
@@ -258,7 +258,8 @@ export function createLocalAuthAdapter(): AuthAdapter {
           ip_address: string | null;
           user_agent: string | null;
         }>(
-          `SELECT id, token_hash, issued_at, last_seen_at, expires_at, revoked_at,
+          `SELECT id, token_hash, issued_at::text AS issued_at, last_seen_at::text AS last_seen_at,
+                  expires_at::text AS expires_at, revoked_at::text AS revoked_at,
                   host(ip_address) AS ip_address, user_agent
              FROM airs.sessions WHERE account_id = $1 ORDER BY issued_at DESC`,
           [accountId],

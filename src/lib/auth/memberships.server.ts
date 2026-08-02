@@ -41,7 +41,7 @@ export async function listMembers(token: string | null, orgId: string | null, me
       q.query<MemberRow>(
         `SELECT m.id AS "membershipId", m.user_id AS "userId", m.account_id AS "accountId",
                 u.email_address AS email, u.display_name AS "displayName",
-                m.role_key AS "roleKey", m.status, m.activated_at AS "activatedAt"
+                m.role_key AS "roleKey", m.status, m.activated_at::text AS "activatedAt"
            FROM airs.memberships m
            JOIN airs.users u ON u.id = m.user_id
           WHERE m.org_id = airs.current_org_id()
@@ -258,7 +258,7 @@ export async function listAuditEvents(
         detail: string;
       }>(
         `SELECT a.id::text AS id, a.action, a.resource_type AS "resourceType", a.outcome,
-                a.occurred_at AS "occurredAt", u.display_name AS actor, a.detail::text AS detail
+                a.occurred_at::text AS "occurredAt", u.display_name AS actor, a.detail::text AS detail
            FROM airs.audit_events a
            LEFT JOIN airs.users u ON u.id = a.actor_user_id
           WHERE a.org_id = airs.current_org_id()

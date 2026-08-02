@@ -323,4 +323,98 @@ $$;
 REVOKE ALL ON FUNCTION airs.related_org_name(uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION airs.related_org_name(uuid) TO airs_app;
 
+-- ---------------------------------------------------------------------------
+-- Scheduled expiration sweep.
+--
+-- Time-based expiration must not depend on anyone being signed in, so this is
+-- a single SECURITY DEFINER routine that operates across tenants. It only ever
+-- REMOVES access — it can never grant it — and it writes an audit row for every
+-- state change it makes.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION airs.expire_incident_state()
+RETURNS TABLE (expired_invitations int, expired_participations int, expired_rooms int, purged_rooms int)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = airs, pg_catalog AS $$
+DECLARE
+  inv int := 0; part int := 0; rooms int := 0; purged int := 0;
+BEGIN
+  WITH x AS (
+    UPDATE airs.incident_participants
+       SET invitation_status = 'expired', participation_status = 'expired',
+           token_hash = NULL, updated_at = now()
+     WHERE invitation_status = 'pending' AND invitation_expires_at <= now()
+    RETURNING id, incident_id, org_id, partner_org_id
+  ), a AS (
+    INSERT INTO airs.audit_events (org_id, actor_user_id, action, resource_type, resource_id,
+                                   outcome, detail)
+    SELECT x.org_id, NULL, 'incident.invitation_expired', 'incident_room', x.incident_id, 'allow',
+           jsonb_build_object('participant_id', x.id, 'target_org_id', x.partner_org_id,
+                              'prior_state','pending','new_state','expired','cause','schedule')
+      FROM x RETURNING 1
+  ) SELECT count(*)::int INTO inv FROM x;
+
+  WITH x AS (
+    UPDATE airs.incident_participants
+       SET participation_status = 'expired', revoked_at = coalesce(revoked_at, now()),
+           token_hash = NULL, updated_at = now()
+     WHERE participation_status IN ('active','restricted','suspended','pending_approval')
+       AND expires_at IS NOT NULL AND expires_at <= now()
+    RETURNING id, incident_id, org_id, partner_org_id
+  ), a AS (
+    INSERT INTO airs.audit_events (org_id, actor_user_id, action, resource_type, resource_id,
+                                   outcome, detail)
+    SELECT x.org_id, NULL, 'incident.participation_expired', 'incident_room', x.incident_id, 'allow',
+           jsonb_build_object('participant_id', x.id, 'target_org_id', x.partner_org_id,
+                              'new_state','expired','cause','schedule')
+      FROM x RETURNING 1
+  ) SELECT count(*)::int INTO part FROM x;
+
+  -- A scheduled room whose window elapsed closes itself; partner access ends
+  -- with it, exactly as in an operator-driven closure.
+  WITH x AS (
+    UPDATE airs.incident_rooms
+       SET status = 'closed', closed_at = now(),
+           closure_reason = coalesce(closure_reason, 'scheduled window elapsed'),
+           temp_data_expires_at = coalesce(temp_data_expires_at,
+                                           now() + (temp_data_retention_hours || ' hours')::interval),
+           updated_at = now(), version = version + 1
+     WHERE status IN ('draft','scheduled','active','paused','closing')
+       AND scheduled_expires_at IS NOT NULL AND scheduled_expires_at <= now()
+    RETURNING id, org_id
+  ), r AS (
+    UPDATE airs.incident_participants p
+       SET participation_status = 'revoked', revoked_at = now(), token_hash = NULL,
+           reason = coalesce(p.reason, 'incident closed'), updated_at = now()
+      FROM x WHERE p.incident_id = x.id
+        AND p.participation_status IN ('invited','pending_approval','active','restricted','suspended')
+    RETURNING p.id
+  ), a AS (
+    INSERT INTO airs.audit_events (org_id, actor_user_id, action, resource_type, resource_id,
+                                   outcome, detail)
+    SELECT x.org_id, NULL, 'incident.closed', 'incident_room', x.id, 'allow',
+           jsonb_build_object('new_state','closed','cause','scheduled_expiration')
+      FROM x RETURNING 1
+  ) SELECT count(*)::int INTO rooms FROM x;
+
+  -- Temporary operational data retention: mark rooms whose retention window
+  -- elapsed. Payload tables added by later stages join on data_expired_at.
+  WITH x AS (
+    UPDATE airs.incident_rooms
+       SET data_expired_at = now(), updated_at = now()
+     WHERE data_expired_at IS NULL AND temp_data_expires_at IS NOT NULL
+       AND temp_data_expires_at <= now()
+    RETURNING id, org_id
+  ), a AS (
+    INSERT INTO airs.audit_events (org_id, actor_user_id, action, resource_type, resource_id,
+                                   outcome, detail)
+    SELECT x.org_id, NULL, 'incident.temp_data_expired', 'incident_room', x.id, 'allow',
+           jsonb_build_object('cause','retention_window')
+      FROM x RETURNING 1
+  ) SELECT count(*)::int INTO purged FROM x;
+
+  RETURN QUERY SELECT inv, part, rooms, purged;
+END;
+$$;
+REVOKE ALL ON FUNCTION airs.expire_incident_state() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION airs.expire_incident_state() TO airs_app;
+
 COMMIT;

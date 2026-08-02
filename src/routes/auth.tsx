@@ -5,6 +5,12 @@ import { useState } from "react";
 import { signIn } from "@/lib/api/auth.functions";
 
 export const Route = createFileRoute("/auth")({
+  validateSearch: (search: Record<string, unknown>) => {
+    // Only same-origin, absolute-path redirects are honoured — never a full URL.
+    const raw = typeof search.redirect === "string" ? search.redirect : "";
+    const redirect = /^\/[A-Za-z0-9\-._~/%$]*$/.test(raw) && !raw.startsWith("//") ? raw : "";
+    return redirect ? { redirect } : {};
+  },
   head: () => ({
     meta: [
       { title: "Sign in — AIRS Agent" },
@@ -32,6 +38,7 @@ const MESSAGES: Record<string, string> = {
 
 function SignInPage() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const submit = useServerFn(signIn);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -48,7 +55,7 @@ function SignInPage() {
         setError(MESSAGES[result.code] ?? "Those credentials were not accepted.");
         return;
       }
-      await navigate({ to: "/console" });
+      await navigate({ to: redirect || "/console" });
     } catch {
       setError("Sign-in is temporarily unavailable. Try again shortly.");
     } finally {

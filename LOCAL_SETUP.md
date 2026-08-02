@@ -160,3 +160,12 @@ npm test
 `npm test` without `TEST_DATABASE_URL` still runs the unit suites and skips the database-backed
 tests. The application itself must be started with `DATABASE_URL` pointing at the **airs_app**
 role — never at a superuser or the table owner, or RLS would be bypassed.
+
+### Which role runs which suite (2026-08-02)
+
+`db/tests/auth_rls.sql` builds its fixtures **before** it does `SET ROLE airs_app`, so it must be
+invoked with the migration/owner DSN (`$DATABASE_URL`, as `npm run db:test` does). Running it
+directly as `airs_app` fails at the fixture stage with
+`new row violates row-level security policy for table "accounts"` — that is FORCE RLS working as
+designed, not a defect. The assertions themselves still execute as `airs_app`; the script asserts
+that role has neither SUPERUSER nor BYPASSRLS.

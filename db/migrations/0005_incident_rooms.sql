@@ -278,4 +278,46 @@ CREATE POLICY participant_update ON airs.incident_participants FOR UPDATE
   USING (org_id = airs.current_org_id() OR partner_org_id = airs.current_org_id())
   WITH CHECK (org_id = airs.current_org_id() OR partner_org_id = airs.current_org_id());
 
+-- ---------------------------------------------------------------------------
+-- Invitation-side read helpers.
+--
+-- Before acceptance a partner organization holds NO access to the room, so RLS
+-- correctly hides airs.incident_rooms and airs.organizations from it. These
+-- SECURITY DEFINER functions disclose the minimum an invited organization must
+-- see to make a decision, and only for rows that name it as the partner.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION airs.pending_incident_invitations()
+RETURNS TABLE (
+  participant_id uuid, incident_id uuid, incident_name text, incident_type text,
+  incident_status text, owner_org_id uuid, owner_org_name text, access_level text,
+  requires_approval boolean, invited_at timestamptz, invitation_expires_at timestamptz,
+  expires_at timestamptz
+)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = airs, pg_catalog AS $$
+  SELECT p.id, r.id, r.name, r.incident_type, r.status, r.org_id, o.name, p.access_level,
+         p.requires_approval, p.invited_at, p.invitation_expires_at, p.expires_at
+    FROM airs.incident_participants p
+    JOIN airs.incident_rooms r ON r.id = p.incident_id
+    JOIN airs.organizations o ON o.id = r.org_id
+   WHERE p.partner_org_id = airs.current_org_id()
+     AND p.invitation_status = 'pending'
+     AND p.invitation_expires_at > now()
+     AND r.status NOT IN ('closed','archived')
+$$;
+REVOKE ALL ON FUNCTION airs.pending_incident_invitations() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION airs.pending_incident_invitations() TO airs_app;
+
+-- Name of an organization the caller already shares an incident room with.
+CREATE OR REPLACE FUNCTION airs.related_org_name(o uuid) RETURNS text
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = airs, pg_catalog AS $$
+  SELECT org.name FROM airs.organizations org
+   WHERE org.id = o
+     AND (o = airs.current_org_id()
+          OR EXISTS (SELECT 1 FROM airs.incident_participants p
+                      WHERE (p.org_id = o AND p.partner_org_id = airs.current_org_id())
+                         OR (p.partner_org_id = o AND p.org_id = airs.current_org_id())))
+$$;
+REVOKE ALL ON FUNCTION airs.related_org_name(uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION airs.related_org_name(uuid) TO airs_app;
+
 COMMIT;

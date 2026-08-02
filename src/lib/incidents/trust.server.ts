@@ -104,17 +104,14 @@ export async function assertInvitationEligibility(
   q: { query: <R>(sql: string, params?: unknown[]) => Promise<R[]> },
   orgId: string,
   partnerOrgId: string,
-  allowEmergency: boolean,
-): Promise<"trusted" | "emergency"> {
+): Promise<"trusted"> {
   const rows = await q.query<{ status: TrustStatus }>(
     `SELECT status FROM airs.trusted_agencies WHERE org_id = $1 AND partner_org_id = $2`,
     [orgId, partnerOrgId],
   );
   const status = rows[0]?.status ?? null;
-  if (status === "approved") return "trusted";
-  // Documented one-time path: an originating-organization administrator may
-  // invite a non-trusted agency in an emergency. It is explicit, audited, and
-  // never silent — the caller must set it and hold org.manage.
-  if (allowEmergency && status !== "revoked" && status !== "suspended") return "emergency";
-  throw new AccessError("partner_not_eligible");
+  // Eligibility is APPROVED-only. There is no emergency bypass: an unapproved,
+  // pending, restricted, suspended or revoked relationship denies.
+  if (status !== "approved") throw new AccessError("partner_not_eligible");
+  return "trusted";
 }

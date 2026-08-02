@@ -53,6 +53,17 @@ export interface RequestMeta {
   correlationId?: string | null;
 }
 
+export interface SessionSummary {
+  sessionId: string;
+  issuedAt: string;
+  lastSeenAt: string;
+  expiresAt: string;
+  revokedAt: string | null;
+  current: boolean;
+  ipAddress: string | null;
+  userAgent: string | null;
+}
+
 export interface AuthAdapter {
   readonly driver: string;
   /** Verifies a credential and creates a server-side session. */
@@ -63,6 +74,10 @@ export interface AuthAdapter {
   resolve(token: string | null | undefined): Promise<AuthenticatedContext | null>;
   /** Revokes every session of an account (used on password change / admin action). */
   revokeAllSessions(accountId: string, meta: RequestMeta): Promise<number>;
+  /** Lists the sessions of an account, newest first. */
+  listSessions(accountId: string, currentToken?: string | null): Promise<SessionSummary[]>;
+  /** Revokes one session belonging to the account. Returns false when not found. */
+  revokeSession(accountId: string, sessionId: string, meta: RequestMeta): Promise<boolean>;
   /** Starts a recovery flow; returns the opaque token to deliver out of band. */
   startPasswordReset(email: string): Promise<string | null>;
   /** Completes a recovery flow and revokes all existing sessions. */

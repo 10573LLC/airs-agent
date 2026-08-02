@@ -204,26 +204,35 @@ export async function previewInvitation(
   if (!inviteToken || inviteToken.length < 16) throw new AccessError("invitation_invalid");
   const tokenHash = await hashToken(inviteToken);
   const db = getDatabase();
-  const rows = await db.withContext({ "airs.invite_token_hash": tokenHash }, (q) =>
-    q.query<{
+  const row = await db.withContext({ "airs.invite_token_hash": tokenHash }, async (q) => {
+    // The invitation itself is reachable only through its token hash (RLS).
+    const found = await q.query<{
+      org_id: string;
       email: string;
       role_key: RoleKey;
       status: string;
       expires_at: string;
       expired: boolean;
-      org_name: string;
     }>(
-      `SELECT i.email, i.role_key, i.status,
-              to_json(i.expires_at)#>>'{}' AS expires_at,
-              (i.expires_at <= now()) AS expired,
-              o.name AS org_name
-         FROM airs.invitations i
-         JOIN airs.organizations o ON o.id = i.org_id
-        WHERE i.token_hash = $1`,
+      `SELECT org_id, email, role_key, status,
+              to_json(expires_at)#>>'{}' AS expires_at,
+              (expires_at <= now()) AS expired
+         FROM airs.invitations
+        WHERE token_hash = $1`,
       [tokenHash],
-    ),
-  );
-  const row = rows[0];
+    );
+    const invite = found[0];
+    if (!invite) return null;
+    // The organization row is only reachable with a tenant context, and the
+    // only thing that authorises this one is the invitation we just resolved
+    // from the presented token — never a client-supplied organization id.
+    await q.query("SELECT set_config('airs.org_id', $1, true)", [invite.org_id]);
+    const org = await q.query<{ name: string }>(
+      `SELECT name FROM airs.organizations WHERE id = $1`,
+      [invite.org_id],
+    );
+    return { ...invite, org_name: org[0]?.name ?? "" };
+  });
   if (!row) throw new AccessError("invitation_invalid");
   if (row.status === "accepted") throw new AccessError("invitation_used");
   if (row.status === "revoked") throw new AccessError("invitation_revoked");

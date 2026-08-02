@@ -111,11 +111,10 @@ BEGIN
   PERFORM pg_temp.ok(n = 0, 'unrelated organization sees no rooms');
   SELECT count(*) INTO n FROM airs.incident_participants;
   PERFORM pg_temp.ok(n = 0, 'unrelated organization sees no participation rows');
-  PERFORM pg_temp.denied(
-    format('UPDATE airs.incident_rooms SET name = ''stolen'' WHERE id = %L', room),
-    'unrelated organization cannot rename another tenant''s room');
-  SELECT count(*) INTO n FROM airs.incident_rooms WHERE id = room AND name = 'stolen';
-  PERFORM pg_temp.ok(n = 0, 'unrelated UPDATE changed no row');
+  -- RLS hides the row, so the UPDATE matches nothing rather than raising.
+  UPDATE airs.incident_rooms SET name = 'stolen' WHERE id = room;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  PERFORM pg_temp.ok(n = 0, 'unrelated organization cannot rename another tenant''s room');
 
   -- a partner may not write the room, invite anyone, or edit its own grant
   PERFORM set_config('airs.org_id', org_b::text, true);

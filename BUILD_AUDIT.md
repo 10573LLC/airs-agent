@@ -331,3 +331,42 @@ drift within existing public dependencies, no builder package.
   17.9 rather than the documented 16 target.
 - Non-operational builder metadata (`AGENTS.md` block, `.lovable/`, `.workspace/`) still exists and
   is read by no install, build, test, run or deploy path.
+
+## Authentication and Authorization Enforcement — completion, 2026-07-30
+
+Environment: PostgreSQL 17.9 on 127.0.0.1:5599, database `airs`, application role `airs_app`
+(no SUPERUSER, no BYPASSRLS), Node 22, vitest 4.1.10.
+
+### Commands executed and results
+
+| Command | Result |
+| --- | --- |
+| `psql "$DATABASE_URL" -f db/migrations/0004_org_context_guard.sql` | exit 0 |
+| `psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/tests/auth_rls.sql` | exit 0 — 59/59 assertions, "AUTH-RLS: all assertions passed" |
+| `TEST_DATABASE_URL=… TEST_ADMIN_DATABASE_URL=… npx vitest run` | exit 0 — 39/39 tests (3 files) |
+| `npx vitest run` (no database) | exit 0 — 14 passed, 25 skipped |
+| `npx tsgo --noEmit` | exit 0 — no diagnostics |
+| Playwright: `/auth`, `/console`, `/invite/<token>` | all render; unauthenticated invite shows the sign-in prompt; no page errors |
+
+### Verification table
+
+| Verification item | Status | Evidence | Exact command or file | Remaining limitation |
+| --- | --- | --- | --- | --- |
+| Invitation acceptance route | **VERIFIED** | Renders; org/role read-only from the server-validated row | `src/routes/invite/$token.tsx` | Signed-in acceptance verified at service level, not in-browser |
+| Invitation is single-use | **VERIFIED** | Replay returns `invitation_used` | `tests/auth-integration.test.ts` | — |
+| Invitation expiry / revocation / resend | **VERIFIED** | `invitation_expired`, `invitation_revoked`, rotated token invalidates the old one | `tests/auth-integration.test.ts` | — |
+| Recipient binding | **VERIFIED** | Non-recipient gets `invitation_wrong_recipient`; preview masks the address | `tests/auth-integration.test.ts` | — |
+| Identity-plane forced RLS | **VERIFIED** | 59 assertions as `airs_app`, incl. FORCE RLS on all 7 identity tables | `db/tests/auth_rls.sql` | Superusers bypass RLS by design |
+| Default deny with no context | **VERIFIED** | 0 rows on all tables; inserts rejected by policy | `db/tests/auth_rls.sql` §2a | — |
+| Cross-tenant read/write denial | **VERIFIED** | Org B invisible by known id; UPDATE/DELETE affect 0 rows; inserts rejected | `db/tests/auth_rls.sql` §2d | — |
+| Unapproved / malformed GUC denied | **VERIFIED** | Malformed `airs.org_id` → NULL context; unrelated GUC grants nothing | `db/tests/auth_rls.sql` §2b | — |
+| Non-active membership grants nothing | **VERIFIED** | invited / suspended / revoked / non-member all yield NULL context | `db/tests/auth_rls.sql` §2e, migration 0004 | — |
+| Context does not leak across pooled reuse | **VERIFIED** | Context gone after COMMIT and after ROLLBACK on the same backend | `db/tests/auth_rls.sql` §3 | — |
+| Password hashing | **VERIFIED** | PBKDF2-SHA256 210k, per-hash salt, wrong password rejected | `tests/auth-integration.test.ts` | No MFA, no lockout threshold |
+| Session lifecycle | **VERIFIED** | Sign-in, resolve, sign-out, expiry; token never stored in clear text | `tests/auth-integration.test.ts` | No refresh/rotation |
+| Permission denial is enforced and audited | **VERIFIED** | `visual_observer` → `forbidden`, deny row with the acting user | `tests/auth-integration.test.ts` | — |
+| Client-supplied org id rejected | **VERIFIED** | `not_a_member` at the app layer, NULL context at the DB layer | `tests/auth-integration.test.ts`, migration 0004 | — |
+| Audit append-only, secret-free | **VERIFIED** | UPDATE/DELETE affect 0 rows; no token/password strings in detail | `tests/auth-integration.test.ts`, `db/tests/auth_rls.sql` | No retention/purge job yet |
+| Suite runs without a database | **VERIFIED** | 14 passed, 25 skipped | `npx vitest run` | DB tests need `TEST_DATABASE_URL` + `TEST_ADMIN_DATABASE_URL` |
+| Documentation updated | **VERIFIED** | Dated sections added | `SECURITY.md`, `DATABASE.md`, `ARCHITECTURE.md`, `CHANGELOG.md`, `BUILD_AUDIT.md` | — |
+| Signed-in browser walkthrough | **NOT VERIFIED** | Editor dev server has no `DATABASE_URL`; `/console` renders the generic "Session required" state | — | Run locally per `LOCAL_SETUP.md` to exercise the signed-in UI |

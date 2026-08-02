@@ -67,3 +67,21 @@ All notable changes. Newest first. Dates are UTC.
 - `.env.example` placeholders only; `.gitignore` now excludes `.env*`.
 - Root route metadata, `README.md` rewritten for AIRS Agent.
 - `BUILD_AUDIT.md`, `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`, `LOCAL_SETUP.md` updated.
+
+## 2026-07-30 — Authentication and Authorization Enforcement (complete)
+
+### Added
+- `src/routes/invite/$token.tsx` — session-gated, non-enumerating invitation acceptance page.
+- `db/migrations/0004_org_context_guard.sql` — organization-context guard in
+  `airs.current_org_id()`; `audit_identity_insert` now requires an ACTIVE membership.
+- `db/tests/auth_rls.sql` — 59 identity-plane RLS assertions run as `airs_app`.
+- `tests/auth-integration.test.ts` — 25 live-database tests of the full enforcement chain.
+- `/auth` accepts an optional same-origin `?redirect=` path so an invitation link survives sign-in.
+
+### Changed
+- `previewInvitation()` requires a session, masks the recipient address, returns
+  `recipientMatches`, and resolves the organization name through the invitation's own context
+  instead of a join that RLS correctly blocked.
+- `auditIdentityEvent()` writes only to organizations with an ACTIVE membership and no longer lets
+  an audit failure break sign-in or sign-out.
+- `npm run db:migrate` applies 0001–0004; `npm run db:test` also runs `auth_rls.sql`.

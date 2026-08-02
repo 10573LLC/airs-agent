@@ -2,6 +2,30 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Authentication and Authorization Enforcement — closure verification] 2026-08-02
+
+### Verified (no code change)
+- `npm install` exit 0; `package.json` and `package-lock.json` unchanged.
+- `npx vitest run` exit 0 — 14 passed / 25 skipped without a database; 39 passed / 0 failed with
+  `TEST_DATABASE_URL` + `TEST_ADMIN_DATABASE_URL` (14 foundation + 25 authentication integration).
+- `npx tsgo --noEmit` exit 0, 0 diagnostics.
+- `npm run build` exit 0 → `.output/server/index.mjs` + `.output/public`; `npm run build:dev` exit 0 →
+  `dist/server`, `dist/client`, `dist/server/wrangler.json`.
+- Fresh PostgreSQL 17.9 cluster: migrations 0001→0004 and seed applied clean; `auth_rls.sql` 59/59,
+  `rls_matrix.sql` and `role_parity.sql` pass; live-DB suite 39/39. Application role `airs_app` is
+  neither SUPERUSER nor BYPASSRLS.
+- Preview: `/`, `/auth`, `/console`, `/invite/<invalid>` all HTTP 200 with no console or page errors;
+  unauthenticated `/console` renders the deny state.
+
+### Documentation
+- `BUILD_AUDIT.md`: added "Authentication and Authorization Enforcement — closure verification".
+- `LOCAL_SETUP.md`: recorded that `db/tests/auth_rls.sql` must run with the migration/owner DSN.
+
+### Still PARTIALLY VERIFIED
+Interactive signed-in UI (editor preview has no `DATABASE_URL`), MFA, rate limiting, account
+lockout, password-reset delivery, CSRF beyond same-origin + `SameSite=Lax`, Docker runtime,
+clean-clone install.
+
 ## [Lovable Editor Compatibility Repair] 2026-07-30
 
 ### Fixed

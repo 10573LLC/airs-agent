@@ -45,6 +45,8 @@ BEGIN
 END $$;
 
 CREATE TEMP TABLE ids (k text PRIMARY KEY, v uuid);
+-- Fixture ids are readable by the assertion role; they carry no tenant data.
+GRANT SELECT ON ids TO airs_app;
 
 DO $$
 DECLARE

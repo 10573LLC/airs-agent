@@ -142,3 +142,17 @@ Helpers (all `SECURITY DEFINER`, executable by `airs_app` only):
 
 Role model is now 9 roles / 23 permissions / 52 grants. Apply order: `0001 → 0002 → 0003 → 0004 → 0005`.
 `npm run db:test` additionally runs `db/tests/incident_rls.sql`.
+
+## Scheduled expiration
+
+`airs.expire_incident_state()` is the single writer for time-based state changes. In one
+transaction it expires overdue invitations (destroying their token hashes), expires overdue
+participations, closes rooms whose scheduled window elapsed and revokes their partners, and marks
+temporary data past its retention window. It returns counters only and writes an audit row for
+every change. It can only remove access — no code path in the function grants or restores any.
+
+Callers must hold advisory lock `8421701`. Running it twice in a row is a no-op; this is asserted
+in `db/tests/expiration.sql` (21 assertions, included in `npm run db:test`).
+
+Optional in-database scheduling lives in `db/scheduler/pg_cron.sql`. It is not part of the
+migration chain and is applied only where the `pg_cron` extension exists.

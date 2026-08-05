@@ -59,77 +59,124 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-navy-deep: var(--brand-navy-deep);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-blue-bright: var(--brand-blue-bright);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-deep: var(--brand-gold-deep);
+  --color-brand-silver: var(--brand-silver);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --shadow-brand: var(--shadow-brand);
+  --shadow-panel: var(--shadow-panel);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
+  --radius: 0.375rem;
+
+  /* Anconison / AIRS Agent brand primitives (sampled from the approved emblem). */
+  --brand-navy-deep: oklch(0.138 0.048 256.5);
+  --brand-navy: oklch(0.229 0.095 260.4);
+  --brand-blue: oklch(0.482 0.138 250.3);
+  --brand-blue-bright: oklch(0.640 0.175 248.7);
+  --brand-gold: oklch(0.801 0.159 88.5);
+  --brand-gold-deep: oklch(0.652 0.132 81.6);
+  --brand-silver: oklch(0.936 0.009 258.3);
+
+  --font-display: "Barlow Condensed", "Barlow", system-ui, sans-serif;
+  --font-sans: "Barlow", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --shadow-brand: 0 0 0 1px oklch(0.482 0.138 250.3 / 25%), 0 10px 30px -12px oklch(0.138 0.048 256.5 / 45%);
+  --shadow-panel: 0 1px 2px oklch(0.138 0.048 256.5 / 8%);
+
+  --background: oklch(0.985 0.004 258);
+  --foreground: oklch(0.183 0.069 258.6);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
+  --card-foreground: oklch(0.183 0.069 258.6);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --popover-foreground: oklch(0.183 0.069 258.6);
+  --primary: oklch(0.482 0.138 250.3);
+  --primary-foreground: oklch(0.985 0.004 258);
+  --secondary: oklch(0.945 0.012 256);
+  --secondary-foreground: oklch(0.229 0.095 260.4);
+  --muted: oklch(0.955 0.008 256);
+  --muted-foreground: oklch(0.505 0.032 257);
+  --accent: oklch(0.801 0.159 88.5);
+  --accent-foreground: oklch(0.229 0.095 260.4);
+  --destructive: oklch(0.556 0.216 27.3);
+  --destructive-foreground: oklch(0.985 0.004 258);
+  --success: oklch(0.560 0.126 158);
+  --success-foreground: oklch(0.985 0.004 258);
+  --warning: oklch(0.652 0.132 81.6);
+  --warning-foreground: oklch(0.138 0.048 256.5);
+  --info: oklch(0.570 0.172 252.2);
+  --info-foreground: oklch(0.985 0.004 258);
+  --border: oklch(0.895 0.013 256);
+  --input: oklch(0.895 0.013 256);
+  --ring: oklch(0.570 0.172 252.2);
+  --chart-1: oklch(0.482 0.138 250.3);
+  --chart-2: oklch(0.640 0.175 248.7);
+  --chart-3: oklch(0.801 0.159 88.5);
+  --chart-4: oklch(0.560 0.126 158);
+  --chart-5: oklch(0.556 0.216 27.3);
+  --sidebar: oklch(0.229 0.095 260.4);
+  --sidebar-foreground: oklch(0.936 0.009 258.3);
+  --sidebar-primary: oklch(0.640 0.175 248.7);
+  --sidebar-primary-foreground: oklch(0.138 0.048 256.5);
+  --sidebar-accent: oklch(0.332 0.132 259.6);
+  --sidebar-accent-foreground: oklch(0.936 0.009 258.3);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.640 0.175 248.7);
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --background: oklch(0.138 0.048 256.5);
+  --foreground: oklch(0.936 0.009 258.3);
+  --card: oklch(0.183 0.069 258.6);
+  --card-foreground: oklch(0.936 0.009 258.3);
+  --popover: oklch(0.183 0.069 258.6);
+  --popover-foreground: oklch(0.936 0.009 258.3);
+  --primary: oklch(0.640 0.175 248.7);
+  --primary-foreground: oklch(0.138 0.048 256.5);
+  --secondary: oklch(0.229 0.095 260.4);
+  --secondary-foreground: oklch(0.936 0.009 258.3);
+  --muted: oklch(0.229 0.095 260.4);
+  --muted-foreground: oklch(0.766 0.029 258.4);
+  --accent: oklch(0.801 0.159 88.5);
+  --accent-foreground: oklch(0.138 0.048 256.5);
+  --destructive: oklch(0.640 0.191 25);
+  --destructive-foreground: oklch(0.985 0.004 258);
+  --success: oklch(0.680 0.140 158);
+  --success-foreground: oklch(0.138 0.048 256.5);
+  --warning: oklch(0.801 0.159 88.5);
+  --warning-foreground: oklch(0.138 0.048 256.5);
+  --info: oklch(0.640 0.175 248.7);
+  --info-foreground: oklch(0.138 0.048 256.5);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.640 0.175 248.7);
+  --chart-1: oklch(0.640 0.175 248.7);
+  --chart-2: oklch(0.570 0.172 252.2);
+  --chart-3: oklch(0.801 0.159 88.5);
+  --chart-4: oklch(0.680 0.140 158);
+  --chart-5: oklch(0.640 0.191 25);
+  --sidebar: oklch(0.183 0.069 258.6);
+  --sidebar-foreground: oklch(0.936 0.009 258.3);
+  --sidebar-primary: oklch(0.640 0.175 248.7);
+  --sidebar-primary-foreground: oklch(0.138 0.048 256.5);
+  --sidebar-accent: oklch(0.229 0.095 260.4);
+  --sidebar-accent-foreground: oklch(0.936 0.009 258.3);
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: oklch(0.640 0.175 248.7);
 }
 
 @layer base {
@@ -141,4 +188,44 @@
     background-color: var(--color-background);
     color: var(--color-foreground);
   }
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: 0.005em;
+  }
+}
+
+/* Reusable Anconison surface treatments. Components reference these utilities
+   instead of hardcoding brand colors. */
+@utility brand-command-surface {
+  background-image: linear-gradient(
+    160deg,
+    var(--brand-navy-deep) 0%,
+    var(--brand-navy) 55%,
+    var(--brand-navy-deep) 100%
+  );
+  color: var(--brand-silver);
+}
+
+@utility brand-gold-rule {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--brand-gold-deep) 15%,
+    var(--brand-gold) 50%,
+    var(--brand-gold-deep) 85%,
+    transparent 100%
+  );
+}
+
+@utility brand-focus-ring {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }

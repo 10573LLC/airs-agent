@@ -467,3 +467,47 @@ unprivileged `INSERT INTO airs.accounts` — which is correct behaviour. Documen
 | Time-based expiration | IMPLEMENTED, NOT SCHEDULED | `airs.expire_incident_state()` audits every change | `db/migrations/0005_incident_rooms.sql` | no scheduler/endpoint wired yet; must be invoked by cron |
 | Typecheck | PASS | no errors | `bunx tsgo --noEmit` | — |
 | Unit tests | PASS | 14 passed, 25 integration skipped without `DATABASE_URL` | `npx vitest run` | integration suite not exercised in this run |
+
+## Stage 5A — Branding Integration and Incident Expiration Operations (2026-08-05)
+
+Scope was limited to (1) integrating the approved brand package and Anconison design system,
+(2) making `airs.expire_incident_state()` invocable in a portable, secure way, and
+(3) revalidating the foundation, authentication and incident-lifecycle stages. No incident-room
+feature was redesigned or expanded.
+
+### Verification table
+
+| Verification item | Status | Evidence | Exact command or file | Remaining limitation |
+| --- | --- | --- | --- | --- |
+| Brand masters installed | VERIFIED | 10 transparent masters, 7 web icons, 4 manifest icons; alpha channel present on every master | `npm run brand:verify` → "Brand asset verification OK" | artwork is used as delivered; no derivative marks were produced |
+| Transparency rules honoured | VERIFIED | emblem/horizontal masters carry a real alpha channel; white-/black-test files are proofs and are never referenced by the app | `scripts/verify-brand-assets.mjs`, `src/components/brand/assets.ts` | no automated contrast check on arbitrary backgrounds |
+| Design system tokens | COMPLETE | OKLCH navy / blue / gold sampled from the emblem, exposed as Tailwind v4 `@theme` tokens | `src/styles.css` | tokens cover surface, text, accent and status only |
+| Reusable brand components | COMPLETE | `BrandMark`, `BrandLockup`, `BrandHorizontal`, `AppHeader`, `AppFooter`, `PageShell`, `PageHeading`, `SectionCard`, `StatusPill` | `src/components/brand/` | applied to `/`, `/auth`, `/incidents`; other routes inherit shell only |
+| PWA icons + manifest | COMPLETE | favicon (16/32/ico), apple-touch-icon, 192/512 maskable-capable icons, manifest wired in the document head | `public/site.webmanifest`, `src/routes/__root.tsx` | not audited by Lighthouse |
+| Expiration runner (portable) | VERIFIED | single sweep behind advisory lock 8421701; returns counters only | `src/lib/incidents/expiration.server.ts` | one sweep per invocation; no partial/batched mode |
+| Standalone scheduler script | VERIFIED | ran green as the owner role and as the RLS-enforced `airs_app` role | `npm run incidents:expire` → `{"status":"ok",...}` | needs `DATABASE_URL`; no built-in retry |
+| HTTP scheduler endpoint | VERIFIED | GET 405; POST without token 401; POST with wrong token 401; POST with correct token 200 + counters; 503 when the secret is unset | `src/routes/api/public/cron/expire-incidents.ts`, tested against `node .output/server/index.mjs` | bearer token only (no mTLS / IP allowlist) |
+| Endpoint fails closed | VERIFIED | secret absent or shorter than 24 chars → 503 `scheduler_secret_not_configured`, sweep never runs | same file | — |
+| Constant-time token compare | COMPLETE | `timingSafeEqualString` used for the bearer comparison | `src/lib/incidents/expiration.server.ts` | — |
+| In-database scheduling option | COMPLETE | optional pg_cron schedule, applied only when the extension exists | `db/scheduler/pg_cron.sql` | pg_cron not installed in the verification cluster; SQL reviewed, not executed |
+| Container scheduling option | COMPLETE | dedicated `expiration-scheduler` service in the compose stack | `docker-compose.yml` | no Docker daemon available; compose file reviewed, not run |
+| Expiration behaviour proof | VERIFIED | 21 new assertions: overdue invitations/participations expire, tokens destroyed, overdue rooms self-close and revoke partners, retention window marked, not-yet-due rows untouched, access never granted, every change audited, second sweep is a no-op | `db/tests/expiration.sql` via `npm run db:test` | — |
+| Full SQL suite | VERIFIED | 104 assertions ok, exit 0 (was 82; +21 expiration, +1 harness) | `npm run db:test` | PostgreSQL 17.9, not the documented 16 target |
+| Authentication stage intact | VERIFIED | 39/39 tests pass against a live database (14 unit + 25 integration) | `TEST_DATABASE_URL=… TEST_ADMIN_DATABASE_URL=… npx vitest run` | — |
+| Incident lifecycle intact | VERIFIED | all 26 incident RLS assertions still pass unchanged | `db/tests/incident_rls.sql` | — |
+| Typecheck | PASS | 0 diagnostics | `npx tsgo --noEmit` | — |
+| Portable build | VERIFIED | `.output/server/index.mjs` (21,693 bytes) produced with the builder env vars unset, then booted and served traffic on port 3123 | `npx vite build` with `LOVABLE_SANDBOX` / `DEV_SERVER__PROJECT_PATH` unset | — |
+| Editor build | VERIFIED | `dist/server` + `dist/client` produced | `LOVABLE_SANDBOX=1 npm run build` | Worker artifact path is only exercised inside the sandbox |
+| No builder dependency added | VERIFIED | brand assets are static files in `public/`; the runner, endpoint, script and scheduler are stock Node/psql/Postgres | `package.json`, `vite.config.ts` | — |
+
+### Operational note
+
+`INCIDENT_EXPIRY_TOKEN` must be at least 24 characters. It is read from the environment only, is
+never logged, and is absent from the repository. With it unset the endpoint is disabled rather than
+open — the script and pg_cron paths remain available for operators who prefer no HTTP surface.
+
+### Still PARTIALLY VERIFIED after Stage 5A
+
+Docker runtime (no daemon available), pg_cron path (extension not installed), clean-clone install,
+interactive signed-in UI in the editor preview, and the authentication gaps recorded in Stage 4
+(MFA, rate limiting, account lockout, password-reset delivery, per-request CSRF token).

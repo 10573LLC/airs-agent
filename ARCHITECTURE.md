@@ -174,3 +174,35 @@ contract (`local` today, OIDC later), and no Lovable-specific service is on this
 - `/auth` — sign-in; accepts an optional same-origin `?redirect=` path only.
 - `/invite/$token` — invitation acceptance (`ssr: false`, `noindex`); organization and role are
   displayed read-only from the server-validated invitation.
+
+## Brand and presentation layer (Stage 5A)
+
+Brand artwork is static and portable: files live in `public/brand/airs-agent/` and are referenced
+through a single registry, `src/components/brand/assets.ts`. No component hard-codes a path, so the
+whole package can be re-pointed or re-issued in one place. Design tokens are Tailwind v4 `@theme`
+variables in `src/styles.css`; components consume tokens, never literal colours.
+
+`src/components/brand/` is the only place that knows what the product looks like:
+
+```
+BrandMark / BrandLockup / BrandHorizontal   the mark, at fixed safe sizes
+AppHeader / AppFooter                       chrome shared by every route
+PageShell / PageHeading / SectionCard       page skeleton
+StatusPill                                  lifecycle and verification states
+```
+
+## Incident expiration operations (Stage 5A)
+
+Expiration logic stays in the database — `airs.expire_incident_state()` — so every invocation path
+gets the same behaviour and the same audit trail. Three interchangeable triggers exist; an operator
+picks one and none is required:
+
+```
+npm run incidents:expire        scripts/expire-incidents.mjs, plain pg driver, for cron/systemd
+POST /api/public/cron/…         bearer-token endpoint, for a hosted scheduler
+db/scheduler/pg_cron.sql        optional in-database schedule, no external caller at all
+docker compose                  expiration-scheduler service wrapping the script
+```
+
+All paths take PostgreSQL advisory lock `8421701` first, so overlapping schedulers cannot run
+concurrent sweeps; a caller that loses the race returns `skippedLocked: true` and exits cleanly.

@@ -2,6 +2,34 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Stage 5A — Branding Integration and Incident Expiration Operations] 2026-08-05
+
+### Added
+- Approved AIRS Agent brand package installed under `public/brand/airs-agent/` plus root web icons;
+  transparent masters verified by `npm run brand:verify`.
+- Anconison design system: OKLCH brand tokens in `src/styles.css` and reusable components in
+  `src/components/brand/` (`BrandMark`, `BrandLockup`, `BrandHorizontal`, `AppHeader`, `AppFooter`,
+  `PageShell`, `PageHeading`, `SectionCard`, `StatusPill`).
+- PWA manifest (`public/site.webmanifest`) and icon links in the document head.
+- Portable expiration runner `src/lib/incidents/expiration.server.ts` (advisory lock 8421701).
+- Three portable ways to invoke it: `npm run incidents:expire`, the token-protected endpoint
+  `POST /api/public/cron/expire-incidents`, and the optional `db/scheduler/pg_cron.sql`.
+- `expiration-scheduler` service in `docker-compose.yml`.
+- `db/tests/expiration.sql` — 21 assertions covering expiry, revocation, retention, audit coverage,
+  no-grant safety and idempotence. Wired into `npm run db:test` (now 104 assertions).
+
+### Changed
+- The scheduler endpoint now answers `GET` with 405 instead of falling through to the app shell.
+
+### Verified (no behaviour change)
+- `npm run db:test` 104/104 ok; `npx vitest run` 39/39 against a live database; `npx tsgo --noEmit`
+  clean; portable build boots and serves; editor build produces `dist/server` + `dist/client`.
+- Endpoint security proven end to end: 405 GET / 401 no token / 401 wrong token / 200 correct token
+  / 503 when `INCIDENT_EXPIRY_TOKEN` is unset.
+
+### Still PARTIALLY VERIFIED
+Docker runtime, pg_cron path, clean-clone install, and the Stage 4 authentication gaps.
+
 ## [Authentication and Authorization Enforcement — closure verification] 2026-08-02
 
 ### Verified (no code change)

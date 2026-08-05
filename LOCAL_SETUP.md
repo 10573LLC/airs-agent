@@ -169,3 +169,22 @@ directly as `airs_app` fails at the fixture stage with
 `new row violates row-level security policy for table "accounts"` — that is FORCE RLS working as
 designed, not a defect. The assertions themselves still execute as `airs_app`; the script asserts
 that role has neither SUPERUSER nor BYPASSRLS.
+
+## Running the expiration sweep locally
+
+```bash
+export DATABASE_URL="postgres://airs_app:…@localhost:5432/airs"
+npm run incidents:expire        # prints JSON counters, exits 0
+```
+
+To exercise the HTTP path, set a token of at least 24 characters and build first:
+
+```bash
+export INCIDENT_EXPIRY_TOKEN="$(openssl rand -hex 24)"
+npm run build && node .output/server/index.mjs
+curl -X POST -H "authorization: Bearer $INCIDENT_EXPIRY_TOKEN" \
+  http://localhost:3000/api/public/cron/expire-incidents
+```
+
+With the token unset the endpoint answers 503 by design. Verify brand assets any time with
+`npm run brand:verify`.

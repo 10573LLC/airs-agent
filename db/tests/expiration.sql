@@ -64,14 +64,14 @@ BEGIN
   INSERT INTO airs.incident_participants
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
         invitation_status, participation_status, invitation_expires_at)
-       VALUES (future_room, org_a, org_b, org_a, 'situational', 'pending', 'invited',
+       VALUES (future_room, org_a, org_b, org_a, 'view_only', 'pending', 'invited',
                now() - interval '1 minute')
     RETURNING id INTO due_inv;
 
   INSERT INTO airs.incident_participants
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
         invitation_status, participation_status, invitation_expires_at)
-       VALUES (retain_room, org_a, org_b, org_a, 'situational', 'pending', 'invited',
+       VALUES (retain_room, org_a, org_b, org_a, 'view_only', 'pending', 'invited',
                now() + interval '2 days')
     RETURNING id INTO live_inv;
 

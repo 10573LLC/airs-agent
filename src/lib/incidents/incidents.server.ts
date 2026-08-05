@@ -725,6 +725,16 @@ export async function closeIncident(
         features_archived: 0,
         positions_expired: 0,
       };
+      // Stage 8: closing a room also ends its awareness plane. Every share
+      // scoped to this room is revoked and every still-open observation filed
+      // into it is closed, in the same transaction as the closure itself, so a
+      // partner can never read an observation from a room that no longer
+      // exists for them.
+      const awareness = await q.query<{ shares_revoked: number; observations_closed: number }>(
+        `SELECT * FROM airs.terminate_incident_observations($1)`,
+        [incidentId],
+      );
+      const obs = awareness[0] ?? { shares_revoked: 0, observations_closed: 0 };
       const room = await transition(
         ctx,
         q,
@@ -741,6 +751,8 @@ export async function closeIncident(
           operating_areas_completed: Number(geo.areas_completed),
           map_features_archived: Number(geo.features_archived),
           positions_expired: Number(geo.positions_expired),
+          observation_shares_revoked: Number(obs.shares_revoked),
+          observations_closed: Number(obs.observations_closed),
         },
       );
       for (const row of revoked) {

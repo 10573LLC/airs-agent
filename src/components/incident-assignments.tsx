@@ -22,6 +22,7 @@ import { CATEGORY_LABELS, SHARING_CLASSIFICATIONS } from "@/lib/resources/model"
 import {
   DISCLOSURE_PROFILE_LABELS,
   PARTNER_DISCLOSURE_PROFILES,
+  type DisclosureProfile,
 } from "@/lib/resources/disclosure";
 
 const label = (value: string) => value.replaceAll("_", " ");
@@ -55,7 +56,7 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
   const [resourceId, setResourceId] = useState("");
   const [personId, setPersonId] = useState("");
   const [classification, setClassification] = useState<string>("participating_orgs");
-  const [profile, setProfile] = useState<string>("summary");
+  const [profile, setProfile] = useState<DisclosureProfile>("summary");
 
   const assignments = useQuery({
     queryKey: ["incident-assignments", incidentId],
@@ -172,7 +173,7 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
         <select
           className={inputClass}
           value={profile}
-          onChange={(event) => setProfile(event.target.value)}
+          onChange={(event) => setProfile(event.target.value as DisclosureProfile)}
           aria-label="Disclosure profile"
         >
           {PARTNER_DISCLOSURE_PROFILES.map((value) => (

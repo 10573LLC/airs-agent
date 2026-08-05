@@ -9,7 +9,10 @@ All colour lives in `src/styles.css` as OKLCH custom properties exposed to
 Tailwind through `@theme`. Components use semantic utilities
 (`bg-background`, `text-foreground`, `border-border`, `text-muted-foreground`).
 Hard-coded colour utilities (`text-white`, `bg-black`, `bg-[#...]`) are not used
-anywhere in `src/`, because they bypass the light/dark themes.
+in any application screen or component written for AIRS Agent, because they
+bypass the light/dark themes. The only remaining occurrences are the stock
+shadcn overlay scrims (`bg-black/80` in `dialog`, `sheet`, `drawer`,
+`alert-dialog`), which are intentional modal dimming rather than surface colour.
 
 | Token | Light | Role |
 | --- | --- | --- |

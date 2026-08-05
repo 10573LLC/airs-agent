@@ -206,6 +206,14 @@ beforeAll(async () => {
   );
   ORG_C = org.rows[0]!.id;
 
+  await admin.query(
+    `INSERT INTO airs.trusted_agencies (org_id, partner_org_id, status, approved_at)
+     VALUES ($1,$2,'approved', now())
+     ON CONFLICT (org_id, partner_org_id) DO UPDATE
+       SET status = 'approved', approved_at = now()`,
+    [ORG_A, ORG_B],
+  );
+
   tokenAdminA = await seedMember("admin-a", ORG_A, "agency_admin");
   tokenIcA = await seedMember("ic-a", ORG_A, "incident_commander");
   tokenPartnerB = await seedMember("partner-b", ORG_B, "partner_agency_user");

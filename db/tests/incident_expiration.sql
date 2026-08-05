@@ -230,16 +230,16 @@ SELECT pg_temp.ok(count(*) = 0, 'sweep created no incident room')
 -- Tenant audit coverage for each change.
 SELECT pg_temp.ok(EXISTS (SELECT 1 FROM airs.audit_events
                            WHERE action = 'incident.invitation_expired'
-                             AND resource_id = (SELECT v FROM xids WHERE k='room_live')),
+                             AND resource_id::text = (SELECT v::text FROM xids WHERE k='room_live')),
                   'invitation expiry audited in the tenant log');
 SELECT pg_temp.ok(EXISTS (SELECT 1 FROM airs.audit_events
                            WHERE action = 'incident.closed'
-                             AND resource_id = (SELECT v FROM xids WHERE k='room_due')
+                             AND resource_id::text = (SELECT v::text FROM xids WHERE k='room_due')
                              AND detail->>'cause' = 'scheduled_expiration'),
                   'scheduled closure audited in the tenant log');
 SELECT pg_temp.ok(EXISTS (SELECT 1 FROM airs.audit_events
                            WHERE action = 'incident.temp_data_expired'
-                             AND resource_id = (SELECT v FROM xids WHERE k='room_ret')),
+                             AND resource_id::text = (SELECT v::text FROM xids WHERE k='room_ret')),
                   'retention expiry audited in the tenant log');
 
 -- ---------------------------------------------------------------------------

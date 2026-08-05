@@ -568,3 +568,19 @@ with strictly less privilege. The public `/api/public/cron/...` surface no longe
 4. Docker and pg_cron scheduling were reviewed but not executed in this environment.
 5. There is no in-app screen for maintenance history yet; `airs.maintenance_expiration_status()` is
    the read path.
+
+## Stage 6 — Operational Resource Registry and Readiness Board
+
+| Requirement | Status | Evidence | Limitation |
+| --- | --- | --- | --- |
+| Organization-owned resource registry | COMPLETE | `db/migrations/0007_resource_registry.sql`, `src/lib/resources/resources.server.ts` | detail fields are a fixed allow-list, no free-form JSON |
+| Aircraft / vehicle / dock / launch-site / sensor subtypes | COMPLETE | `airs.resource_aircraft`, `_vehicles`, `_docks`, `_launch_sites`, `_sensors` | serial numbers and restricted notes redacted for partners |
+| Personnel operational profiles | COMPLETE | `src/lib/resources/personnel.server.ts` | operational data only — no HR, payroll or medical fields |
+| Qualifications and expiry | VERIFIED | `airs.qualification_is_current()`; expiry and revocation assertions | expiry sweep is per-organization and operator-invoked |
+| Shifts and duty windows | VERIFIED | `airs.shift_guard()`; overlapping-shift assertion | no recurring-shift generator |
+| Readiness states per category | VERIFIED | `airs.resource_category_statuses`, cross-category rejection assertion | — |
+| Incident assignment without ownership transfer | VERIFIED | `src/lib/resources/assignments.server.ts`, assignment assertions | one live assignment per resource per room |
+| Sharing classifications | VERIFIED | `originating_org_only` and `named_recipients` assertions | classification is per share, not per field |
+| Revocation, expiry and closure end access | VERIFIED | `airs.terminate_incident_resource_access()` + closure assertions | — |
+| Forced RLS and default deny | VERIFIED | `db/tests/resource_registry_rls.sql` — 52 assertions | run on PG 17.9, documented target is 16 |
+| Earlier stages intact | VERIFIED | `npm run db:test` 178 assertions green; `tsgo` clean | Docker/pg_cron paths reviewed, not executed this stage |

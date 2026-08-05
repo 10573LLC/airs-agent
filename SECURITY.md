@@ -301,3 +301,40 @@ delete append-only fixture rows. This requires the fixture-owner/superuser
 connection (`TEST_ADMIN_DATABASE_URL`) and is confined to test teardown. The
 application role has no such privilege, and no application code path sets it —
 append-only remains enforced for the running system.
+
+
+## Platform administration bootstrap — IMPLEMENTED (2026-08-05)
+
+Threat addressed: the product operator needs an administrative identity without becoming a member
+of, or gaining visibility into, any participating agency.
+
+Controls:
+
+- **Separate tenant.** Platform ownership lives in the `anconison-platform` organization
+  (`org_kind = 'platform'`). No agency account is ever made platform owner, and the City of Albany
+  organizations are untouched.
+- **No operational reach.** `platform_admin` carries four administrative permissions and no
+  `incident.*`, `resource.*`, `map.*`, `observation.*`, `airspace.*` or `personnel.*` grant. Even
+  with a permission bug, `airs.current_org_id()` denies an organization context the account is not
+  an ACTIVE member of, so agency rows stay invisible.
+- **Database-enforced plane separation.** A trigger rejects cross-plane role assignment on
+  `memberships`, `user_roles` and `invitations`.
+- **No privileged path from the app.** `airs.bootstrap_platform_invitation()` and
+  `airs.platform_identity_report()` are not executable by `airs_app`; the running application
+  cannot mint a platform administrator.
+- **Token handling.** The invitation token is generated in the operator CLI, transmitted to the
+  database only as a SHA-256 hex digest, and printed once to stdout. It never appears in the
+  database, the audit detail, the structured logs, or the repository.
+- **Expiry and single use.** The invitation expires (default 72 h, clamped to 300 s .. 7 d) and is
+  claimed by a conditional `UPDATE ... WHERE status = 'pending'`, so a replayed link fails.
+  Re-running the bootstrap revokes the previous pending link instead of creating a duplicate.
+- **Activation cannot take over an account.** `/activate/$token` refuses when an account already
+  exists for the invited address; that recipient must sign in normally and then accept the
+  invitation. The address is taken from the stored invitation, never from the request.
+- **Authentication unchanged.** After activation the platform administrator signs in at `/auth`
+  with the same PBKDF2 credential check, opaque session token and httpOnly cookie as every other
+  user. Nothing in this work disables, bypasses or weakens authentication, forced RLS, organization
+  isolation or session control.
+- **Audit.** `platform.bootstrap_invitation_created` (issuance), `invitation.accepted`
+  (activation, membership creation and role assignment) and `auth.sign_in` are recorded in the
+  platform organization. No audit record contains token material.

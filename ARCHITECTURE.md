@@ -308,3 +308,36 @@ test. Instead each suite tags its fixtures with a per-run identifier and
 from `afterAll` (which also runs after a failure). Suite files run sequentially
 (`vitest.config.ts`, `fileParallelism: false`) because the two demo
 organizations are shared state.
+
+
+## Platform administration plane — IMPLEMENTED (2026-08-05)
+
+AIRS Agent now distinguishes two planes of administration.
+
+```text
+platform plane                         agency plane
+------------------------------------   ------------------------------------
+organizations.org_kind = 'platform'    organizations.org_kind = 'agency'
+Anconison — AIRS Agent Platform        Albany Police Department, Albany County
+role: platform_admin                   the nine agency roles
+permissions: org.manage, user.manage,  incident.*, resource.*, map.*,
+             audit.read,               observation.*, airspace.*, ...
+             retention.manage
+owns: no incidents, no resources,      owns: all operational records
+      no geography, no observations
+```
+
+Separation is structural, not conventional:
+
+- a database trigger rejects `platform_admin` in any agency organization and rejects agency roles
+  in the platform organization (`memberships`, `user_roles`, `invitations`);
+- `platform_admin` is granted no operational permission at all, in SQL and in
+  `src/lib/rbac/roles.ts`;
+- `airs.current_org_id()` (migration 0004) still requires an ACTIVE membership, so a platform
+  administrator who supplies an agency organization id gets NULL context and therefore no rows.
+
+Bootstrap is operator-driven and offline: `npm run bootstrap:platform-admin` calls
+`airs.bootstrap_platform_invitation()` over an operator connection, which the application role
+cannot execute. The one-time token is generated in the CLI and reaches the database only as a
+SHA-256 hash. The recipient completes `/activate/$token` (new account) or `/invite/$token`
+(existing account) and from then on authenticates normally at `/auth`.

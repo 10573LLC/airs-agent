@@ -178,3 +178,38 @@ no-op and a concurrent second runner returns `skipped_locked = true`. All of thi
 Optional in-database scheduling lives in `db/scheduler/pg_cron.sql`. It is not part of the
 migration chain and is applied only where the `pg_cron` extension exists; schedule it as
 `airs_maintenance` so it carries no more privilege than an external scheduler.
+
+## Migration 0007 — resource registry (Stage 6)
+
+`airs.resources` plus the subtype tables `resource_aircraft`, `resource_vehicles`,
+`resource_docks`, `resource_launch_sites`, `resource_sensors`; `personnel_profiles`,
+`qualifications`, `shifts`; `resource_shares` and `incident_assignments`. Every table is
+organization-scoped, `FORCE ROW LEVEL SECURITY` is set, and readiness values are validated against
+`airs.resource_category_statuses` rather than a free enum. Verified by
+`db/tests/resource_registry_rls.sql` (52 assertions).
+
+## Migration 0008 — disclosure profiles
+
+Reference tables:
+
+- `airs.disclosure_fields` — 60 rows, the entire disclosable vocabulary; `sensitive boolean` marks
+  the 12 keys no partner profile may ever contain.
+- `airs.disclosure_profile_fields` — 242 rows, the profile grid. `airs_app` holds `SELECT` only:
+  the application role cannot invent a field or widen a profile.
+
+Columns added to `airs.resource_shares` and `airs.incident_assignments`:
+
+- `disclosure_profile text NOT NULL DEFAULT 'summary'` with a check constraint on the profile names.
+- `custom_field_keys text[]` — only permitted when the profile is `custom`, and rejected by trigger
+  if it names a sensitive or unknown field.
+
+Functions:
+
+- `airs.disclosure_allows(profile, field_key, custom_keys)` — pure decision, default deny.
+- `airs.effective_disclosure(resource_id)` — returns zero rows when there is no live share, so a
+  revoked share, an expired share or a closed room ends field disclosure as well as row access.
+- `airs.assignment_current_qualifications(assignment_id)` — surfaces qualification *currency* to an
+  aviation-level partner without exposing qualification rows.
+
+Verified by `db/tests/disclosure_projection.sql` (63 assertions, run without superuser and without
+`BYPASSRLS`).

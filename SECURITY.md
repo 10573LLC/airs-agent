@@ -219,3 +219,37 @@ before doing anything. A second runner that loses the race returns `skipped_lock
 
 Operators who want no HTTP surface leave the endpoint disabled and use
 `npm run maintenance:expire-incidents` or `db/scheduler/pg_cron.sql`.
+
+## Field-level disclosure controls (Stage 6 closure)
+
+Row access and field access are separate decisions. Passing RLS releases a row; it does not release
+the row's contents.
+
+**Defaults.** A share with no stated profile is `summary`. An unknown profile name is rejected by a
+check constraint; an unknown profile reaching the service layer resolves to `summary`. Unknown field
+keys are never disclosable.
+
+**Never disclosed to a partner under any profile** (12 sensitive keys): serial numbers, FAA
+registration, asset tags, VIN, restricted notes, internal identifiers, personnel duty contact
+details, employee identifiers, qualification certificate numbers, qualification restrictions,
+verification evidence, and share-recipient notes. These are excluded from every partner profile and
+cannot be re-added through a custom profile — the database trigger rejects the insert and the
+service layer filters them again.
+
+**Named recipients.** `full` only resolves to the full authorized record for an organization the
+owner explicitly named on the share. Every other partner resolving `full` is downgraded to
+`incident_command`.
+
+**Withholding is invisible.** Withheld fields are omitted from the payload rather than sent as
+`null`, so a partner cannot infer that a value exists.
+
+**Narrowing is immediate.** Disclosure is resolved per read, not cached on the share, so narrowing a
+profile, revoking the share, expiring the share or closing the room takes effect on the next request.
+
+**Receiving organizations cannot widen.** `airs_app` holds `SELECT` only on the two reference
+tables; `setShareDisclosure` requires the owning organization plus `resource.share`, and
+`assertSameOrg` denies a cross-tenant attempt with an auditable `tenant_mismatch`.
+
+**Qualification expiry.** An expired, revoked or unverified qualification stops being current
+immediately via `airs.qualification_is_current()`. Partners at aviation level and above see only the
+currency flag, never the qualification record.

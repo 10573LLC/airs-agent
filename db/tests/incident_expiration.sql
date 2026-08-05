@@ -46,9 +46,18 @@ DO $$
 DECLARE
   org_a uuid := '11111111-1111-4111-8111-111111111111';  -- Albany Police Department
   org_b uuid := '22222222-2222-4222-8222-222222222222';  -- Albany County
+  -- one partner org per participant row: (incident_id, partner_org_id) is unique
+  org_c uuid := gen_random_uuid();
+  org_d uuid := gen_random_uuid();
+  org_e uuid := gen_random_uuid();
   room_due uuid; room_live uuid; room_ret uuid;
   p_inv_due uuid; p_inv_future uuid; p_act_due uuid; p_act_live uuid; p_declined uuid;
 BEGIN
+  INSERT INTO airs.organizations (id, slug, name, agency_type) VALUES
+    (org_c, 'exp-test-agency-c', 'Expiration Test Agency C', 'law_enforcement'),
+    (org_d, 'exp-test-agency-d', 'Expiration Test Agency D', 'fire'),
+    (org_e, 'exp-test-agency-e', 'Expiration Test Agency E', 'ems');
+
   -- Room whose scheduled window has elapsed.
   INSERT INTO airs.incident_rooms (org_id, name, incident_type, status, scheduled_expires_at)
        VALUES (org_a, 'EXP overdue room', 'critical_incident', 'active', now() - interval '1 hour')
@@ -80,7 +89,7 @@ BEGIN
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
         invitation_status, participation_status, requires_approval, invitation_expires_at,
         token_hash)
-       VALUES (room_live, org_a, org_b, org_a, 'view_only', 'pending', 'invited', true,
+       VALUES (room_live, org_a, org_c, org_a, 'view_only', 'pending', 'invited', true,
                now() + interval '2 days', 'exp-test-hash-2')
     RETURNING id INTO p_inv_future;
 
@@ -89,7 +98,7 @@ BEGIN
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
         invitation_status, participation_status, requires_approval,
         invitation_expires_at, accepted_at, approved_at, expires_at, token_hash)
-       VALUES (room_live, org_a, org_b, org_a, 'operational', 'accepted', 'active', false,
+       VALUES (room_live, org_a, org_d, org_a, 'operational', 'accepted', 'active', false,
                now() - interval '1 day', now() - interval '1 day', now() - interval '1 day',
                now() - interval '5 minutes', 'exp-test-hash-3')
     RETURNING id INTO p_act_due;
@@ -108,12 +117,12 @@ BEGIN
   INSERT INTO airs.incident_participants
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
         invitation_status, participation_status, requires_approval, invitation_expires_at)
-       VALUES (room_live, org_a, org_b, org_a, 'view_only', 'declined', 'declined', true,
+       VALUES (room_live, org_a, org_e, org_a, 'view_only', 'declined', 'declined', true,
                now() - interval '3 days')
     RETURNING id INTO p_declined;
 
   INSERT INTO xids VALUES
-    ('org_a', org_a), ('org_b', org_b),
+    ('org_a', org_a), ('org_b', org_b), ('org_c', org_c), ('org_d', org_d), ('org_e', org_e),
     ('room_due', room_due), ('room_live', room_live), ('room_ret', room_ret),
     ('p_inv_due', p_inv_due), ('p_inv_future', p_inv_future),
     ('p_act_due', p_act_due), ('p_act_live', p_act_live), ('p_declined', p_declined);

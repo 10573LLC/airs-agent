@@ -321,7 +321,7 @@ BEGIN
                public.ST_SetSRID(public.ST_GeomFromText(
                  'POLYGON((-73.76 42.64,-73.75 42.64,-73.75 42.65,-73.76 42.65,-73.76 42.64))'),4326))$q$,
     (SELECT v FROM mids WHERE k='org_a'), room),
-    'a partner cannot define an operating v_area in a room it does not own');
+    'a partner cannot define an operating area in a room it does not own');
 
   PERFORM pg_temp.denied(format(
     $q$INSERT INTO airs.resource_locations (org_id, resource_id, location_kind, geom)
@@ -335,7 +335,7 @@ BEGIN
 
   UPDATE airs.operating_areas SET precision_policy = 'exact' WHERE id = v_area;
   GET DIAGNOSTICS n = ROW_COUNT;
-  PERFORM pg_temp.ok(n = 0, 'a partner cannot widen the precision of a readable operating v_area');
+  PERFORM pg_temp.ok(n = 0, 'a partner cannot widen the precision of a readable operating area');
 
   DELETE FROM airs.map_features WHERE id = v_feat;
   GET DIAGNOSTICS n = ROW_COUNT;
@@ -362,16 +362,16 @@ BEGIN
                          'map feature ownership is immutable');
   PERFORM pg_temp.denied(format($q$UPDATE airs.operating_areas SET incident_id=gen_random_uuid()
                                     WHERE id='%s'$q$, v_area),
-                         'an operating v_area cannot be moved to another room');
+                         'an operating area cannot be moved to another room');
   PERFORM pg_temp.denied(format(
-    $q$INSERT INTO airs.operating_areas (org_id, incident_id, name, v_area, status)
+    $q$INSERT INTO airs.operating_areas (org_id, incident_id, name, area, status)
        VALUES ('%s','%s','Unapproved but approved-state',
                public.ST_SetSRID(public.ST_GeomFromText(
                  'POLYGON((-73.76 42.64,-73.75 42.64,-73.75 42.65,-73.76 42.65,-73.76 42.64))'),4326),
                'approved')$q$, org_a, room),
-    'an approved operating v_area must record its approval');
+    'an approved operating area must record its approval');
   PERFORM pg_temp.denied(format(
-    $q$INSERT INTO airs.operating_areas (org_id, incident_id, name, v_area,
+    $q$INSERT INTO airs.operating_areas (org_id, incident_id, name, area,
                                          altitude_floor_ft, altitude_ceiling_ft, approved_at, status)
        VALUES ('%s','%s','Inverted block',
                public.ST_SetSRID(public.ST_GeomFromText(

@@ -132,7 +132,7 @@ const OBSERVATION_SELECT = `
   airs.observation_precision(o.id) AS "policy",
   public.ST_AsGeoJSON(
     airs.apply_precision(
-      COALESCE(o.geom, mf.geom, oa.area, rl.position),
+      COALESCE(o.geom, mf.geom, oa.area, rl.geom),
       airs.observation_precision(o.id))) AS "geojson"
 `;
 

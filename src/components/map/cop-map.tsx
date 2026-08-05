@@ -80,7 +80,7 @@ export function CopMap({ items, styleUrl, className, onPickPoint, picking }: Cop
     let disposed = false;
     let map: import("maplibre-gl").Map | null = null;
     (async () => {
-      const maplibre = (await import("maplibre-gl")).default;
+      const maplibre = await import("maplibre-gl");
       await import("maplibre-gl/dist/maplibre-gl.css");
       if (disposed || !holder.current) return;
       map = new maplibre.Map({
@@ -90,9 +90,10 @@ export function CopMap({ items, styleUrl, className, onPickPoint, picking }: Cop
         zoom: 11,
         attributionControl: { compact: true },
       });
-      map.addControl(new maplibre.NavigationControl({ visualizePitch: false }), "top-right");
-      map.addControl(new maplibre.ScaleControl({ unit: "imperial" }), "bottom-left");
-      map.on("load", () => {
+      const m = map;
+      m.addControl(new maplibre.NavigationControl({ visualizePitch: false }), "top-right");
+      m.addControl(new maplibre.ScaleControl({ unit: "imperial" }), "bottom-left");
+      m.on("load", () => {
         if (!map) return;
         map.addSource("cop", { type: "geojson", data: collection as never });
         map.addLayer({
@@ -134,10 +135,10 @@ export function CopMap({ items, styleUrl, className, onPickPoint, picking }: Cop
           paint: { "text-color": "#e2e8f0", "text-halo-color": "#0b1220", "text-halo-width": 1.4 },
         });
       });
-      map.on("click", (event) => {
+      m.on("click", (event) => {
         pickRef.current?.([event.lngLat.lng, event.lngLat.lat]);
       });
-      mapRef.current = map;
+      mapRef.current = m;
     })();
     return () => {
       disposed = true;

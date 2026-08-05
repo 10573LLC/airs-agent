@@ -179,7 +179,7 @@ function MapPage() {
   const featureRows = features.data?.ok ? features.data.data : [];
   const areaRows = areas.data?.ok ? areas.data.data : [];
   const locationRows = locations.data?.ok ? locations.data.data : [];
-  const incidentRows = incidents.data?.ok ? incidents.data.data.owned : [];
+  const incidentRows = incidents.data?.ok ? incidents.data.data : [];
   const resourceRows = resources.data?.ok ? resources.data.data : [];
 
   const layers = useMemo<MapLayerItem[]>(() => {

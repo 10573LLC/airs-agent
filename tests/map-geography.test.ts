@@ -150,6 +150,7 @@ let resources: typeof import("@/lib/resources/resources.server");
 
 let ORG_C = "";
 let tokenAdminA = "";
+const createdTrustedPairs: Array<{ orgId: string; partnerOrgId: string }> = [];
 let tokenIcA = "";
 let tokenPartnerB = "";
 let tokenOutsiderC = "";
@@ -332,7 +333,7 @@ afterAll(async () => {
     // Deterministic fixture cleanup keyed by this run's identifier.
     const { cleanupRunFixtures } = await import("./support/fixtures");
     await cleanupRunFixtures(admin, {
-      emailLike: `cop.%.${RUN}@example.test`,
+      emailLike: `map.%.${RUN}@example.test`,
       orgIds: [ORG_C].filter(Boolean),
       trustedPairs: createdTrustedPairs,
     });

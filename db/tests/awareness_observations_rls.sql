@@ -580,7 +580,7 @@ DECLARE
   acct  uuid := (SELECT v FROM aids WHERE k='acct_a');
   obs   uuid := (SELECT v FROM aids WHERE k='obs_second');
   closed uuid := (SELECT v FROM aids WHERE k='obs_closed');
-  status text; body text; n int;
+  status text; body text; note_body text; n int;
 BEGIN
   PERFORM set_config('airs.org_id', org_a::text, true);
 
@@ -629,8 +629,8 @@ BEGIN
   -- and the trigger refuses even if one ever did.
   UPDATE airs.observation_annotations SET body = 'rewritten' WHERE observation_id = obs;
   PERFORM pg_temp.ok(NOT FOUND, 'no row-level policy exposes an annotation for rewriting');
-  SELECT body INTO body FROM airs.observation_annotations WHERE observation_id = obs;
-  PERFORM pg_temp.ok(body = 'Confirmed against the second report.',
+  SELECT a.body INTO note_body FROM airs.observation_annotations a WHERE a.observation_id = obs;
+  PERFORM pg_temp.ok(note_body = 'Confirmed against the second report.',
     'the reviewer annotation text is unchanged');
   PERFORM pg_temp.denied(format(
     $q$DELETE FROM airs.observation_annotations WHERE observation_id = '%s'$q$, obs),

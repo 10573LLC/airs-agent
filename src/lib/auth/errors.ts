@@ -42,7 +42,17 @@ export type AccessCode =
   | "invalid_time_window"
   | "map_feature_not_found"
   | "operating_area_not_found"
-  | "operating_area_state_invalid";
+  | "operating_area_state_invalid"
+  // Stage 8 — manual airspace observations and awareness layer
+  | "observation_not_found"
+  | "observation_state_invalid"
+  | "observation_stale_version"
+  | "observation_terminal"
+  | "observation_relationship_invalid"
+  | "observation_gap_not_found"
+  | "observation_evidence_not_found"
+  | "observation_share_not_found"
+  | "observation_share_revoked";
 
 const STATUS: Record<AccessCode, number> = {
   unauthenticated: 401,
@@ -83,6 +93,15 @@ const STATUS: Record<AccessCode, number> = {
   map_feature_not_found: 404,
   operating_area_not_found: 404,
   operating_area_state_invalid: 409,
+  observation_not_found: 404,
+  observation_state_invalid: 409,
+  observation_stale_version: 409,
+  observation_terminal: 409,
+  observation_relationship_invalid: 400,
+  observation_gap_not_found: 404,
+  observation_evidence_not_found: 404,
+  observation_share_not_found: 404,
+  observation_share_revoked: 409,
 };
 
 export class AccessError extends Error {

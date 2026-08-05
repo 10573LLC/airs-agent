@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "db:migrate": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/migrations/0001_init.sql -f db/migrations/0002_roles_seed.sql -f db/migrations/0003_auth.sql -f db/migrations/0004_org_context_guard.sql -f db/migrations/0005_incident_rooms.sql",
     "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/seed/demo_orgs.sql",
-    "db:test": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/tests/rls_matrix.sql -f db/tests/role_parity.sql -f db/tests/auth_rls.sql -f db/tests/incident_rls.sql",
+    "db:test": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/tests/rls_matrix.sql -f db/tests/role_parity.sql -f db/tests/auth_rls.sql -f db/tests/incident_rls.sql -f db/tests/expiration.sql",
     "incidents:expire": "node scripts/expire-incidents.mjs",
     "brand:verify": "node scripts/verify-brand-assets.mjs",
     "typecheck": "tsc --noEmit"

@@ -713,6 +713,20 @@ export async function createObservation(
       meta,
     },
     async (ctx, q) => {
+      // A room that is closed or archived accepts no new reports. Decided here
+      // so the caller receives a typed refusal instead of a raw database
+      // exception, and so the denial is auditable.
+      if (v.incidentId) {
+        const room = await q.query<{ status: string }>(
+          `SELECT status FROM airs.incident_rooms WHERE id = $1`,
+          [v.incidentId],
+        );
+        const status = room[0]?.status;
+        if (!status) throw new AccessError("incident_not_found");
+        if (status === "closed" || status === "archived") {
+          throw new AccessError("incident_closed");
+        }
+      }
       const rows = await q.query<{ id: string }>(
         `INSERT INTO airs.observations
            (org_id, incident_id, observation_type, title, description, observed_object,

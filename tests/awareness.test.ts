@@ -895,7 +895,7 @@ describe("incident closure ends the awareness plane it created", () => {
 
   dbit("refuses a new observation filed into the closed room", async () => {
     await expect(makeObservation(tokenSupervisorA, ORG_A)).rejects.toMatchObject({
-      code: expect.stringMatching(/incident_closed|incident_state_invalid|observation_state_invalid/),
+      code: "incident_closed",
     });
   });
 });

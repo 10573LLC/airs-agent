@@ -192,6 +192,7 @@ let incidents: typeof import("@/lib/incidents/incidents.server");
 let participation: typeof import("@/lib/incidents/participation.server");
 
 let ORG_C = "";
+const createdTrustedPairs: Array<{ orgId: string; partnerOrgId: string }> = [];
 let tokenAdminA = "";
 let tokenIcA = "";
 let tokenSupervisorA = "";

@@ -13,7 +13,7 @@
 //
 // Pure TypeScript: no I/O, no SQL, no map SDK, no platform service.
 
-import type { PrecisionPolicy } from "@/lib/map/model";
+import type { Geometry, PrecisionPolicy } from "@/lib/map/model";
 import type { DisclosureProfile } from "@/lib/resources/disclosure";
 
 // --- what was observed --------------------------------------------------------
@@ -510,7 +510,7 @@ export const OWNER_ONLY_FIELDS = [
 export interface ObservationEnvelope {
   precision: PrecisionPolicy;
   /** Absent entirely when no geography may be released. Never null-islanded. */
-  geometry?: unknown;
+  geometry?: Geometry;
 }
 
 export interface ObservationSummary extends ObservationEnvelope {

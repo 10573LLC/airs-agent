@@ -20,6 +20,7 @@ import { Route as IncidentsIndexRouteImport } from './routes/incidents.index'
 import { Route as AwarenessIndexRouteImport } from './routes/awareness.index'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
+import { Route as AwarenessObservationIdRouteImport } from './routes/awareness.$observationId'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/maintenance/expire-incidents'
 
@@ -78,6 +79,11 @@ const IncidentsIncidentIdRoute = IncidentsIncidentIdRouteImport.update({
   path: '/$incidentId',
   getParentRoute: () => IncidentsRoute,
 } as any)
+const AwarenessObservationIdRoute = AwarenessObservationIdRouteImport.update({
+  id: '/$observationId',
+  path: '/$observationId',
+  getParentRoute: () => AwarenessRoute,
+} as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
@@ -98,6 +104,7 @@ export interface FileRoutesByFullPath {
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/awareness/': typeof AwarenessIndexRoute
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/console': typeof ConsoleRoute
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/awareness': typeof AwarenessIndexRoute
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/awareness/': typeof AwarenessIndexRoute
@@ -144,6 +153,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/map'
     | '/resources'
+    | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/awareness/'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/map'
     | '/resources'
+    | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/awareness'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/map'
     | '/resources'
+    | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/awareness/'
@@ -272,6 +284,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IncidentsIncidentIdRouteImport
       parentRoute: typeof IncidentsRoute
     }
+    '/awareness/$observationId': {
+      id: '/awareness/$observationId'
+      path: '/$observationId'
+      fullPath: '/awareness/$observationId'
+      preLoaderRoute: typeof AwarenessObservationIdRouteImport
+      parentRoute: typeof AwarenessRoute
+    }
     '/api/public/health': {
       id: '/api/public/health'
       path: '/api/public/health'
@@ -290,10 +309,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AwarenessRouteChildren {
+  AwarenessObservationIdRoute: typeof AwarenessObservationIdRoute
   AwarenessIndexRoute: typeof AwarenessIndexRoute
 }
 
 const AwarenessRouteChildren: AwarenessRouteChildren = {
+  AwarenessObservationIdRoute: AwarenessObservationIdRoute,
   AwarenessIndexRoute: AwarenessIndexRoute,
 }
 

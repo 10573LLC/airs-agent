@@ -14,6 +14,10 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/cron/expire-incidents")({
   server: {
     handlers: {
+      // Anything other than POST is refused outright, so a crawler, link
+      // preview or mistyped scheduler entry can never trigger a sweep.
+      GET: () =>
+        new Response("Method Not Allowed", { status: 405, headers: { allow: "POST" } }),
       POST: async ({ request }) => {
         const secret = process.env.INCIDENT_EXPIRY_TOKEN;
         if (!secret || secret.length < 24) {

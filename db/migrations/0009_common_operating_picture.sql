@@ -442,7 +442,7 @@ BEGIN
   GET DIAGNOSTICS f = ROW_COUNT;
 
   UPDATE airs.resource_locations
-     SET superseded_at = now(), expires_at = LEAST(COALESCE(expires_at, now()), now())
+     SET superseded_at = clock_timestamp()
    WHERE incident_id = inc AND location_kind = 'temporary' AND superseded_at IS NULL;
   GET DIAGNOSTICS p = ROW_COUNT;
 

@@ -728,16 +728,26 @@ END $$;
 -- ===========================================================================
 DO $$
 DECLARE
+  org_a uuid := (SELECT v FROM aids WHERE k='org_a');
   org_b uuid := (SELECT v FROM aids WHERE k='org_b');
   expiring uuid := (SELECT v FROM aids WHERE k='obs_expiring');
+  sh uuid := (SELECT v FROM aids WHERE k='share_expiring');
   n int;
 BEGIN
   PERFORM set_config('airs.org_id', org_b::text, true);
   SELECT count(*) INTO n FROM airs.observations WHERE id = expiring;
   PERFORM pg_temp.ok(n = 1, 'a live time-limited share is visible before it expires');
-  PERFORM pg_sleep(1.2);
+
+  -- Move the expiry into the past. Nothing else changes: no sweep runs, no
+  -- status column is rewritten. Access must end on the read path alone.
+  PERFORM set_config('airs.org_id', org_a::text, true);
+  UPDATE airs.observation_shares SET expires_at = now() - interval '1 minute' WHERE id = sh;
+
+  PERFORM set_config('airs.org_id', org_b::text, true);
   SELECT count(*) INTO n FROM airs.observations WHERE id = expiring;
-  PERFORM pg_temp.ok(n = 0, 'an expired share removes partner access without any sweep running');
+  PERFORM pg_temp.ok(n = 0, 'a lapsed share removes partner access with no sweep having run');
+  PERFORM pg_temp.ok((SELECT status FROM airs.observation_shares WHERE id = sh) = 'active',
+    'access ended on the read path even though the share row still reads active');
 END $$;
 
 DO $$

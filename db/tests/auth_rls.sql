@@ -98,7 +98,8 @@ BEGIN
   INSERT INTO airs.users (org_id, email_address, display_name, account_id)
     VALUES (org_a,'rls.invited@example.test','RLS Invited',acct) RETURNING id INTO usr;
   INSERT INTO airs.memberships (org_id, account_id, user_id, role_key, status, invited_at)
-    VALUES (org_a, acct, usr, 'visual_observer', 'invited', now());
+    VALUES (org_a, acct, usr, 'visual_observer', 'invited', now()) RETURNING id INTO mship;
+  INSERT INTO ids VALUES ('mship_invited', mship);
 
   -- suspended (org A)
   INSERT INTO airs.accounts (email, display_name, password_hash)
@@ -107,7 +108,8 @@ BEGIN
   INSERT INTO airs.users (org_id, email_address, display_name, account_id)
     VALUES (org_a,'rls.suspended@example.test','RLS Suspended',acct) RETURNING id INTO usr;
   INSERT INTO airs.memberships (org_id, account_id, user_id, role_key, status, activated_at, suspended_at)
-    VALUES (org_a, acct, usr, 'dispatcher', 'suspended', now(), now());
+    VALUES (org_a, acct, usr, 'dispatcher', 'suspended', now(), now()) RETURNING id INTO mship;
+  INSERT INTO ids VALUES ('mship_suspended', mship);
 
   -- revoked (org A)
   INSERT INTO airs.accounts (email, display_name, password_hash)
@@ -116,7 +118,8 @@ BEGIN
   INSERT INTO airs.users (org_id, email_address, display_name, account_id)
     VALUES (org_a,'rls.revoked@example.test','RLS Revoked',acct) RETURNING id INTO usr;
   INSERT INTO airs.memberships (org_id, account_id, user_id, role_key, status, revoked_at)
-    VALUES (org_a, acct, usr, 'dispatcher', 'revoked', now());
+    VALUES (org_a, acct, usr, 'dispatcher', 'revoked', now()) RETURNING id INTO mship;
+  INSERT INTO ids VALUES ('mship_revoked', mship);
 
   -- one pending invitation per organization
   INSERT INTO airs.invitations (org_id, email, role_key, token_hash, expires_at)
@@ -226,7 +229,13 @@ BEGIN
   PERFORM set_config('airs.user_id', (SELECT v FROM ids WHERE k='user_a')::text, true);
 
   PERFORM pg_temp.ok(airs.current_org_id() = org_a, 'active membership establishes org A context');
-  PERFORM pg_temp.ok((SELECT count(*) FROM airs.memberships) = 4, 'org A context: sees the four org A memberships');
+  -- Fixture-scoped, not table-wide: the assertion proves this context sees all
+  -- four org A fixture memberships regardless of unrelated rows in the database.
+  PERFORM pg_temp.ok(
+    (SELECT count(*) FROM airs.memberships
+      WHERE id IN (SELECT v FROM ids
+                    WHERE k IN ('mship_a','mship_invited','mship_suspended','mship_revoked'))) = 4,
+    'org A context: sees the four org A memberships');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.memberships WHERE org_id = org_b) = 0,
     'org A context: org B memberships invisible');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.memberships WHERE id = (SELECT v FROM ids WHERE k='mship_b')) = 0,

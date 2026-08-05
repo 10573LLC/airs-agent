@@ -40,7 +40,14 @@ const TONE: Record<MapLayerItem["tone"], string> = {
   muted: "#94a3b8",
 };
 
-export function CopMap({ items, styleUrl, attribution, className, onPickPoint, picking }: CopMapProps) {
+export function CopMap({
+  items,
+  styleUrl,
+  attribution,
+  className,
+  onPickPoint,
+  picking,
+}: CopMapProps) {
   const holder = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<unknown>(null);
   const pickRef = useRef(onPickPoint);

@@ -48,9 +48,9 @@ const sqlRoles = new Map<string, string>(
     m[2],
   ]),
 );
-const sqlPermissions = [
-  ...permissionsBlock.matchAll(/\(\s*'([a-z_.]+)'\s*,\s*'[^']*'\s*\)/g),
-].map((m) => m[1]);
+const sqlPermissions = [...permissionsBlock.matchAll(/\(\s*'([a-z_.]+)'\s*,\s*'[^']*'\s*\)/g)].map(
+  (m) => m[1],
+);
 const sqlGrants = [...grantsBlock.matchAll(/\(\s*'([a-z_]+)'\s*,\s*'([a-z_.]+)'\s*\)/g)].map(
   (m) => `${m[1]}:${m[2]}`,
 );

@@ -55,10 +55,7 @@ import {
   VERIFICATION_TRANSITIONS,
   type VerificationStatus,
 } from "@/lib/awareness/model";
-import {
-  DISCLOSURE_PROFILE_LABELS,
-  type DisclosureProfile,
-} from "@/lib/resources/disclosure";
+import { DISCLOSURE_PROFILE_LABELS, type DisclosureProfile } from "@/lib/resources/disclosure";
 import { PRECISION_LABELS, PRECISION_POLICIES, type PrecisionPolicy } from "@/lib/map/model";
 
 export const Route = createFileRoute("/awareness/$observationId")({
@@ -116,7 +113,9 @@ function ObservationDetailPage() {
   const [rationale, setRationale] = useState("");
   const [annotationType, setAnnotationType] = useState<string>("review_note");
   const [annotationBody, setAnnotationBody] = useState("");
-  const [annotationVisibility, setAnnotationVisibility] = useState<"internal" | "shared">("internal");
+  const [annotationVisibility, setAnnotationVisibility] = useState<"internal" | "shared">(
+    "internal",
+  );
   const [relatedId, setRelatedId] = useState("");
   const [relationship, setRelationship] = useState<string>("corroborates");
   const [gapType, setGapType] = useState<string>("identity_unknown");
@@ -181,8 +180,7 @@ function ObservationDetailPage() {
     "Annotation added.",
   );
   const addLink = act<void>(
-    () =>
-      relateFn({ data: { observationId, relatedObservationId: relatedId, relationship } }),
+    () => relateFn({ data: { observationId, relatedObservationId: relatedId, relationship } }),
     "Observations linked.",
   );
   const dropLink = useMutation({
@@ -194,8 +192,7 @@ function ObservationDetailPage() {
     "Information gap recorded.",
   );
   const resolveGap = useMutation({
-    mutationFn: (gapId: string) =>
-      closeGapFn({ data: { gapId, status: "resolved" as const } }),
+    mutationFn: (gapId: string) => closeGapFn({ data: { gapId, status: "resolved" as const } }),
     onSuccess: (r) => report(r, "Gap closed."),
   });
   const addEvidence = act<void>(
@@ -291,7 +288,10 @@ function ObservationDetailPage() {
           <Detail label="Object observed" value={o.observedObject} />
           <Detail label="Behavior" value={o.observedBehavior} />
           <Detail label="Count" value={o.observedCount} />
-          <Detail label="Estimated altitude" value={o.observedAltitudeFt ? `${o.observedAltitudeFt} ft` : null} />
+          <Detail
+            label="Estimated altitude"
+            value={o.observedAltitudeFt ? `${o.observedAltitudeFt} ft` : null}
+          />
           <Detail
             label="Observed at"
             value={
@@ -302,7 +302,10 @@ function ObservationDetailPage() {
           />
           <Detail label="Reported at" value={timeText(o.reportedAt)} />
           <Detail label="Source" value={OBSERVATION_SOURCE_LABELS[o.sourceType]} />
-          <Detail label="Source reliability" value={SOURCE_RELIABILITY_LABELS[o.sourceReliability]} />
+          <Detail
+            label="Source reliability"
+            value={SOURCE_RELIABILITY_LABELS[o.sourceReliability]}
+          />
           <Detail
             label="Information credibility"
             value={INFORMATION_CREDIBILITY_LABELS[o.informationCredibility]}
@@ -392,7 +395,10 @@ function ObservationDetailPage() {
         </SectionCard>
       ) : null}
 
-      <SectionCard title="Annotations" description="Notes, corrections and reviewer assessments. Internal notes are never included in a partner release.">
+      <SectionCard
+        title="Annotations"
+        description="Notes, corrections and reviewer assessments. Internal notes are never included in a partner release."
+      >
         <ul className="mb-3 flex flex-col gap-2">
           {d.annotations.length === 0 ? (
             <li className="text-sm text-muted-foreground">No annotations recorded.</li>
@@ -517,7 +523,11 @@ function ObservationDetailPage() {
               </select>
             </Field>
             <div className="flex items-end">
-              <button className={buttonClass} disabled={!relatedId} onClick={() => addLink.mutate()}>
+              <button
+                className={buttonClass}
+                disabled={!relatedId}
+                onClick={() => addLink.mutate()}
+              >
                 Link observations
               </button>
             </div>
@@ -541,7 +551,9 @@ function ObservationDetailPage() {
               <span>
                 <strong>{GAP_LABELS[g.gapType as keyof typeof GAP_LABELS] ?? g.gapType}</strong>
                 {g.detail ? ` — ${g.detail}` : ""}{" "}
-                <StatusPill tone={g.status === "open" ? "caution" : "neutral"}>{g.status}</StatusPill>
+                <StatusPill tone={g.status === "open" ? "caution" : "neutral"}>
+                  {g.status}
+                </StatusPill>
               </span>
               {isOwner && g.status === "open" ? (
                 <button className={smallButton} onClick={() => resolveGap.mutate(g.id)}>
@@ -554,7 +566,11 @@ function ObservationDetailPage() {
         {isOwner ? (
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="Gap">
-              <select className={inputClass} value={gapType} onChange={(e) => setGapType(e.target.value)}>
+              <select
+                className={inputClass}
+                value={gapType}
+                onChange={(e) => setGapType(e.target.value)}
+              >
                 {GAP_TYPES.map((t) => (
                   <option key={t} value={t}>
                     {GAP_LABELS[t]}
@@ -592,8 +608,9 @@ function ObservationDetailPage() {
               className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2 text-sm"
             >
               <span>
-                {EVIDENCE_LABELS[e.referenceType as keyof typeof EVIDENCE_LABELS] ?? e.referenceType} ·{" "}
-                {e.displayName}
+                {EVIDENCE_LABELS[e.referenceType as keyof typeof EVIDENCE_LABELS] ??
+                  e.referenceType}{" "}
+                · {e.displayName}
                 {e.referenceValue ? ` · ${e.referenceValue}` : ""}
               </span>
               {isOwner ? (
@@ -634,7 +651,11 @@ function ObservationDetailPage() {
               />
             </Field>
             <div className="flex items-end">
-              <button className={buttonClass} disabled={!evidenceName} onClick={() => addEvidence.mutate()}>
+              <button
+                className={buttonClass}
+                disabled={!evidenceName}
+                onClick={() => addEvidence.mutate()}
+              >
                 Add reference
               </button>
             </div>
@@ -660,9 +681,10 @@ function ObservationDetailPage() {
                   {s.partnerOrgName} ·{" "}
                   {DISCLOSURE_PROFILE_LABELS[s.disclosureProfile as DisclosureProfile] ??
                     s.disclosureProfile}{" "}
-                  ·{" "}
-                  {PRECISION_LABELS[s.precisionPolicy as PrecisionPolicy] ?? s.precisionPolicy} ·{" "}
-                  <StatusPill tone={s.status === "active" ? "active" : "neutral"}>{s.status}</StatusPill>
+                  · {PRECISION_LABELS[s.precisionPolicy as PrecisionPolicy] ?? s.precisionPolicy} ·{" "}
+                  <StatusPill tone={s.status === "active" ? "active" : "neutral"}>
+                    {s.status}
+                  </StatusPill>
                 </span>
                 {s.status === "active" ? (
                   <button className={smallButton} onClick={() => revokeShare.mutate(s.id)}>
@@ -714,7 +736,11 @@ function ObservationDetailPage() {
               </select>
             </Field>
             <div className="flex items-end">
-              <button className={buttonClass} disabled={!partnerOrgId} onClick={() => share.mutate()}>
+              <button
+                className={buttonClass}
+                disabled={!partnerOrgId}
+                onClick={() => share.mutate()}
+              >
                 Release to partner
               </button>
             </div>

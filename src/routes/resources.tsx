@@ -4,11 +4,15 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
 import { DENY_MESSAGES } from "@/components/incident-ui";
-import { PageHeading, PageShell, SectionCard, StatusPill, type StatusTone } from "@/components/brand";
-import { getMe } from "@/lib/api/auth.functions";
 import {
-  DISCLOSURE_PROFILE_LABELS,
-} from "@/lib/resources/disclosure";
+  PageHeading,
+  PageShell,
+  SectionCard,
+  StatusPill,
+  type StatusTone,
+} from "@/components/brand";
+import { getMe } from "@/lib/api/auth.functions";
+import { DISCLOSURE_PROFILE_LABELS } from "@/lib/resources/disclosure";
 import {
   addQualificationFn,
   createResourceFn,
@@ -63,9 +67,11 @@ export const Route = createFileRoute("/resources")({
 const label = (value: string) => value.replaceAll("_", " ");
 
 function toneForStatus(status: string): StatusTone {
-  if (["available", "ready", "in_service", "operational", "on_duty"].includes(status)) return "active";
+  if (["available", "ready", "in_service", "operational", "on_duty"].includes(status))
+    return "active";
   if (["assigned", "deployed", "in_use", "standby", "on_call"].includes(status)) return "info";
-  if (["maintenance", "charging", "inspection", "limited", "rest"].includes(status)) return "caution";
+  if (["maintenance", "charging", "inspection", "limited", "rest"].includes(status))
+    return "caution";
   if (["out_of_service", "unavailable", "retired", "non_operational"].includes(status))
     return "critical";
   return "neutral";
@@ -166,7 +172,8 @@ function ResourcesPage() {
   };
 
   const addResource = useMutation({
-    mutationFn: () => createResource({ data: { category, displayName, callsign: callsign || null } }),
+    mutationFn: () =>
+      createResource({ data: { category, displayName, callsign: callsign || null } }),
     onSuccess: (result) => {
       report(result, `Registered ${displayName}.`);
       if (result.ok) {
@@ -309,7 +316,10 @@ function ResourcesPage() {
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Resources</p>
                 <ul className="mt-2 space-y-1">
                   {summary.data.data.byStatus.map((row) => (
-                    <li key={row.status} className="flex items-center justify-between gap-2 text-sm">
+                    <li
+                      key={row.status}
+                      className="flex items-center justify-between gap-2 text-sm"
+                    >
                       <StatusPill tone={toneForStatus(row.status)}>{label(row.status)}</StatusPill>
                       <span className="font-mono text-xs">{row.count}</span>
                     </li>
@@ -654,7 +664,11 @@ function ResourcesPage() {
                   {label(qual.verificationStatus)}
                 </StatusPill>
                 {qual.verificationStatus !== "verified" && qual.status !== "revoked" ? (
-                  <button type="button" className={smallButton} onClick={() => verify.mutate(qual.id)}>
+                  <button
+                    type="button"
+                    className={smallButton}
+                    onClick={() => verify.mutate(qual.id)}
+                  >
                     Verify
                   </button>
                 ) : null}

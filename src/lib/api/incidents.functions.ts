@@ -197,7 +197,13 @@ export const activateIncidentFn = createServerFn({ method: "POST" })
     guard(async () => {
       const { activateIncident } = await svc();
       const { token, meta } = await serverCtx();
-      return activateIncident(token, data.orgId ?? null, data.incidentId, data.expectedVersion, meta);
+      return activateIncident(
+        token,
+        data.orgId ?? null,
+        data.incidentId,
+        data.expectedVersion,
+        meta,
+      );
     }),
   );
 
@@ -227,7 +233,13 @@ export const archiveIncidentFn = createServerFn({ method: "POST" })
     guard(async () => {
       const { archiveIncident } = await svc();
       const { token, meta } = await serverCtx();
-      return archiveIncident(token, data.orgId ?? null, data.incidentId, data.expectedVersion, meta);
+      return archiveIncident(
+        token,
+        data.orgId ?? null,
+        data.incidentId,
+        data.expectedVersion,
+        meta,
+      );
     }),
   );
 

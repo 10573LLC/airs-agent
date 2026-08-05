@@ -22,9 +22,8 @@ export const Route = createFileRoute("/api/maintenance/expire-incidents")({
           headers: { allow: "POST", "content-type": "application/json" },
         }),
       POST: async ({ request }) => {
-        const { handleMaintenanceExpirationRequest } = await import(
-          "@/lib/maintenance/endpoint.server"
-        );
+        const { handleMaintenanceExpirationRequest } =
+          await import("@/lib/maintenance/endpoint.server");
         return handleMaintenanceExpirationRequest(request);
       },
     },

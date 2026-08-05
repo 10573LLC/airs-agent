@@ -95,7 +95,11 @@ export const FIELD_DEFS = {
   assignedUnit: { source: "detail", column: "assigned_unit", kinds: ["vehicle"] },
   supportedEquipment: { source: "detail", column: "supported_equipment", kinds: ["vehicle"] },
   dockName: { source: "detail", column: "dock_name", kinds: ["dock"] },
-  connectivityStatus: { source: "detail", column: "connectivity_status", kinds: ["dock", "sensor"] },
+  connectivityStatus: {
+    source: "detail",
+    column: "connectivity_status",
+    kinds: ["dock", "sensor"],
+  },
   powerStatus: { source: "detail", column: "power_status", kinds: ["dock"] },
   siteName: { source: "detail", column: "site_name", kinds: ["launch_site"] },
   owningOrganizationLabel: {
@@ -253,12 +257,7 @@ export const PROFILE_FIELDS: Record<DisclosureProfile, readonly FieldKey[]> = {
   summary: SUMMARY,
   operational: [...SUMMARY, ...OPERATIONAL_ADDS],
   aviation: [...SUMMARY, ...OPERATIONAL_ADDS, ...AVIATION_ADDS],
-  incident_command: [
-    ...SUMMARY,
-    ...OPERATIONAL_ADDS,
-    ...AVIATION_ADDS,
-    ...INCIDENT_COMMAND_ADDS,
-  ],
+  incident_command: [...SUMMARY, ...OPERATIONAL_ADDS, ...AVIATION_ADDS, ...INCIDENT_COMMAND_ADDS],
   full: FIELD_KEYS,
   // A custom profile can only ever be assembled from non-sensitive keys.
   custom: FIELD_KEYS.filter((k) => !FIELD_DEF[k].sensitive),
@@ -272,9 +271,7 @@ export function isFieldKey(value: unknown): value is FieldKey {
 }
 
 export function isDisclosureProfile(value: unknown): value is DisclosureProfile {
-  return (
-    typeof value === "string" && (DISCLOSURE_PROFILES as readonly string[]).includes(value)
-  );
+  return typeof value === "string" && (DISCLOSURE_PROFILES as readonly string[]).includes(value);
 }
 
 export interface DisclosureRequest {

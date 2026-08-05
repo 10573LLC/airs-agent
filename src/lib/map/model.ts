@@ -128,14 +128,23 @@ export function resolvePrecision(
 ): PrecisionPolicy {
   if (isOwner) return "exact";
   const declaredRank = isPrecisionPolicy(declared) ? PRECISION_RANK[declared] : 0;
-  const profileRank = profile && PROFILE_PRECISION[profile] ? PRECISION_RANK[PROFILE_PRECISION[profile]] : 0;
+  const profileRank =
+    profile && PROFILE_PRECISION[profile] ? PRECISION_RANK[PROFILE_PRECISION[profile]] : 0;
   const rank = Math.min(declaredRank, profileRank);
-  return (PRECISION_POLICIES.find((p) => PRECISION_RANK[p] === rank) ?? "withheld") as PrecisionPolicy;
+  return (PRECISION_POLICIES.find((p) => PRECISION_RANK[p] === rank) ??
+    "withheld") as PrecisionPolicy;
 }
 
 // --- position freshness -------------------------------------------------------
 
-export const FRESHNESS_STATES = ["fresh", "recent", "aging", "stale", "expired", "unknown"] as const;
+export const FRESHNESS_STATES = [
+  "fresh",
+  "recent",
+  "aging",
+  "stale",
+  "expired",
+  "unknown",
+] as const;
 export type Freshness = (typeof FRESHNESS_STATES)[number];
 
 export const FRESHNESS_LABELS: Record<Freshness, string> = {
@@ -214,7 +223,8 @@ export function parseGeometry(value: unknown): Geometry | null {
   }
   if (g.type === "LineString") {
     const coords = g.coordinates;
-    if (!Array.isArray(coords) || coords.length < 2 || coords.length > MAX_RING_VERTICES) return null;
+    if (!Array.isArray(coords) || coords.length < 2 || coords.length > MAX_RING_VERTICES)
+      return null;
     if (!coords.every(isFiniteLngLat)) return null;
     return { type: "LineString", coordinates: coords as Position[] };
   }
@@ -246,7 +256,9 @@ export function parsePoint(value: unknown): PointGeometry | null {
 }
 
 /** Bounding box helper the UI uses to frame the map. Pure, no map SDK. */
-export function bounds(geoms: readonly (Geometry | null | undefined)[]): [number, number, number, number] | null {
+export function bounds(
+  geoms: readonly (Geometry | null | undefined)[],
+): [number, number, number, number] | null {
   let minX = Infinity;
   let minY = Infinity;
   let maxX = -Infinity;

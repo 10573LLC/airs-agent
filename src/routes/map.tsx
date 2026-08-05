@@ -3,7 +3,13 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
-import { PageHeading, PageShell, SectionCard, StatusPill, type StatusTone } from "@/components/brand";
+import {
+  PageHeading,
+  PageShell,
+  SectionCard,
+  StatusPill,
+  type StatusTone,
+} from "@/components/brand";
 import { CopMap, type MapLayerItem } from "@/components/map/cop-map";
 import { DENY_MESSAGES } from "@/components/incident-ui";
 import { getMe } from "@/lib/api/auth.functions";
@@ -116,7 +122,9 @@ function squareAround([lng, lat]: [number, number], radiusDeg: number) {
 const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
 const mapAttribution =
   (import.meta.env.VITE_MAP_ATTRIBUTION as string | undefined) ||
-  (mapStyleUrl ? "Basemap © the configured tile provider · Rendered with MapLibre GL JS" : undefined);
+  (mapStyleUrl
+    ? "Basemap © the configured tile provider · Rendered with MapLibre GL JS"
+    : undefined);
 
 function MapPage() {
   const qc = useQueryClient();
@@ -193,7 +201,9 @@ function MapPage() {
   });
 
   const report = (result: { ok: boolean; code?: string }, success: string) =>
-    setNotice(result.ok ? success : (DENY_MESSAGES[result.code ?? ""] ?? `Denied (${result.code}).`));
+    setNotice(
+      result.ok ? success : (DENY_MESSAGES[result.code ?? ""] ?? `Denied (${result.code}).`),
+    );
   const refresh = (...keys: string[]) => {
     for (const key of keys) void qc.invalidateQueries({ queryKey: [key] });
   };
@@ -208,49 +218,58 @@ function MapPage() {
   const layers = useMemo<MapLayerItem[]>(() => {
     const items: MapLayerItem[] = [];
     if (showAreas)
-    for (const a of areaRows) {
-      items.push({
-        id: `area-${a.id}`,
-        label: a.name,
-        geometry: a.geometry,
-        tone: "area",
-        detail: `${OPERATING_AREA_LABELS[a.status]} · ${a.altitudeFloorFt}–${a.altitudeCeilingFt} ft`,
-      });
-    }
+      for (const a of areaRows) {
+        items.push({
+          id: `area-${a.id}`,
+          label: a.name,
+          geometry: a.geometry,
+          tone: "area",
+          detail: `${OPERATING_AREA_LABELS[a.status]} · ${a.altitudeFloorFt}–${a.altitudeCeilingFt} ft`,
+        });
+      }
     if (showFeatures)
-    for (const f of featureRows) {
-      items.push({
-        id: `feature-${f.id}`,
-        label: f.name,
-        geometry: f.geometry,
-        tone: f.relationship === "owner" ? "own" : "partner",
-        detail: MAP_FEATURE_LABELS[f.featureType],
-      });
-    }
+      for (const f of featureRows) {
+        items.push({
+          id: `feature-${f.id}`,
+          label: f.name,
+          geometry: f.geometry,
+          tone: f.relationship === "owner" ? "own" : "partner",
+          detail: MAP_FEATURE_LABELS[f.featureType],
+        });
+      }
     if (showPositions)
-    for (const l of locationRows) {
-      items.push({
-        id: `loc-${l.id}`,
-        label: l.resourceName,
-        geometry: l.geometry,
-        tone: "position",
-        detail: FRESHNESS_LABELS[l.freshness],
-      });
-    }
+      for (const l of locationRows) {
+        items.push({
+          id: `loc-${l.id}`,
+          label: l.resourceName,
+          geometry: l.geometry,
+          tone: "position",
+          detail: FRESHNESS_LABELS[l.freshness],
+        });
+      }
     // Awareness layer. A manual report is drawn only when the server released
     // geography for it; a withheld or area-only report contributes no point.
     if (showObservations)
-    for (const o of observationRows) {
-      items.push({
-        id: `obs-${o.id}`,
-        label: o.title,
-        geometry: o.geometry,
-        tone: "muted",
-        detail: `${OBSERVATION_TYPE_LABELS[o.observationType]} · ${OBSERVATION_FRESHNESS_LABELS[o.freshness]}`,
-      });
-    }
+      for (const o of observationRows) {
+        items.push({
+          id: `obs-${o.id}`,
+          label: o.title,
+          geometry: o.geometry,
+          tone: "muted",
+          detail: `${OBSERVATION_TYPE_LABELS[o.observationType]} · ${OBSERVATION_FRESHNESS_LABELS[o.freshness]}`,
+        });
+      }
     return items;
-  }, [areaRows, featureRows, locationRows, observationRows, showAreas, showFeatures, showPositions, showObservations]);
+  }, [
+    areaRows,
+    featureRows,
+    locationRows,
+    observationRows,
+    showAreas,
+    showFeatures,
+    showPositions,
+    showObservations,
+  ]);
 
   const withheld =
     featureRows.filter((f) => !f.geometry).length +
@@ -366,14 +385,12 @@ function MapPage() {
           </Field>
           <fieldset className="flex flex-wrap items-center gap-3 rounded-md border border-border px-3 py-2">
             <legend className="px-1 text-xs font-medium text-muted-foreground">Layers</legend>
-            {(
-              [
-                ["Operating areas", showAreas, setShowAreas] as const,
-                ["Map features", showFeatures, setShowFeatures] as const,
-                ["Reported positions", showPositions, setShowPositions] as const,
-                ["Awareness observations", showObservations, setShowObservations] as const,
-              ]
-            ).map(([label, checked, set]) => (
+            {[
+              ["Operating areas", showAreas, setShowAreas] as const,
+              ["Map features", showFeatures, setShowFeatures] as const,
+              ["Reported positions", showPositions, setShowPositions] as const,
+              ["Awareness observations", showObservations, setShowObservations] as const,
+            ].map(([label, checked, set]) => (
               <label key={label} className="flex items-center gap-2 text-xs text-foreground">
                 <input
                   type="checkbox"
@@ -631,8 +648,8 @@ function MapPage() {
                     <span className="font-medium">{f.name}</span>{" "}
                     <span className="text-muted-foreground">
                       {MAP_FEATURE_LABELS[f.featureType]} ·{" "}
-                      {f.relationship === "owner" ? "yours" : (f.ownerOrgName ?? "partner agency")} ·{" "}
-                      {PRECISION_LABELS[f.precision]}
+                      {f.relationship === "owner" ? "yours" : (f.ownerOrgName ?? "partner agency")}{" "}
+                      · {PRECISION_LABELS[f.precision]}
                       {f.geometry ? "" : " · geography withheld"}
                     </span>
                   </div>

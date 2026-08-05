@@ -167,7 +167,10 @@ function ConsolePage() {
             Active organization:{" "}
             <strong>{orgResult?.ok ? orgResult.data.name : "none selected"}</strong>
             {orgResult?.ok ? (
-              <span className="text-muted-foreground"> · {ROLE_LABELS[orgResult.data.roleKey]}</span>
+              <span className="text-muted-foreground">
+                {" "}
+                · {ROLE_LABELS[orgResult.data.roleKey]}
+              </span>
             ) : null}
           </p>
           <nav className="mt-3 flex gap-4 text-sm">
@@ -268,7 +271,9 @@ function ConsolePage() {
                   {m.status === "suspended" ? (
                     <button
                       disabled={!canManageUsers}
-                      onClick={() => run(() => reinstate({ data: { membershipId: m.membershipId } }))}
+                      onClick={() =>
+                        run(() => reinstate({ data: { membershipId: m.membershipId } }))
+                      }
                       className="rounded-md border border-input px-2 py-1 text-xs disabled:opacity-50"
                     >
                       Reinstate
@@ -284,7 +289,9 @@ function ConsolePage() {
                   )}
                   <button
                     disabled={!canManageUsers || m.status === "revoked"}
-                    onClick={() => run(() => revokeMember({ data: { membershipId: m.membershipId } }))}
+                    onClick={() =>
+                      run(() => revokeMember({ data: { membershipId: m.membershipId } }))
+                    }
                     className="rounded-md border border-input px-2 py-1 text-xs disabled:opacity-50"
                   >
                     Revoke

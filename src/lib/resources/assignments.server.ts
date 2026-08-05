@@ -65,11 +65,12 @@ const COLUMNS = `
  * are deleted from the payload, never blanked.
  */
 function discloseAssignment(
-  row: AssignmentRow & { customFieldKeys?: string[] | null; currentQualifications?: string[] | null },
+  row: AssignmentRow & {
+    customFieldKeys?: string[] | null;
+    currentQualifications?: string[] | null;
+  },
 ): AssignmentRow {
-  const profile = (DISCLOSURE_PROFILES as readonly string[]).includes(
-    String(row.disclosureProfile),
-  )
+  const profile = (DISCLOSURE_PROFILES as readonly string[]).includes(String(row.disclosureProfile))
     ? (row.disclosureProfile as DisclosureProfile)
     : "summary";
   const keys = new Set(
@@ -141,7 +142,7 @@ export async function listIncidentAssignments(
     async (ctx, q) =>
       (
         await q.query<AssignmentRow & { customFieldKeys?: string[] | null }>(
-        `SELECT ${COLUMNS},
+          `SELECT ${COLUMNS},
                 COALESCE(r.display_name, p.display_name) AS label,
                 CASE WHEN a.assignment_type = 'person'
                      THEN airs.assignment_current_qualifications(a.id) END
@@ -153,7 +154,7 @@ export async function listIncidentAssignments(
            LEFT JOIN airs.personnel_profiles p ON p.id = a.person_id AND p.org_id = a.org_id
           WHERE a.incident_id = $1
           ORDER BY a.created_at DESC`,
-        [inc, ctx.orgId],
+          [inc, ctx.orgId],
         )
       ).map((row) => (row.orgId === ctx.orgId ? row : discloseAssignment(row))),
   );
@@ -177,7 +178,11 @@ export async function assignToIncident(
   meta?: RequestMeta,
 ): Promise<AssignmentRow> {
   const incidentId = assertUuid(input.incidentId, "incident id");
-  const type = assertOneOf(input.assignmentType, ["resource", "person"] as const, "assignment type");
+  const type = assertOneOf(
+    input.assignmentType,
+    ["resource", "person"] as const,
+    "assignment type",
+  );
   const resourceId =
     type === "resource" ? assertUuid(String(input.resourceId), "resource id") : null;
   const personId = type === "person" ? assertUuid(String(input.personId), "person id") : null;

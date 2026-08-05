@@ -191,11 +191,7 @@ export async function setPersonnelAvailability(
   meta?: RequestMeta,
 ): Promise<PersonnelRow> {
   const personId = assertUuid(input.personId, "person id");
-  const availability = assertOneOf(
-    input.availabilityStatus,
-    AVAILABILITY_STATUSES,
-    "availability",
-  );
+  const availability = assertOneOf(input.availabilityStatus, AVAILABILITY_STATUSES, "availability");
   return withAuthorized(
     {
       token,

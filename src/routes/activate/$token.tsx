@@ -9,7 +9,11 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
-import { activateAccountFn, previewActivationFn, selectOrganization } from "@/lib/api/auth.functions";
+import {
+  activateAccountFn,
+  previewActivationFn,
+  selectOrganization,
+} from "@/lib/api/auth.functions";
 import { ROLE_LABELS, type RoleKey } from "@/lib/rbac/roles";
 
 export const Route = createFileRoute("/activate/$token")({
@@ -121,7 +125,10 @@ function ActivateAccountPage() {
   if (!data || !data.ok) {
     return (
       <Shell>
-        <p role="alert" className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {message(data && !data.ok ? data.code : "invitation_invalid")}
         </p>
         <Link to="/auth" className="mt-6 text-xs text-muted-foreground underline">
@@ -220,7 +227,10 @@ function ActivateAccountPage() {
           />
         </div>
         {error ? (
-          <p role="alert" className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          <p
+            role="alert"
+            className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
             {error}
           </p>
         ) : null}

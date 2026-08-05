@@ -14,8 +14,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 const SECRET = "b7f1c0e3a95d4c2f8e6a1b3d5f70921c";
 const OTHER = "b7f1c0e3a95d4c2f8e6a1b3d5f70921d"; // same length, one char apart
 
-const post = (headers: Record<string, string> = {}, url = "https://x/api/maintenance/expire-incidents") =>
-  new Request(url, { method: "POST", headers });
+const post = (
+  headers: Record<string, string> = {},
+  url = "https://x/api/maintenance/expire-incidents",
+) => new Request(url, { method: "POST", headers });
 
 type Endpoint = typeof import("@/lib/maintenance/endpoint.server");
 let endpoint: Endpoint;
@@ -65,7 +67,10 @@ describe("maintenance endpoint authorization", () => {
 
   it("rejects a secret passed in the query string", () => {
     const d = endpoint.authorizeMaintenanceRequest(
-      post({ authorization: `Bearer ${SECRET}` }, `https://x/api/maintenance/expire-incidents?secret=${SECRET}`),
+      post(
+        { authorization: `Bearer ${SECRET}` },
+        `https://x/api/maintenance/expire-incidents?secret=${SECRET}`,
+      ),
     );
     expect(d.ok).toBe(false);
     expect(d.status).toBe(400);
@@ -96,7 +101,9 @@ describe("maintenance endpoint authorization", () => {
   it("accepts the correct secret, then rate-limits an immediate repeat", () => {
     const first = endpoint.authorizeMaintenanceRequest(post({ authorization: `Bearer ${SECRET}` }));
     expect(first.ok).toBe(true);
-    const second = endpoint.authorizeMaintenanceRequest(post({ authorization: `Bearer ${SECRET}` }));
+    const second = endpoint.authorizeMaintenanceRequest(
+      post({ authorization: `Bearer ${SECRET}` }),
+    );
     expect(second.ok).toBe(false);
     expect(second.status).toBe(429);
   });
@@ -143,7 +150,9 @@ describe.runIf(live)("maintenance runner against PostgreSQL", () => {
     expect(result.skippedLocked).toBe(false);
     expect(result.expiredRooms).toBeGreaterThanOrEqual(1);
 
-    const room = await admin.query("SELECT status FROM airs.incident_rooms WHERE id = $1", [roomId]);
+    const room = await admin.query("SELECT status FROM airs.incident_rooms WHERE id = $1", [
+      roomId,
+    ]);
     expect(room.rows[0].status).toBe("closed");
 
     const ev = await admin.query(
@@ -190,9 +199,8 @@ describe.runIf(live)("maintenance runner against PostgreSQL", () => {
   });
 
   it("fails closed with a clear error when no maintenance connection is configured", async () => {
-    const { runIncidentExpiration, MaintenanceError } = await import(
-      "@/lib/maintenance/expiration.server"
-    );
+    const { runIncidentExpiration, MaintenanceError } =
+      await import("@/lib/maintenance/expiration.server");
     const saved = process.env.AIRS_MAINTENANCE_DATABASE_URL;
     delete process.env.AIRS_MAINTENANCE_DATABASE_URL;
     try {

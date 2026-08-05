@@ -21,7 +21,12 @@ import type { QueryRunner } from "@/lib/adapters/types";
 import { withAuthorized, type AuthorizedContext } from "@/lib/auth/authorize.server";
 import { AccessError } from "@/lib/auth/errors";
 import type { RequestMeta } from "@/lib/auth/types";
-import { PRECISION_POLICIES, parseGeometry, type Geometry, type PrecisionPolicy } from "@/lib/map/model";
+import {
+  PRECISION_POLICIES,
+  parseGeometry,
+  type Geometry,
+  type PrecisionPolicy,
+} from "@/lib/map/model";
 import { PARTNER_DISCLOSURE_PROFILES } from "@/lib/resources/disclosure";
 import { assertOneOf, assertUuid, text, timestamp } from "@/lib/resources/resources.server";
 
@@ -89,7 +94,13 @@ function envelope(policy: string, geojson: string | null) {
 function projectForReader<T extends Record<string, unknown>>(row: T, isOwner: boolean): T {
   if (isOwner) return row;
   for (const key of RESTRICTED_SOURCE_FIELDS) delete row[key];
-  for (const key of ["classification", "declaredPrecision", "disclosureProfile", "visibleFrom", "visibleUntil"]) {
+  for (const key of [
+    "classification",
+    "declaredPrecision",
+    "disclosureProfile",
+    "visibleFrom",
+    "visibleUntil",
+  ]) {
     delete row[key];
   }
   return row;
@@ -656,7 +667,9 @@ function normalize(input: ObservationInput): NormalizedObservation {
         : "unknown",
     locationKind,
     mapFeatureId:
-      locationKind === "map_feature" ? assertUuid(input.mapFeatureId ?? "", "map feature id") : null,
+      locationKind === "map_feature"
+        ? assertUuid(input.mapFeatureId ?? "", "map feature id")
+        : null,
     operatingAreaId:
       locationKind === "operating_area"
         ? assertUuid(input.operatingAreaId ?? "", "operating area id")
@@ -679,7 +692,11 @@ function normalize(input: ObservationInput): NormalizedObservation {
       ? assertOneOf(input.sourceReliability, SOURCE_RELIABILITY, "source reliability")
       : "unknown",
     informationCredibility: input.informationCredibility
-      ? assertOneOf(input.informationCredibility, INFORMATION_CREDIBILITY, "information credibility")
+      ? assertOneOf(
+          input.informationCredibility,
+          INFORMATION_CREDIBILITY,
+          "information credibility",
+        )
       : "unknown",
     confidenceLevel: input.confidenceLevel
       ? assertOneOf(input.confidenceLevel, CONFIDENCE_LEVELS, "confidence level")
@@ -940,7 +957,8 @@ export async function setVerificationStatus(
         [
           ctx.orgId,
           id,
-          rationale ?? `Verification status changed from ${current.verificationStatus} to ${target}.`,
+          rationale ??
+            `Verification status changed from ${current.verificationStatus} to ${target}.`,
           ctx.accountId,
         ],
       );
@@ -1227,8 +1245,14 @@ export async function addEvidenceReference(
   const displayName = text(input.displayName, "display name", 160, true)!;
   const description = text(input.description, "description", 1000) ?? "";
   const referenceValue = text(input.referenceValue, "reference", 240) ?? "";
-  if (/^file:/i.test(referenceValue) || (referenceValue.includes("://") && !/^https:\/\//i.test(referenceValue))) {
-    throw new AccessError("invalid_input", "evidence references must be identifiers or https locators");
+  if (
+    /^file:/i.test(referenceValue) ||
+    (referenceValue.includes("://") && !/^https:\/\//i.test(referenceValue))
+  ) {
+    throw new AccessError(
+      "invalid_input",
+      "evidence references must be identifiers or https locators",
+    );
   }
   const classification = input.classification
     ? assertOneOf(input.classification, OBSERVATION_CLASSIFICATIONS, "classification")
@@ -1254,7 +1278,16 @@ export async function addEvidenceReference(
          RETURNING id, reference_type AS "referenceType", display_name AS "displayName",
                    description, classification, reference_value AS "referenceValue",
                    to_json(created_at)#>>'{}' AS "createdAt"`,
-        [ctx.orgId, id, referenceType, displayName, description, referenceValue, classification, ctx.accountId],
+        [
+          ctx.orgId,
+          id,
+          referenceType,
+          displayName,
+          description,
+          referenceValue,
+          classification,
+          ctx.accountId,
+        ],
       );
       return rows[0]!;
     },

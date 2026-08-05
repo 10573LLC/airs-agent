@@ -30,7 +30,8 @@ export const Route = createFileRoute("/incidents/")({
       { property: "og:title", content: "Incident rooms — AIRS Agent" },
       {
         property: "og:description",
-        content: "Owner-controlled, temporary incident coordination rooms with audited partner access.",
+        content:
+          "Owner-controlled, temporary incident coordination rooms with audited partner access.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -86,7 +87,8 @@ function IncidentsPage() {
     },
   });
 
-  if (session.isLoading) return <main className="mx-auto max-w-4xl px-6 py-16 text-sm">Loading…</main>;
+  if (session.isLoading)
+    return <main className="mx-auto max-w-4xl px-6 py-16 text-sm">Loading…</main>;
   if (!session.data?.ok) {
     return (
       <main className="mx-auto max-w-md px-6 py-16">
@@ -165,7 +167,10 @@ function IncidentsPage() {
         ) : (
           <ul className="space-y-2">
             {(rooms.data?.ok ? rooms.data.data : []).map((room) => (
-              <li key={room.id} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+              <li
+                key={room.id}
+                className="flex flex-wrap items-center justify-between gap-2 text-sm"
+              >
                 <span>
                   <Link
                     to="/incidents/$incidentId"

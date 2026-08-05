@@ -254,9 +254,9 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
 
 export const listAuditEventsFn = createServerFn({ method: "GET" })
   .inputValidator((d: { orgId?: string | null; limit?: number }) =>
-    z.object({ orgId: uuid.nullish(), limit: z.number().int().min(1).max(200).optional() }).parse(
-      d ?? {},
-    ),
+    z
+      .object({ orgId: uuid.nullish(), limit: z.number().int().min(1).max(200).optional() })
+      .parse(d ?? {}),
   )
   .handler(async ({ data }) =>
     guard(async () => {

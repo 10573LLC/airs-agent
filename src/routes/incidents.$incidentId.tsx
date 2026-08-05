@@ -41,7 +41,8 @@ export const Route = createFileRoute("/incidents/$incidentId")({
       { property: "og:title", content: "Incident room — AIRS Agent" },
       {
         property: "og:description",
-        content: "Lifecycle, participation and audit history for a single AIRS Agent incident room.",
+        content:
+          "Lifecycle, participation and audit history for a single AIRS Agent incident room.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -197,7 +198,9 @@ function IncidentDetailPage() {
       <Link to="/incidents" className="text-sm underline">
         Back to incident rooms
       </Link>
-      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{incident.name}</h1>
+      <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
+        {incident.name}
+      </h1>
       <p className="mt-1 text-sm text-muted-foreground">
         {INCIDENT_TYPE_LABELS[incident.incidentType]} · state {incident.status} ·{" "}
         {incident.classification} · version {incident.version}
@@ -366,9 +369,7 @@ function IncidentDetailPage() {
                         key={action}
                         type="button"
                         className="rounded-md border border-input px-2 py-1 text-xs"
-                        onClick={() =>
-                          participantM.mutate({ participantId: p.id, action })
-                        }
+                        onClick={() => participantM.mutate({ participantId: p.id, action })}
                       >
                         {action.replace("_", " ")}
                       </button>

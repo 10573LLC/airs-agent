@@ -18,12 +18,7 @@ import type { QueryRunner } from "@/lib/adapters/types";
 import { withAuthorized, type AuthorizedContext } from "@/lib/auth/authorize.server";
 import { AccessError } from "@/lib/auth/errors";
 import type { RequestMeta } from "@/lib/auth/types";
-import {
-  assertOneOf,
-  assertUuid,
-  text,
-  timestamp,
-} from "@/lib/resources/resources.server";
+import { assertOneOf, assertUuid, text, timestamp } from "@/lib/resources/resources.server";
 
 import {
   MAP_FEATURE_TYPES,
@@ -162,7 +157,11 @@ function assertPrecision(value: unknown, fallback: PrecisionPolicy): PrecisionPo
 
 function geometryOrThrow(value: unknown, kind: "any" | "polygon" | "point"): Geometry {
   const parsed =
-    kind === "polygon" ? parsePolygon(value) : kind === "point" ? parsePoint(value) : parseGeometry(value);
+    kind === "polygon"
+      ? parsePolygon(value)
+      : kind === "point"
+        ? parsePoint(value)
+        : parseGeometry(value);
   if (!parsed) throw new AccessError("invalid_geometry");
   return parsed;
 }
@@ -818,7 +817,8 @@ export async function reportResourceLocation(
     : "manual";
   const note = text(input.note, "note", 1000) ?? "";
   const precision = assertPrecision(input.precisionPolicy, "approximate");
-  const validForHours = kind === "temporary" ? integer(input.validForHours, "validity", 1, 72) ?? 4 : null;
+  const validForHours =
+    kind === "temporary" ? (integer(input.validForHours, "validity", 1, 72) ?? 4) : null;
 
   return withAuthorized(
     {

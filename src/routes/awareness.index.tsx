@@ -173,7 +173,10 @@ function AwarenessBoard() {
           locationKind: form.locationKind,
           geometry:
             form.lat && form.lng
-              ? { type: "Point" as const, coordinates: [Number(form.lng), Number(form.lat)] as [number, number] }
+              ? {
+                  type: "Point" as const,
+                  coordinates: [Number(form.lng), Number(form.lat)] as [number, number],
+                }
               : null,
           precisionPolicy: form.precisionPolicy,
           sourceType: form.sourceType,
@@ -618,7 +621,11 @@ function AwarenessBoard() {
           </label>
         </fieldset>
 
-        {denied ? <p role="alert" className="text-sm text-destructive">{denied}</p> : null}
+        {denied ? (
+          <p role="alert" className="text-sm text-destructive">
+            {denied}
+          </p>
+        ) : null}
         {!denied && rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">No observations match these filters.</p>
         ) : null}
@@ -654,7 +661,10 @@ function AwarenessBoard() {
                   label="Reliability / credibility"
                   value={`${SOURCE_RELIABILITY_LABELS[o.sourceReliability]} · ${INFORMATION_CREDIBILITY_LABELS[o.informationCredibility]}`}
                 />
-                <Detail label="Location basis" value={OBSERVATION_LOCATION_LABELS[o.locationKind]} />
+                <Detail
+                  label="Location basis"
+                  value={OBSERVATION_LOCATION_LABELS[o.locationKind]}
+                />
                 <Detail
                   label="Geography"
                   value={o.geometry ? PRECISION_LABELS[o.precision] : null}

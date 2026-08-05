@@ -36,10 +36,7 @@ const MIGRATION = readFileSync("db/migrations/0009_common_operating_picture.sql"
 describe("map model mirrors migration 0009", () => {
   it("declares the same precision policies, grids and ranks", () => {
     for (const policy of PRECISION_POLICIES) {
-      const row = new RegExp(
-        `\\('${policy}',\\s*(NULL|[0-9.]+),\\s*(\\d+),`,
-        "i",
-      ).exec(MIGRATION);
+      const row = new RegExp(`\\('${policy}',\\s*(NULL|[0-9.]+),\\s*(\\d+),`, "i").exec(MIGRATION);
       expect(row, `precision ${policy} missing from migration`).toBeTruthy();
       const grid = row![1] === "NULL" ? null : Number(row![1]);
       expect(PRECISION_GRID[policy]).toBe(grid);
@@ -90,7 +87,14 @@ describe("geometry parsing rejects untrusted input", () => {
     expect(
       parseGeometry({
         type: "Polygon",
-        coordinates: [[[0, 0], [0, 1], [1, 1], [1, 0]]],
+        coordinates: [
+          [
+            [0, 0],
+            [0, 1],
+            [1, 1],
+            [1, 0],
+          ],
+        ],
       }),
     ).toBeNull();
     expect(parseGeometry({ type: "GeometryCollection", geometries: [] })).toBeNull();
@@ -403,7 +407,12 @@ describe("Stage 7 geography enforcement", () => {
     await resources.shareResource(
       tokenAdminA,
       ORG_A,
-      { resourceId, incidentId, classification: "participating_orgs", disclosureProfile: "operational" },
+      {
+        resourceId,
+        incidentId,
+        classification: "participating_orgs",
+        disclosureProfile: "operational",
+      },
       meta,
     );
     const locations = await map.listResourceLocations(tokenPartnerB, ORG_B, { incidentId }, meta);
@@ -457,7 +466,16 @@ describe("Stage 7 geography enforcement", () => {
         {
           incidentId,
           name: "bad",
-          area: { type: "Polygon", coordinates: [[[0, 0], [0, 1], [1, 1]]] },
+          area: {
+            type: "Polygon",
+            coordinates: [
+              [
+                [0, 0],
+                [0, 1],
+                [1, 1],
+              ],
+            ],
+          },
         },
         meta,
       ),

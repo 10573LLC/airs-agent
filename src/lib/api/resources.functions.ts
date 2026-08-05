@@ -56,14 +56,15 @@ const assign = () => import("@/lib/resources/assignments.server");
 // --- registry reads -----------------------------------------------------------
 
 export const listResourcesFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null; category?: string | null; includeRetired?: boolean }) =>
-    z
-      .object({
-        orgId: orgIdField,
-        category: z.string().max(40).nullish(),
-        includeRetired: z.boolean().optional(),
-      })
-      .parse(d ?? {}),
+  .inputValidator(
+    (d: { orgId?: string | null; category?: string | null; includeRetired?: boolean }) =>
+      z
+        .object({
+          orgId: orgIdField,
+          category: z.string().max(40).nullish(),
+          includeRetired: z.boolean().optional(),
+        })
+        .parse(d ?? {}),
   )
   .handler(async ({ data }) =>
     guard(async () => {
@@ -176,7 +177,9 @@ export const setResourceStatusFn = createServerFn({ method: "POST" })
 
 export const retireResourceFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
-    z.object({ orgId: orgIdField, resourceId: uuid, reason: z.string().max(500).nullish() }).parse(d),
+    z
+      .object({ orgId: orgIdField, resourceId: uuid, reason: z.string().max(500).nullish() })
+      .parse(d),
   )
   .handler(async ({ data }) =>
     guard(async () => {
@@ -189,7 +192,11 @@ export const retireResourceFn = createServerFn({ method: "POST" })
 export const restoreResourceFn = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z
-      .object({ orgId: orgIdField, resourceId: uuid, readinessStatus: z.string().max(40).nullish() })
+      .object({
+        orgId: orgIdField,
+        resourceId: uuid,
+        readinessStatus: z.string().max(40).nullish(),
+      })
       .parse(d),
   )
   .handler(async ({ data }) =>
@@ -404,9 +411,7 @@ export const addQualificationFn = createServerFn({ method: "POST" })
   );
 
 export const verifyQualificationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z.object({ orgId: orgIdField, qualificationId: uuid }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, qualificationId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { verifyQualification } = await people();

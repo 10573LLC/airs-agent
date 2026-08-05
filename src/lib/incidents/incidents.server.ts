@@ -738,6 +738,9 @@ export async function closeIncident(
           closure_reason: reason,
           revoked_participants: revoked.length,
           expired_invitations: expired.length,
+          operating_areas_completed: Number(geo.areas_completed),
+          map_features_archived: Number(geo.features_archived),
+          positions_expired: Number(geo.positions_expired),
         },
       );
       for (const row of revoked) {

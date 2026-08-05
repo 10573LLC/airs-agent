@@ -473,7 +473,7 @@ function ResourcesPage() {
 
         <SectionCard
           title="Shared with you"
-          description="Partner-owned resources visible only through an active incident share."
+          description="Partner-owned resources visible only through an active incident share. Each record shows the disclosure profile its originating agency approved — fields outside that profile are not withheld from view, they are never sent."
         >
           {shared.data?.ok && shared.data.data.length > 0 ? (
             <ul className="divide-y divide-border">
@@ -486,6 +486,14 @@ function ResourcesPage() {
                   <StatusPill className="ml-2" tone={toneForStatus(resource.readinessStatus)}>
                     {label(resource.readinessStatus)}
                   </StatusPill>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Disclosed as{" "}
+                    <span className="font-medium text-foreground">
+                      {DISCLOSURE_PROFILE_LABELS[resource.disclosureProfile ?? "summary"]}
+                    </span>{" "}
+                    · {resource.disclosedFields?.length ?? 0} approved fields · the originating
+                    agency may narrow this at any time
+                  </p>
                 </li>
               ))}
             </ul>

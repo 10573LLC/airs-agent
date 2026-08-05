@@ -28,6 +28,7 @@ DO $$
 DECLARE
   org_a uuid := '11111111-1111-4111-8111-111111111111';  -- Albany Police Department
   org_b uuid := '22222222-2222-4222-8222-222222222222';  -- Albany County
+  org_c uuid := gen_random_uuid();                        -- second trusted partner
   due_room    uuid;   -- scheduled window already elapsed
   future_room uuid;   -- scheduled window still open
   retain_room uuid;   -- closed, retention window elapsed
@@ -45,6 +46,11 @@ BEGIN
   INSERT INTO airs.trusted_agencies (org_id, partner_org_id, status)
        VALUES (org_a, org_b, 'approved')
   ON CONFLICT DO NOTHING;
+
+  INSERT INTO airs.organizations (id, slug, name, agency_type)
+       VALUES (org_c, 'test-expiry-partner', 'Expiry Test Partner Agency', 'fire_rescue');
+  INSERT INTO airs.trusted_agencies (org_id, partner_org_id, status)
+       VALUES (org_a, org_c, 'approved');
 
   -- Rooms -------------------------------------------------------------------
   INSERT INTO airs.incident_rooms (org_id, name, incident_type, status, scheduled_expires_at)
@@ -79,7 +85,7 @@ BEGIN
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
         invitation_status, participation_status, invitation_expires_at,
         accepted_at, approved_at, expires_at)
-       VALUES (future_room, org_a, org_b, org_a, 'operational', 'accepted', 'active',
+       VALUES (future_room, org_a, org_c, org_a, 'operational', 'accepted', 'active',
                now() + interval '2 days', now(), now(), now() - interval '1 minute')
     RETURNING id INTO due_part;
 
@@ -87,7 +93,7 @@ BEGIN
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
         invitation_status, participation_status, invitation_expires_at,
         accepted_at, approved_at)
-       VALUES (retain_room, org_a, org_b, org_a, 'operational', 'accepted', 'active',
+       VALUES (retain_room, org_a, org_c, org_a, 'operational', 'accepted', 'active',
                now() + interval '2 days', now(), now())
     RETURNING id INTO live_part;
 

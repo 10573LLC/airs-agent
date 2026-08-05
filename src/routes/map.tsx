@@ -109,6 +109,13 @@ function squareAround([lng, lat]: [number, number], radiusDeg: number) {
   };
 }
 
+// Operator-supplied basemap. Absent by design in environments with no approved
+// tile service: the renderer then explains itself instead of loading one.
+const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
+const mapAttribution =
+  (import.meta.env.VITE_MAP_ATTRIBUTION as string | undefined) ||
+  (mapStyleUrl ? "Basemap © the configured tile provider · Rendered with MapLibre GL JS" : undefined);
+
 function MapPage() {
   const qc = useQueryClient();
   const me = useServerFn(getMe);
@@ -140,6 +147,11 @@ function MapPage() {
   const [posKind, setPosKind] = useState<"fixed" | "temporary">("temporary");
   const [posPrecision, setPosPrecision] = useState<PrecisionPolicy>("approximate");
   const [posHours, setPosHours] = useState("4");
+  // Presentation-only layer visibility. Hiding a layer never changes what the
+  // server released; it only stops drawing what was already authorized.
+  const [showAreas, setShowAreas] = useState(true);
+  const [showFeatures, setShowFeatures] = useState(true);
+  const [showPositions, setShowPositions] = useState(true);
 
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
   const signedIn = session.data?.ok === true;
@@ -184,6 +196,7 @@ function MapPage() {
 
   const layers = useMemo<MapLayerItem[]>(() => {
     const items: MapLayerItem[] = [];
+    if (showAreas)
     for (const a of areaRows) {
       items.push({
         id: `area-${a.id}`,
@@ -193,6 +206,7 @@ function MapPage() {
         detail: `${OPERATING_AREA_LABELS[a.status]} · ${a.altitudeFloorFt}–${a.altitudeCeilingFt} ft`,
       });
     }
+    if (showFeatures)
     for (const f of featureRows) {
       items.push({
         id: `feature-${f.id}`,
@@ -202,6 +216,7 @@ function MapPage() {
         detail: MAP_FEATURE_LABELS[f.featureType],
       });
     }
+    if (showPositions)
     for (const l of locationRows) {
       items.push({
         id: `loc-${l.id}`,
@@ -212,7 +227,7 @@ function MapPage() {
       });
     }
     return items;
-  }, [areaRows, featureRows, locationRows]);
+  }, [areaRows, featureRows, locationRows, showAreas, showFeatures, showPositions]);
 
   const withheld =
     featureRows.filter((f) => !f.geometry).length +
@@ -325,6 +340,26 @@ function MapPage() {
               ))}
             </select>
           </Field>
+          <fieldset className="flex flex-wrap items-center gap-3 rounded-md border border-border px-3 py-2">
+            <legend className="px-1 text-xs font-medium text-muted-foreground">Layers</legend>
+            {(
+              [
+                ["Operating areas", showAreas, setShowAreas] as const,
+                ["Map features", showFeatures, setShowFeatures] as const,
+                ["Reported positions", showPositions, setShowPositions] as const,
+              ]
+            ).map(([label, checked, set]) => (
+              <label key={label} className="flex items-center gap-2 text-xs text-foreground">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 accent-primary"
+                  checked={checked}
+                  onChange={(e) => set(e.target.checked)}
+                />
+                {label}
+              </label>
+            ))}
+          </fieldset>
           <p className="text-xs text-muted-foreground">
             {picked
               ? `Working point ${picked[1].toFixed(5)}, ${picked[0].toFixed(5)}`
@@ -333,6 +368,8 @@ function MapPage() {
         </div>
         <CopMap
           items={layers}
+          styleUrl={mapStyleUrl}
+          attribution={mapAttribution}
           picking
           onPickPoint={setPicked}
           className="h-[420px] w-full overflow-hidden rounded-lg border border-border"

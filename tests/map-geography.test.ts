@@ -147,7 +147,6 @@ let map: typeof import("@/lib/map/map.server");
 let incidents: typeof import("@/lib/incidents/incidents.server");
 let participation: typeof import("@/lib/incidents/participation.server");
 let resources: typeof import("@/lib/resources/resources.server");
-let db: typeof import("@/lib/adapters/index.server");
 
 let ORG_C = "";
 let tokenAdminA = "";
@@ -199,7 +198,6 @@ beforeAll(async () => {
   incidents = await import("@/lib/incidents/incidents.server");
   participation = await import("@/lib/incidents/participation.server");
   resources = await import("@/lib/resources/resources.server");
-  db = await import("@/lib/adapters/index.server");
 
   const org = await admin.query<{ id: string }>(
     `INSERT INTO airs.organizations (slug, name, agency_type)
@@ -325,7 +323,6 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!enabled) return;
   await admin?.end();
-  await db?.closeDatabase?.();
 });
 
 const dbIt = enabled ? it : it.skip;
@@ -468,12 +465,12 @@ describe("Stage 7 geography enforcement", () => {
   });
 
   dbIt("terminates geography when the incident closes", async () => {
-    const room = await incidents.readIncident(tokenIcA, ORG_A, incidentId, meta);
+    const access = await incidents.readIncident(tokenIcA, ORG_A, incidentId, meta);
     await incidents.closeIncident(
       tokenIcA,
       ORG_A,
       incidentId,
-      { reason: "verification complete", expectedVersion: room.version },
+      { reason: "verification complete", expectedVersion: access.incident.version },
       meta,
     );
     const locations = await map.listResourceLocations(tokenAdminA, ORG_A, { incidentId }, meta);

@@ -96,6 +96,7 @@ DECLARE
   veh   uuid := (SELECT v FROM rids WHERE k='veh');
   person uuid := (SELECT v FROM rids WHERE k='person');
   qual  uuid := (SELECT v FROM rids WHERE k='qual');
+  s_other text;
   n int;
 BEGIN
   PERFORM pg_temp.ok(NOT (SELECT rolsuper OR rolbypassrls FROM pg_roles WHERE rolname = current_user),
@@ -266,8 +267,14 @@ BEGIN
   PERFORM pg_temp.denied(
     format('UPDATE airs.resources SET readiness_status = %L WHERE id = %L', 'not_a_status', ac),
     'an invalid readiness state is rejected');
+  -- every category has its own permitted set; pick one this category lacks
+  SELECT status INTO STRICT s_other FROM (
+    SELECT DISTINCT status FROM airs.resource_category_statuses
+     WHERE status NOT IN (SELECT status FROM airs.resource_category_statuses
+                           WHERE category = 'aircraft')
+     ORDER BY 1 LIMIT 1) x;
   PERFORM pg_temp.denied(
-    format('UPDATE airs.resources SET readiness_status = %L WHERE id = %L', 'charging', ac),
+    format('UPDATE airs.resources SET readiness_status = %L WHERE id = %L', s_other, ac),
     'a readiness state from another category is rejected');
 
   -- 12. retirement keeps the record and its history -----------------------------

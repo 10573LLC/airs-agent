@@ -22,7 +22,20 @@ export type AccessCode =
   | "incident_stale_version"
   | "partner_not_eligible"
   | "participation_inactive"
-  | "invalid_input";
+  | "invalid_input"
+  // Stage 6 — resource registry and readiness
+  | "resource_not_found"
+  | "resource_retired"
+  | "invalid_status_for_category"
+  | "version_conflict"
+  | "incident_closed"
+  | "share_not_found"
+  | "share_revoked"
+  | "person_not_found"
+  | "qualification_not_found"
+  | "shift_conflict"
+  | "assignment_not_found"
+  | "assignment_terminated";
 
 const STATUS: Record<AccessCode, number> = {
   unauthenticated: 401,
@@ -45,6 +58,18 @@ const STATUS: Record<AccessCode, number> = {
   partner_not_eligible: 403,
   participation_inactive: 403,
   invalid_input: 400,
+  resource_not_found: 404,
+  resource_retired: 409,
+  invalid_status_for_category: 400,
+  version_conflict: 409,
+  incident_closed: 409,
+  share_not_found: 404,
+  share_revoked: 409,
+  person_not_found: 404,
+  qualification_not_found: 404,
+  shift_conflict: 409,
+  assignment_not_found: 404,
+  assignment_terminated: 409,
 };
 
 export class AccessError extends Error {

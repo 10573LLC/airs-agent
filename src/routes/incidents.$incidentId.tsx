@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
 import { DENY_MESSAGES, Denied, Panel } from "@/components/incident-ui";
+import { IncidentAssignments } from "@/components/incident-assignments";
 import {
   activateIncidentFn,
   archiveIncidentFn,
@@ -382,6 +383,8 @@ function IncidentDetailPage() {
           </ul>
         )}
       </Panel>
+
+      <IncidentAssignments incidentId={incidentId} />
 
       <Panel title="Room history">
         {history.data && !history.data.ok ? (

@@ -170,6 +170,14 @@ function ConsolePage() {
               <span className="text-muted-foreground"> · {ROLE_LABELS[orgResult.data.roleKey]}</span>
             ) : null}
           </p>
+          <nav className="mt-3 flex gap-4 text-sm">
+            <Link to="/incidents" className="underline">
+              Incident rooms
+            </Link>
+            <Link to="/resources" className="underline">
+              Readiness board
+            </Link>
+          </nav>
         </div>
         <button
           onClick={async () => {

@@ -65,8 +65,9 @@ function SignInPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16">
+      <BrandMark size={80} className="mb-6" />
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-        AIRS Agent
+        {BRAND.name} — {BRAND.tagline}
       </p>
       <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Sign in</h1>
       <p className="mt-2 text-sm text-muted-foreground">

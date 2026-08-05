@@ -7,6 +7,9 @@ import { DENY_MESSAGES } from "@/components/incident-ui";
 import { PageHeading, PageShell, SectionCard, StatusPill, type StatusTone } from "@/components/brand";
 import { getMe } from "@/lib/api/auth.functions";
 import {
+  DISCLOSURE_PROFILE_LABELS,
+} from "@/lib/resources/disclosure";
+import {
   addQualificationFn,
   createResourceFn,
   createShiftFn,

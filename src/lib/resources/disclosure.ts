@@ -36,6 +36,19 @@ export const DISCLOSURE_PROFILE_LABELS: Record<DisclosureProfile, string> = {
   custom: "Custom approved profile",
 };
 
+/**
+ * Profiles an owner may pick in the interface when offering a record to a
+ * partner. `custom` is deliberately excluded: a custom profile is composed from
+ * an explicit field list, not chosen as a level.
+ */
+export const PARTNER_DISCLOSURE_PROFILES = [
+  "summary",
+  "operational",
+  "aviation",
+  "incident_command",
+  "full",
+] as const satisfies readonly DisclosureProfile[];
+
 /** Where a projected value is read from once RLS has already released the row. */
 type FieldSource = "resource" | "detail" | "extra" | "personnel" | "qualification";
 

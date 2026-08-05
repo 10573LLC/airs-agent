@@ -13,7 +13,15 @@ import {
   OPERATIONAL_ROLES,
   SHARING_CLASSIFICATIONS,
 } from "./model";
-import { assertOneOf, assertUuid, text, timestamp } from "./resources.server";
+import { DISCLOSURE_PROFILES, resolveDisclosedFields, type DisclosureProfile } from "./disclosure";
+import {
+  assertCustomFieldKeys,
+  assertDisclosureProfile,
+  assertOneOf,
+  assertUuid,
+  text,
+  timestamp,
+} from "./resources.server";
 
 export interface AssignmentRow {
   id: string;
@@ -25,7 +33,7 @@ export interface AssignmentRow {
   label: string | null;
   assignedRole: string | null;
   status: string;
-  startsAt: string;
+  startsAt?: string;
   endsAt: string | null;
   visibilityClassification: string;
   releaseReason: string | null;
@@ -33,6 +41,10 @@ export interface AssignmentRow {
   createdAt: string;
   updatedAt: string;
   ownerOrgName?: string | null;
+  disclosureProfile?: DisclosureProfile;
+  disclosedFields?: string[];
+  /** Currently valid qualification types. Aviation profile and above only. */
+  currentQualifications?: string[];
 }
 
 const COLUMNS = `
@@ -42,8 +54,58 @@ const COLUMNS = `
   to_json(a.starts_at)#>>'{}' AS "startsAt", to_json(a.ends_at)#>>'{}' AS "endsAt",
   a.visibility_classification AS "visibilityClassification",
   a.release_reason AS "releaseReason", to_json(a.released_at)#>>'{}' AS "releasedAt",
-  to_json(a.created_at)#>>'{}' AS "createdAt", to_json(a.updated_at)#>>'{}' AS "updatedAt"
+  to_json(a.created_at)#>>'{}' AS "createdAt", to_json(a.updated_at)#>>'{}' AS "updatedAt",
+  a.disclosure_profile AS "disclosureProfile", a.custom_field_keys AS "customFieldKeys"
 `;
+
+/**
+ * Field-level disclosure for an assignment owned by ANOTHER organization.
+ * A partner sees the record exists (RLS already allowed the row) but only the
+ * fields the originating organization's profile releases. Withheld properties
+ * are deleted from the payload, never blanked.
+ */
+function discloseAssignment(
+  row: AssignmentRow & { customFieldKeys?: string[] | null; currentQualifications?: string[] | null },
+): AssignmentRow {
+  const profile = (DISCLOSURE_PROFILES as readonly string[]).includes(
+    String(row.disclosureProfile),
+  )
+    ? (row.disclosureProfile as DisclosureProfile)
+    : "summary";
+  const keys = new Set(
+    resolveDisclosedFields({
+      profile,
+      customFieldKeys: row.customFieldKeys ?? [],
+      owner: false,
+    }),
+  );
+  const out: AssignmentRow = {
+    id: row.id,
+    incidentId: row.incidentId,
+    orgId: row.orgId,
+    assignmentType: row.assignmentType,
+    resourceId: row.resourceId,
+    personId: row.personId,
+    label: keys.has("personDisplayName") || keys.has("displayName") ? row.label : null,
+    assignedRole: keys.has("currentIncidentRole") ? row.assignedRole : null,
+    status: keys.has("assignmentStatus") ? row.status : "shared",
+    endsAt: keys.has("assignmentWindow") ? row.endsAt : null,
+    visibilityClassification: row.visibilityClassification,
+    releaseReason: null,
+    releasedAt: row.releasedAt,
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt,
+    ownerOrgName: row.ownerOrgName ?? null,
+    disclosureProfile: profile,
+    disclosedFields: [...keys],
+  };
+  if (keys.has("assignmentWindow")) out.startsAt = row.startsAt;
+  // Aviation profile and above: which qualifications are CURRENT, nothing else.
+  if (keys.has("qualificationType") && row.assignmentType === "person") {
+    out.currentQualifications = row.currentQualifications ?? [];
+  }
+  return out;
+}
 
 /** Reads the room and refuses any write against a closed or archived one. */
 async function assertOpenRoom(
@@ -77,9 +139,13 @@ export async function listIncidentAssignments(
       meta,
     },
     async (ctx, q) =>
-      q.query<AssignmentRow>(
+      (
+        await q.query<AssignmentRow & { customFieldKeys?: string[] | null }>(
         `SELECT ${COLUMNS},
                 COALESCE(r.display_name, p.display_name) AS label,
+                CASE WHEN a.assignment_type = 'person'
+                     THEN airs.assignment_current_qualifications(a.id) END
+                  AS "currentQualifications",
                 CASE WHEN a.org_id = $2 THEN NULL ELSE airs.related_org_name(a.org_id) END
                   AS "ownerOrgName"
            FROM airs.incident_assignments a
@@ -88,7 +154,8 @@ export async function listIncidentAssignments(
           WHERE a.incident_id = $1
           ORDER BY a.created_at DESC`,
         [inc, ctx.orgId],
-      ),
+        )
+      ).map((row) => (row.orgId === ctx.orgId ? row : discloseAssignment(row))),
   );
 }
 
@@ -104,6 +171,8 @@ export async function assignToIncident(
     visibilityClassification?: string | null;
     startsAt?: string | null;
     endsAt?: string | null;
+    disclosureProfile?: string | null;
+    customFieldKeys?: string[] | null;
   },
   meta?: RequestMeta,
 ): Promise<AssignmentRow> {
@@ -118,6 +187,13 @@ export async function assignToIncident(
   const visibility = input.visibilityClassification
     ? assertOneOf(input.visibilityClassification, SHARING_CLASSIFICATIONS, "visibility")
     : "participating_orgs";
+  const profile = input.disclosureProfile
+    ? assertDisclosureProfile(input.disclosureProfile)
+    : ("summary" as DisclosureProfile);
+  const customKeys = profile === "custom" ? assertCustomFieldKeys(input.customFieldKeys) : [];
+  if (profile === "full") {
+    throw new AccessError("invalid_input", "assignments cannot disclose the full record");
+  }
 
   return withAuthorized(
     {
@@ -127,7 +203,7 @@ export async function assignToIncident(
       action: type === "resource" ? "assignment.resource_assigned" : "assignment.person_assigned",
       resourceType: "assignment",
       resourceId: resourceId ?? personId,
-      detail: { incidentId, type },
+      detail: { incidentId, type, disclosureProfile: profile },
       meta,
     },
     async (ctx, q) => {
@@ -154,8 +230,10 @@ export async function assignToIncident(
       const rows = await q.query<AssignmentRow>(
         `INSERT INTO airs.incident_assignments
            (incident_id, org_id, assignment_type, resource_id, person_id, assigned_role,
-            status, starts_at, ends_at, visibility_classification, assigned_by_account)
-         VALUES ($1,$2,$3,$4,$5,$6,'assigned',COALESCE($7::timestamptz, now()),$8::timestamptz,$9,$10)
+            status, starts_at, ends_at, visibility_classification, assigned_by_account,
+            disclosure_profile, custom_field_keys)
+         VALUES ($1,$2,$3,$4,$5,$6,'assigned',COALESCE($7::timestamptz, now()),$8::timestamptz,
+                 $9,$10,$11,$12)
          RETURNING ${COLUMNS.replaceAll("a.", "")}`,
         [
           incidentId,
@@ -168,6 +246,8 @@ export async function assignToIncident(
           timestamp(input.endsAt, "end time"),
           visibility,
           ctx.accountId,
+          profile,
+          customKeys,
         ],
       );
       return rows[0];

@@ -28,6 +28,14 @@ import {
   type ResourceCategory,
   type SharingClassification,
 } from "./model";
+import {
+  DISCLOSURE_PROFILES,
+  FIELD_DEF,
+  isFieldKey,
+  resolveDisclosedFields,
+  type DisclosureProfile,
+  type FieldKey,
+} from "./disclosure";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -79,17 +87,19 @@ export interface ResourceRow {
   category: ResourceCategory;
   displayName: string;
   callsign: string | null;
-  description: string;
   readinessStatus: ReadinessStatus;
-  operationalStatus: string;
-  sharingClassification: SharingClassification;
-  lifecycleStatus: "active" | "retired";
-  restrictedNotes: string | null;
-  retiredAt: string | null;
-  restoredAt: string | null;
   version: number;
   createdAt: string;
   updatedAt: string;
+  // Everything below is disclosure-controlled: absent (not blank, not masked)
+  // when the reader's profile does not include the field.
+  description?: string;
+  operationalStatus?: string;
+  sharingClassification?: SharingClassification;
+  lifecycleStatus?: "active" | "retired";
+  restrictedNotes?: string | null;
+  retiredAt?: string | null;
+  restoredAt?: string | null;
 }
 
 export interface ResourceView extends ResourceRow {
@@ -97,6 +107,10 @@ export interface ResourceView extends ResourceRow {
   relationship: "owner" | "partner";
   ownerOrgName?: string | null;
   detail?: DetailRecord | null;
+  /** Profile actually applied to this payload. Owner reads are always "full". */
+  disclosureProfile?: DisclosureProfile;
+  /** Field keys the reader was entitled to, for an explainable UI. */
+  disclosedFields?: string[];
 }
 
 const COLUMNS = `
@@ -110,9 +124,98 @@ const COLUMNS = `
   to_json(r.updated_at)#>>'{}' AS "updatedAt"
 `;
 
-/** Strips owner-only fields from a record the active organization does not own. */
-function redactForPartner(row: ResourceRow): ResourceRow {
-  return { ...row, restrictedNotes: null };
+/** Base-row columns that carry a disclosure field key. */
+const RESOURCE_FIELD_BY_COLUMN = new Map<string, FieldKey>(
+  (Object.keys(FIELD_DEF) as FieldKey[])
+    .filter((k) => FIELD_DEF[k].source === "resource")
+    .map((k) => [FIELD_DEF[k].column, k]),
+);
+
+/**
+ * Applies a disclosure profile to a row the database has already released.
+ * Withheld properties are DELETED from the payload rather than nulled, so a
+ * partner cannot distinguish "empty" from "withheld", and cannot infer the
+ * existence or length of a value it is not entitled to.
+ */
+function applyDisclosure(
+  row: ResourceRow,
+  detail: DetailRecord | null,
+  keys: readonly FieldKey[],
+): { row: ResourceRow; detail: DetailRecord | null; disclosedFields: string[] } {
+  const allowed = new Set<FieldKey>(keys);
+  const out: Record<string, unknown> = {};
+  for (const [column, value] of Object.entries(row)) {
+    const key = RESOURCE_FIELD_BY_COLUMN.get(column);
+    if (key && !allowed.has(key)) continue;
+    out[column] = value;
+  }
+  // Owner-plane bookkeeping a partner never needs.
+  if (!allowed.has("restrictedNotes")) {
+    delete out.sharingClassification;
+    delete out.retiredAt;
+    delete out.restoredAt;
+  }
+
+  let projectedDetail: DetailRecord | null = null;
+  if (detail) {
+    projectedDetail = {};
+    for (const key of keys) {
+      const def = FIELD_DEF[key];
+      if (def.source !== "detail") continue;
+      if (!(def.column in detail)) continue;
+      projectedDetail[def.column] = detail[def.column] as DetailValue;
+    }
+  }
+  return {
+    row: out as unknown as ResourceRow,
+    detail: projectedDetail,
+    disclosedFields: keys.filter((k) => allowed.has(k)),
+  };
+}
+
+/** Validates a caller-proposed profile. Unknown values fail closed. */
+export function assertDisclosureProfile(value: unknown): DisclosureProfile {
+  return assertOneOf(value, DISCLOSURE_PROFILES, "disclosure profile");
+}
+
+/**
+ * Validates a custom key list. Keys are matched against the server-side
+ * vocabulary; sensitive keys are rejected outright so a custom profile can
+ * never become a back door to the full authorized record.
+ */
+export function assertCustomFieldKeys(values: readonly string[] | null | undefined): string[] {
+  const keys = values ?? [];
+  if (keys.length > 64) throw new AccessError("invalid_input", "too many disclosure fields");
+  const out: string[] = [];
+  for (const key of keys) {
+    if (!isFieldKey(key) || FIELD_DEF[key].sensitive) {
+      throw new AccessError("invalid_input", "unknown disclosure field");
+    }
+    if (!out.includes(key)) out.push(key);
+  }
+  return out;
+}
+
+/** Reads the disclosure the database says the active organization is entitled to. */
+async function effectiveDisclosure(
+  q: QueryRunner,
+  resourceId: string,
+): Promise<{ profile: DisclosureProfile; customFieldKeys: string[]; namedRecipient: boolean }> {
+  const rows = await q.query<{
+    profile: string;
+    custom_field_keys: string[] | null;
+    named_recipient: boolean | null;
+  }>(`SELECT * FROM airs.effective_disclosure($1)`, [resourceId]);
+  const row = rows[0];
+  // Default deny: no row means no live entitlement beyond the summary floor.
+  if (!row) return { profile: "summary", customFieldKeys: [], namedRecipient: false };
+  return {
+    profile: (DISCLOSURE_PROFILES as readonly string[]).includes(row.profile)
+      ? (row.profile as DisclosureProfile)
+      : "summary",
+    customFieldKeys: row.custom_field_keys ?? [],
+    namedRecipient: row.named_recipient === true,
+  };
 }
 
 const DETAIL_TABLES = {
@@ -123,30 +226,16 @@ const DETAIL_TABLES = {
   sensor: "resource_sensors",
 } as const;
 
-/** Owner-only detail columns removed from a partner view (e.g. serial numbers). */
-const PARTNER_HIDDEN_DETAIL = new Set([
-  "serial_number",
-  "restricted_notes",
-  "faa_registration",
-  "agency_identifier",
-]);
-
 async function loadDetail(
   q: QueryRunner,
   resource: ResourceRow,
-  owner: boolean,
 ): Promise<DetailRecord | null> {
   const table = DETAIL_TABLES[detailKindFor(resource.category)];
   const rows = await q.query<DetailRecord>(
     `SELECT * FROM airs.${table} WHERE resource_id = $1`,
     [resource.id],
   );
-  const row = rows[0];
-  if (!row) return null;
-  if (owner) return row;
-  const out: DetailRecord = {};
-  for (const [k, v] of Object.entries(row)) if (!PARTNER_HIDDEN_DETAIL.has(k)) out[k] = v;
-  return out;
+  return rows[0] ?? null;
 }
 
 async function fetchResource(q: QueryRunner, id: string): Promise<ResourceRow> {
@@ -221,10 +310,21 @@ export async function listSharedResources(
     },
     async (ctx, q) => {
       const rows = await q.query<
-        ResourceRow & { incidentId: string; classification: string; ownerOrgName: string | null }
+        ResourceRow & {
+          incidentId: string;
+          classification: string;
+          ownerOrgName: string | null;
+          disclosureProfile: string;
+          customFieldKeys: string[] | null;
+          namedRecipient: boolean;
+        }
       >(
         `SELECT ${COLUMNS}, s.incident_id AS "incidentId", s.classification,
-                airs.related_org_name(r.org_id) AS "ownerOrgName"
+                airs.related_org_name(r.org_id) AS "ownerOrgName",
+                s.disclosure_profile AS "disclosureProfile",
+                s.custom_field_keys AS "customFieldKeys",
+                (s.classification = 'named_recipients'
+                   AND $1 = ANY (s.named_recipient_org_ids)) AS "namedRecipient"
            FROM airs.resources r
            JOIN airs.resource_shares s ON s.resource_id = r.id
           WHERE r.org_id <> $1
@@ -234,13 +334,27 @@ export async function listSharedResources(
           ORDER BY r.display_name`,
         [ctx.orgId, inc],
       );
-      return rows.map((row) => ({
-        ...redactForPartner(row),
-        incidentId: row.incidentId,
-        classification: row.classification,
-        ownerOrgName: row.ownerOrgName,
-        relationship: "partner" as const,
-      }));
+      return rows.map((row) => {
+        const profile = (DISCLOSURE_PROFILES as readonly string[]).includes(row.disclosureProfile)
+          ? (row.disclosureProfile as DisclosureProfile)
+          : "summary";
+        const keys = resolveDisclosedFields({
+          profile,
+          customFieldKeys: row.customFieldKeys ?? [],
+          owner: false,
+          namedRecipient: row.namedRecipient === true,
+        });
+        const projected = applyDisclosure(row, null, keys);
+        return {
+          ...projected.row,
+          incidentId: row.incidentId,
+          classification: row.classification,
+          ownerOrgName: row.ownerOrgName,
+          relationship: "partner" as const,
+          disclosureProfile: profile,
+          disclosedFields: projected.disclosedFields,
+        };
+      });
     },
   );
 }
@@ -265,11 +379,25 @@ export async function readResource(
     async (ctx, q) => {
       const row = await fetchResource(q, resourceId);
       const owner = row.orgId === ctx.orgId;
-      const detail = await loadDetail(q, row, owner);
+      const detail = await loadDetail(q, row);
+      if (owner) {
+        return { ...row, relationship: "owner" as const, detail, disclosureProfile: "full" as const };
+      }
+      // The database, not the request, decides what this organization may see.
+      const entitlement = await effectiveDisclosure(q, row.id);
+      const keys = resolveDisclosedFields({
+        profile: entitlement.profile,
+        customFieldKeys: entitlement.customFieldKeys,
+        owner: false,
+        namedRecipient: entitlement.namedRecipient,
+      });
+      const projected = applyDisclosure(row, detail, keys);
       return {
-        ...(owner ? row : redactForPartner(row)),
-        relationship: owner ? ("owner" as const) : ("partner" as const),
-        detail,
+        ...projected.row,
+        relationship: "partner" as const,
+        detail: projected.detail,
+        disclosureProfile: entitlement.profile,
+        disclosedFields: projected.disclosedFields,
       };
     },
   );
@@ -708,13 +836,17 @@ export interface ShareRow {
   expiresAt: string | null;
   revokedAt: string | null;
   revocationReason: string | null;
+  disclosureProfile: DisclosureProfile;
+  customFieldKeys: string[];
 }
 
 const SHARE_COLUMNS = `
   s.id, s.resource_id AS "resourceId", s.org_id AS "orgId", s.incident_id AS "incidentId",
   s.classification, to_json(s.shared_at)#>>'{}' AS "sharedAt",
   to_json(s.expires_at)#>>'{}' AS "expiresAt", to_json(s.revoked_at)#>>'{}' AS "revokedAt",
-  s.revocation_reason AS "revocationReason"
+  s.revocation_reason AS "revocationReason",
+  s.disclosure_profile AS "disclosureProfile",
+  s.custom_field_keys AS "customFieldKeys"
 `;
 
 export async function shareResource(
@@ -726,6 +858,8 @@ export async function shareResource(
     classification?: string | null;
     expiresAt?: string | null;
     namedRecipientOrgIds?: string[] | null;
+    disclosureProfile?: string | null;
+    customFieldKeys?: string[] | null;
   },
   meta?: RequestMeta,
 ): Promise<ShareRow> {
@@ -736,6 +870,18 @@ export async function shareResource(
     : "participating_orgs";
   const expiresAt = timestamp(input.expiresAt, "expiry");
   const named = (input.namedRecipientOrgIds ?? []).map((v) => assertUuid(v, "recipient org id"));
+  // Default deny: an unspecified profile discloses the summary set only.
+  const profile = input.disclosureProfile
+    ? assertDisclosureProfile(input.disclosureProfile)
+    : ("summary" as DisclosureProfile);
+  const customKeys = profile === "custom" ? assertCustomFieldKeys(input.customFieldKeys) : [];
+  // The full authorized record is only ever addressable to named recipients.
+  if (profile === "full" && classification !== "named_recipients") {
+    throw new AccessError("invalid_input", "full disclosure requires named recipients");
+  }
+  if (profile === "custom" && customKeys.length === 0) {
+    throw new AccessError("invalid_input", "custom disclosure requires at least one field");
+  }
 
   return withAuthorized(
     {
@@ -745,7 +891,7 @@ export async function shareResource(
       action: "resource.shared",
       resourceType: "resource",
       resourceId,
-      detail: { incidentId, classification },
+      detail: { incidentId, classification, disclosureProfile: profile },
       meta,
     },
     async (ctx, q) => {
@@ -766,17 +912,75 @@ export async function shareResource(
       const rows = await q.query<ShareRow>(
         `INSERT INTO airs.resource_shares
            (resource_id, org_id, incident_id, classification, named_recipient_org_ids,
-            shared_by_account, expires_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)
+            shared_by_account, expires_at, disclosure_profile, custom_field_keys)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
          ON CONFLICT (resource_id, incident_id) DO UPDATE
            SET classification = EXCLUDED.classification,
                named_recipient_org_ids = EXCLUDED.named_recipient_org_ids,
                expires_at = EXCLUDED.expires_at,
                shared_by_account = EXCLUDED.shared_by_account,
+               disclosure_profile = EXCLUDED.disclosure_profile,
+               custom_field_keys = EXCLUDED.custom_field_keys,
                revoked_at = NULL, revocation_reason = NULL
            WHERE airs.resource_shares.revoked_at IS NULL
          RETURNING ${SHARE_COLUMNS.replaceAll("s.", "")}`,
-        [resourceId, ctx.orgId, incidentId, classification, named, ctx.accountId, expiresAt],
+        [
+          resourceId,
+          ctx.orgId,
+          incidentId,
+          classification,
+          named,
+          ctx.accountId,
+          expiresAt,
+          profile,
+          customKeys,
+        ],
+      );
+      if (!rows[0]) throw new AccessError("share_revoked");
+      return rows[0];
+    },
+  );
+}
+
+/**
+ * Narrows or widens the disclosure profile of an existing live share. Only the
+ * originating organization may call it, it cannot resurrect a revoked share,
+ * and every change is audited with the before/after profile.
+ */
+export async function setShareDisclosure(
+  token: string | null | undefined,
+  orgId: string | null,
+  input: { resourceId: string; incidentId: string; profile: string; customFieldKeys?: string[] | null },
+  meta?: RequestMeta,
+): Promise<ShareRow> {
+  const resourceId = assertUuid(input.resourceId, "resource id");
+  const incidentId = assertUuid(input.incidentId, "incident id");
+  const profile = assertDisclosureProfile(input.profile);
+  const customKeys = profile === "custom" ? assertCustomFieldKeys(input.customFieldKeys) : [];
+  if (profile === "custom" && customKeys.length === 0) {
+    throw new AccessError("invalid_input", "custom disclosure requires at least one field");
+  }
+
+  return withAuthorized(
+    {
+      token,
+      orgId,
+      permission: "resource.share",
+      action: "resource.disclosure_changed",
+      resourceType: "resource",
+      resourceId,
+      detail: { incidentId, disclosureProfile: profile, fieldCount: customKeys.length },
+      meta,
+    },
+    async (ctx, q) => {
+      const rows = await q.query<ShareRow>(
+        `UPDATE airs.resource_shares s
+            SET disclosure_profile = $4, custom_field_keys = $5, updated_at = now()
+          WHERE s.resource_id = $1 AND s.incident_id = $2 AND s.org_id = $3
+            AND s.revoked_at IS NULL
+            AND ($4 <> 'full' OR s.classification = 'named_recipients')
+          RETURNING ${SHARE_COLUMNS.replaceAll("s.", "")}`,
+        [resourceId, incidentId, ctx.orgId, profile, customKeys],
       );
       if (!rows[0]) throw new AccessError("share_revoked");
       return rows[0];

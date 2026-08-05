@@ -18,7 +18,8 @@
     "brand:verify": "node scripts/verify-brand-assets.mjs",
     "typecheck": "tsc --noEmit",
     "maintenance:expire-incidents": "node scripts/expire-incident-state.mjs",
-    "bootstrap:platform-admin": "node scripts/bootstrap-platform-admin.mjs"
+    "bootstrap:platform-admin": "node scripts/bootstrap-platform-admin.mjs",
+    "platform-admin:setup": "node scripts/platform-admin-setup.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

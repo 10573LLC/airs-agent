@@ -68,6 +68,72 @@ The image runs `node .output/server/index.mjs` — no Lovable services involved.
 **NOT YET VERIFIED:** the Docker build has not been executed in this environment (no Docker daemon
 available during stage 1). Treat `docker compose up --build` as unproven until you run it once.
 
+## 4b. First platform administrator (operator-only)
+
+The AIRS Agent platform owner is **not** an agency account. Provision it with the
+one setup command below; it validates the environment, applies nothing it does not
+have to, and prints a single-use activation URL to your terminal only.
+
+```bash
+export AIRS_BOOTSTRAP_DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/airs_agent"
+export AIRS_PUBLIC_BASE_URL="http://localhost:3000"
+npm run platform-admin:setup -- --email wflack@anconisonpmg.com
+```
+
+### Windows PowerShell
+
+```powershell
+$env:AIRS_BOOTSTRAP_DATABASE_URL="postgresql://USERNAME:PASSWORD@localhost:5432/airs_agent"
+$env:AIRS_PUBLIC_BASE_URL="http://localhost:3000"
+npm run platform-admin:setup -- --email wflack@anconisonpmg.com
+```
+
+Or use the wrapper, which also clears the connection string from the session afterwards:
+
+```powershell
+.\scripts\platform-admin-setup.ps1 -Email wflack@anconisonpmg.com
+.\scripts\platform-admin-setup.ps1 -Email wflack@anconisonpmg.com -ApplyMigrations
+.\scripts\platform-admin-setup.ps1 -Email wflack@anconisonpmg.com -NewLink
+```
+
+If your PostgreSQL runs in the bundled Docker container, the host URL is the same
+(`localhost:5432`), and the operator role is the database owner/superuser — **not**
+`airs_app`. The bootstrap routines are deliberately not executable by the
+application role.
+
+What the command does, in order, exiting non-zero on the first failure:
+
+1. confirms `AIRS_BOOTSTRAP_DATABASE_URL` and `AIRS_PUBLIC_BASE_URL` are set;
+2. connects and reports the PostgreSQL version;
+3. confirms migrations through `0011_platform_administration.sql` are applied
+   (add `--apply-migrations` to run `npm run db:migrate` — the established runner —
+   when they are not);
+4. confirms the `anconison-platform` organization and the `platform_admin` role exist;
+5. confirms `platform_admin` holds **no** incident, resource, map, observation,
+   airspace, personnel, qualification or aircraft permission;
+6. reports whether the address already exists as an account, membership,
+   invitation, agency user record or active session (aggregates only);
+7. stops with "already provisioned" if a platform membership exists — no duplicate
+   account and no duplicate membership is ever created;
+8. reuses a still-valid pending invitation (tokens are stored hashed and cannot be
+   reprinted; pass `--new-link` to revoke it and mint a fresh one), and revokes and
+   replaces expired or unusable ones;
+9. creates exactly one pending, single-use, expiring invitation, sending only the
+   token's SHA-256 hash to the database;
+10. prints the activation URL and its expiry to the terminal, then closes the
+    connection.
+
+Useful flags: `--report-only` (all checks, issues nothing), `--ttl <seconds>`
+(300–604800, default 259200 = 72 h), `--new-link`, `--apply-migrations`.
+
+The command is idempotent: repeated runs never produce a second account, a second
+membership, or a second usable invitation.
+
+The recipient opens the URL, sets a password (PBKDF2-SHA256), and thereafter signs
+in normally at `/auth`. The token appears in no log, no audit record and no file —
+if it scrolls out of the buffer, run again with `--new-link`. Never commit a real
+database URL or activation URL.
+
 ## 5. Environment variables
 
 See `.env.example`. `DATABASE_URL` and `DB_DRIVER` are the only ones consumed by code today;

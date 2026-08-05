@@ -17,7 +17,7 @@ import { Route as IncidentsIndexRouteImport } from './routes/incidents.index'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
-import { Route as ApiPublicCronExpireIncidentsRouteImport } from './routes/api/public/cron/expire-incidents'
+import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/maintenance/expire-incidents'
 
 const IncidentsRoute = IncidentsRouteImport.update({
   id: '/incidents',
@@ -59,10 +59,10 @@ const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   path: '/api/public/health',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicCronExpireIncidentsRoute =
-  ApiPublicCronExpireIncidentsRouteImport.update({
-    id: '/api/public/cron/expire-incidents',
-    path: '/api/public/cron/expire-incidents',
+const ApiMaintenanceExpireIncidentsRoute =
+  ApiMaintenanceExpireIncidentsRouteImport.update({
+    id: '/api/maintenance/expire-incidents',
+    path: '/api/maintenance/expire-incidents',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -74,8 +74,8 @@ export interface FileRoutesByFullPath {
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/incidents/': typeof IncidentsIndexRoute
+  '/api/maintenance/expire-incidents': typeof ApiMaintenanceExpireIncidentsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
-  '/api/public/cron/expire-incidents': typeof ApiPublicCronExpireIncidentsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -84,8 +84,8 @@ export interface FileRoutesByTo {
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/incidents': typeof IncidentsIndexRoute
+  '/api/maintenance/expire-incidents': typeof ApiMaintenanceExpireIncidentsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
-  '/api/public/cron/expire-incidents': typeof ApiPublicCronExpireIncidentsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,8 +96,8 @@ export interface FileRoutesById {
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/incidents/': typeof IncidentsIndexRoute
+  '/api/maintenance/expire-incidents': typeof ApiMaintenanceExpireIncidentsRoute
   '/api/public/health': typeof ApiPublicHealthRoute
-  '/api/public/cron/expire-incidents': typeof ApiPublicCronExpireIncidentsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -109,8 +109,8 @@ export interface FileRouteTypes {
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/incidents/'
+    | '/api/maintenance/expire-incidents'
     | '/api/public/health'
-    | '/api/public/cron/expire-incidents'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -119,8 +119,8 @@ export interface FileRouteTypes {
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/incidents'
+    | '/api/maintenance/expire-incidents'
     | '/api/public/health'
-    | '/api/public/cron/expire-incidents'
   id:
     | '__root__'
     | '/'
@@ -130,8 +130,8 @@ export interface FileRouteTypes {
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/incidents/'
+    | '/api/maintenance/expire-incidents'
     | '/api/public/health'
-    | '/api/public/cron/expire-incidents'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -140,8 +140,8 @@ export interface RootRouteChildren {
   ConsoleRoute: typeof ConsoleRoute
   IncidentsRoute: typeof IncidentsRouteWithChildren
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiMaintenanceExpireIncidentsRoute: typeof ApiMaintenanceExpireIncidentsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
-  ApiPublicCronExpireIncidentsRoute: typeof ApiPublicCronExpireIncidentsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -202,11 +202,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHealthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/cron/expire-incidents': {
-      id: '/api/public/cron/expire-incidents'
-      path: '/api/public/cron/expire-incidents'
-      fullPath: '/api/public/cron/expire-incidents'
-      preLoaderRoute: typeof ApiPublicCronExpireIncidentsRouteImport
+    '/api/maintenance/expire-incidents': {
+      id: '/api/maintenance/expire-incidents'
+      path: '/api/maintenance/expire-incidents'
+      fullPath: '/api/maintenance/expire-incidents'
+      preLoaderRoute: typeof ApiMaintenanceExpireIncidentsRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -232,8 +232,8 @@ const rootRouteChildren: RootRouteChildren = {
   ConsoleRoute: ConsoleRoute,
   IncidentsRoute: IncidentsRouteWithChildren,
   InviteTokenRoute: InviteTokenRoute,
+  ApiMaintenanceExpireIncidentsRoute: ApiMaintenanceExpireIncidentsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,
-  ApiPublicCronExpireIncidentsRoute: ApiPublicCronExpireIncidentsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

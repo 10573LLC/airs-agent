@@ -2,6 +2,47 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Stage 5B — Incident Expiration Operations] 2026-08-05
+
+### Added
+- `db/migrations/0006_maintenance.sql`: dedicated `airs_maintenance` role (NOSUPERUSER,
+  NOBYPASSRLS, no privilege on any tenant table), the append-only non-tenant
+  `airs.maintenance_events` table with forced RLS, and three narrow SECURITY DEFINER entry points —
+  `airs.run_incident_expiration()`, `airs.record_maintenance_event()`,
+  `airs.maintenance_expiration_status()` — plus `airs.strip_sensitive_detail()`.
+- `src/lib/maintenance/` — portable runner (`expiration.server.ts`), endpoint authorization
+  (`endpoint.server.ts`) and shared types.
+- `scripts/expire-incident-state.mjs` — primary CLI runner (plain Node + `pg`), structured JSON
+  logging, exit 0 on sweep or lock-skip, exit 1 on failure. `npm run maintenance:expire-incidents`.
+- `POST /api/maintenance/expire-incidents` — optional, disabled by default, operator-secret only,
+  constant-time compare, POST-only, rate limited, no secret accepted in the query string.
+- `db/tests/incident_expiration.sql` (43 assertions) and `tests/maintenance-expiration.test.ts`
+  (14 tests: 10 endpoint authorization, 4 live runner/concurrency).
+- `db/init/05_maintenance_role_login.sh` and `MAINTENANCE_DB_PASSWORD` for the container path.
+
+### Changed
+- **`EXECUTE` on `airs.expire_incident_state()` revoked from `airs_app`.** The application role can
+  no longer trigger cross-tenant time-based state changes.
+- The compose `expiration-scheduler` now connects as `airs_maintenance` and runs the new CLI runner.
+- `db/scheduler/pg_cron.sql` schedules `airs.run_incident_expiration()` and documents running the
+  job as `airs_maintenance`.
+- `INCIDENT_EXPIRY_TOKEN` / `npm run incidents:expire` / `POST /api/public/cron/expire-incidents`
+  replaced by `AIRS_MAINTENANCE_*`, `npm run maintenance:expire-incidents` and the protected
+  maintenance route. Removed: `src/lib/incidents/expiration.server.ts`,
+  `scripts/expire-incidents.mjs`, `src/routes/api/public/cron/expire-incidents.ts`,
+  `db/tests/expiration.sql`.
+
+### Verified (no incident-room behaviour change)
+- `npm run db:test` — 126 assertions ok, exit 0.
+- `npx vitest run` — 53/53 passing against a live PostgreSQL 17.9 cluster.
+- `npx tsgo --noEmit` clean; portable and editor builds both succeed.
+- CLI proven three ways: as `airs_maintenance` (exit 0), as `airs_app` (permission denied, exit 1),
+  unconfigured (exit 1).
+
+### Still PARTIALLY VERIFIED
+Docker runtime (no daemon available), the pg_cron path (extension not installed), and the Stage 4
+authentication gaps (no MFA, no rate limiting on sign-in, no password-reset delivery).
+
 ## [Stage 5A — Branding Integration and Incident Expiration Operations] 2026-08-05
 
 ### Added

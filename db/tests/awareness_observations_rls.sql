@@ -316,15 +316,17 @@ BEGIN
   PERFORM set_config('airs.account_id', '', true);
 END $$;
 
+RESET ROLE;
+UPDATE airs.memberships SET status = 'revoked'
+ WHERE account_id = (SELECT v FROM aids WHERE k='acct_susp');
+SET ROLE airs_app;
+
 DO $$
 DECLARE
   org_a uuid := (SELECT v FROM aids WHERE k='org_a');
   acct_s uuid := (SELECT v FROM aids WHERE k='acct_susp');
   n int;
 BEGIN
-  RESET ROLE;
-  UPDATE airs.memberships SET status = 'revoked' WHERE account_id = acct_s;
-  SET ROLE airs_app;
   PERFORM set_config('airs.org_id', org_a::text, true);
   PERFORM set_config('airs.account_id', acct_s::text, true);
   SELECT count(*) INTO n FROM airs.observations;
@@ -670,9 +672,7 @@ END $$;
 -- ===========================================================================
 DO $$
 DECLARE
-  org_a uuid := (SELECT v FROM aids WHERE k='org_a');
   org_b uuid := (SELECT v FROM aids WHERE k='org_b');
-  closed_room uuid := (SELECT v FROM aids WHERE k='closed_room');
   part uuid := (SELECT v FROM aids WHERE k='obs_participating');
   n int;
 BEGIN
@@ -681,11 +681,20 @@ BEGIN
   PERFORM set_config('airs.org_id', org_b::text, true);
   SELECT count(*) INTO n FROM airs.observations WHERE id = part;
   PERFORM pg_temp.ok(n = 1, 'incident participation grants access to a participating-orgs observation');
+END $$;
 
-  RESET ROLE;
-  UPDATE airs.incident_rooms SET status = 'closed', closed_at = now() WHERE id = closed_room;
-  SET ROLE airs_app;
+RESET ROLE;
+UPDATE airs.incident_rooms SET status = 'closed', closed_at = now()
+ WHERE id = (SELECT v FROM aids WHERE k='closed_room');
+SET ROLE airs_app;
 
+DO $$
+DECLARE
+  org_a uuid := (SELECT v FROM aids WHERE k='org_a');
+  org_b uuid := (SELECT v FROM aids WHERE k='org_b');
+  closed_room uuid := (SELECT v FROM aids WHERE k='closed_room');
+  probe uuid;
+BEGIN
   PERFORM set_config('airs.org_id', org_a::text, true);
   PERFORM pg_temp.denied(format(
     $q$INSERT INTO airs.observations
@@ -693,13 +702,21 @@ BEGIN
        VALUES ('%s','%s','other_observation','too late','none','other_source')$q$,
     org_a, closed_room),
     'a closed incident room rejects a new incident-scoped observation');
-  PERFORM pg_temp.denied(format(
-    $q$INSERT INTO airs.observation_shares
-         (org_id, observation_id, partner_org_id, incident_id)
-       SELECT '%s', id, '%s', '%s' FROM airs.observations
-        WHERE org_id = '%s' AND incident_id IS NULL LIMIT 1$q$,
-    org_a, org_b, closed_room, org_a),
-    'a closed incident room rejects new incident-scoped sharing to a partner');
+
+  -- A share scoped to a room that is already closed conveys nothing, because
+  -- the entitlement is re-evaluated against live incident access on every read.
+  SELECT v INTO probe FROM aids WHERE k='obs_unshared';
+  UPDATE airs.observations SET classification = 'participating_orgs' WHERE id = probe;
+  INSERT INTO airs.observation_shares
+       (org_id, observation_id, partner_org_id, incident_id, disclosure_profile,
+        precision_policy)
+       VALUES (org_a, probe, org_b, closed_room, 'operational', 'generalized');
+
+  PERFORM set_config('airs.org_id', org_b::text, true);
+  PERFORM pg_temp.ok(airs.has_incident_access(closed_room) IS FALSE,
+    'a closed incident room grants a former participant no incident access');
+  PERFORM pg_temp.ok((SELECT count(*) FROM airs.observations WHERE id = probe) = 0,
+    'a share scoped to a closed incident room conveys no access');
 END $$;
 
 -- ===========================================================================
@@ -750,11 +767,8 @@ END $$;
 DO $$
 DECLARE
   org_a uuid := (SELECT v FROM aids WHERE k='org_a');
-  org_b uuid := (SELECT v FROM aids WHERE k='org_b');
   room  uuid := (SELECT v FROM aids WHERE k='room');
-  part  uuid := (SELECT v FROM aids WHERE k='obs_participating');
-  wh    uuid := (SELECT v FROM aids WHERE k='obs_withheld');
-  r record; n int;
+  r record;
 BEGIN
   PERFORM set_config('airs.org_id', org_a::text, true);
   SELECT * INTO r FROM airs.terminate_incident_observations(room);
@@ -762,11 +776,20 @@ BEGIN
     'incident closure revokes every share scoped to the room');
   PERFORM pg_temp.ok(r.observations_closed >= 1,
     'incident closure closes every still-open observation filed into the room');
+END $$;
 
-  RESET ROLE;
-  UPDATE airs.incident_rooms SET status = 'closed', closed_at = now() WHERE id = room;
-  SET ROLE airs_app;
+RESET ROLE;
+UPDATE airs.incident_rooms SET status = 'closed', closed_at = now()
+ WHERE id = (SELECT v FROM aids WHERE k='room');
+SET ROLE airs_app;
 
+DO $$
+DECLARE
+  org_b uuid := (SELECT v FROM aids WHERE k='org_b');
+  part  uuid := (SELECT v FROM aids WHERE k='obs_participating');
+  wh    uuid := (SELECT v FROM aids WHERE k='obs_withheld');
+  n int;
+BEGIN
   PERFORM set_config('airs.org_id', org_b::text, true);
   SELECT count(*) INTO n FROM airs.observations WHERE id IN (part, wh);
   PERFORM pg_temp.ok(n = 0, 'closing the incident removes every temporary partner entitlement');

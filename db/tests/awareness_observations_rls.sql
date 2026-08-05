@@ -625,9 +625,13 @@ BEGIN
   INSERT INTO airs.observation_annotations
        (org_id, observation_id, annotation_type, body, author_account)
        VALUES (org_a, obs, 'reviewer_assessment', 'Confirmed against the second report.', acct);
-  PERFORM pg_temp.denied(format(
-    $q$UPDATE airs.observation_annotations SET body = 'rewritten' WHERE observation_id = '%s'$q$, obs),
-    'a reviewer annotation cannot be rewritten');
+  -- Append-only is enforced twice: no UPDATE policy grants a row to rewrite,
+  -- and the trigger refuses even if one ever did.
+  UPDATE airs.observation_annotations SET body = 'rewritten' WHERE observation_id = obs;
+  PERFORM pg_temp.ok(NOT FOUND, 'no row-level policy exposes an annotation for rewriting');
+  SELECT body INTO body FROM airs.observation_annotations WHERE observation_id = obs;
+  PERFORM pg_temp.ok(body = 'Confirmed against the second report.',
+    'the reviewer annotation text is unchanged');
   PERFORM pg_temp.denied(format(
     $q$DELETE FROM airs.observation_annotations WHERE observation_id = '%s'$q$, obs),
     'a reviewer annotation cannot be deleted');

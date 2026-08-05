@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -19,6 +20,11 @@ import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$inc
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/maintenance/expire-incidents'
 
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IncidentsRoute = IncidentsRouteImport.update({
   id: '/incidents',
   path: '/incidents',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
+  '/resources': typeof ResourcesRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/incidents/': typeof IncidentsIndexRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
+  '/resources': typeof ResourcesRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/incidents': typeof IncidentsIndexRoute
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
+  '/resources': typeof ResourcesRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
   '/incidents/': typeof IncidentsIndexRoute
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/console'
     | '/incidents'
+    | '/resources'
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/incidents/'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/console'
+    | '/resources'
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/incidents'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/console'
     | '/incidents'
+    | '/resources'
     | '/incidents/$incidentId'
     | '/invite/$token'
     | '/incidents/'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ConsoleRoute: typeof ConsoleRoute
   IncidentsRoute: typeof IncidentsRouteWithChildren
+  ResourcesRoute: typeof ResourcesRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiMaintenanceExpireIncidentsRoute: typeof ApiMaintenanceExpireIncidentsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -146,6 +159,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/incidents': {
       id: '/incidents'
       path: '/incidents'
@@ -231,6 +251,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ConsoleRoute: ConsoleRoute,
   IncidentsRoute: IncidentsRouteWithChildren,
+  ResourcesRoute: ResourcesRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiMaintenanceExpireIncidentsRoute: ApiMaintenanceExpireIncidentsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,

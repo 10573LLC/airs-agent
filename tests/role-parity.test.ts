@@ -20,6 +20,7 @@ import {
 const SEED_FILES = [
   "db/migrations/0002_roles_seed.sql",
   "db/migrations/0005_incident_rooms.sql",
+  "db/migrations/0007_resource_registry.sql",
 ];
 const sources = SEED_FILES.map((f) => readFileSync(join(process.cwd(), f), "utf8"));
 

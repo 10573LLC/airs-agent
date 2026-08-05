@@ -2,6 +2,29 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Stage 6 closure — Disclosure Hardening] 2026-08-12
+
+### Added
+- `src/lib/resources/disclosure.ts` — portable field-level disclosure model: 60 field keys, 12 of
+  them sensitive, five partner-selectable profiles (`summary`, `operational`, `aviation`,
+  `incident_command`, `full`) plus `custom`, cumulative widening, and `projectFields()`, which
+  deletes withheld properties instead of nulling them.
+- `db/migrations/0008_disclosure_profiles.sql` — `airs.disclosure_fields`,
+  `airs.disclosure_profile_fields`, `airs.disclosure_allows()`, `airs.effective_disclosure()`,
+  `airs.assignment_current_qualifications()`, and `disclosure_profile` / `custom_field_keys` on
+  `airs.resource_shares` and `airs.incident_assignments` with a sensitivity-enforcing trigger.
+- `db/tests/disclosure_projection.sql` — 63 assertions, run as `airs_app` with no superuser and no
+  `BYPASSRLS`, covering the summary floor, cumulative widening, sensitive-field exclusion, custom
+  profiles, named recipients, narrowing, revocation and room closure.
+- `tests/disclosure.test.ts` — 12 pure tests asserting SQL/TypeScript parity and projection.
+
+### Changed
+- `resources.server.ts` and `assignments.server.ts` resolve disclosure per read instead of applying
+  a flat redaction list; `shareResourceFn`, `assignToIncidentFn` and the new `setShareDisclosureFn`
+  accept a profile.
+- The readiness board names the profile in effect on every partner-shared record, and the incident
+  assignment panel lets the owning agency choose the profile when offering a record.
+
 ## [Stage 5B — Incident Expiration Operations] 2026-08-05
 
 ### Added

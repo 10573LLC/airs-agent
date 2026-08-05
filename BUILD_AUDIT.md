@@ -584,3 +584,31 @@ with strictly less privilege. The public `/api/public/cron/...` surface no longe
 | Revocation, expiry and closure end access | VERIFIED | `airs.terminate_incident_resource_access()` + closure assertions | — |
 | Forced RLS and default deny | VERIFIED | `db/tests/resource_registry_rls.sql` — 52 assertions | run on PG 17.9, documented target is 16 |
 | Earlier stages intact | VERIFIED | `npm run db:test` 178 assertions green; `tsgo` clean | Docker/pg_cron paths reviewed, not executed this stage |
+
+## Stage 6 closure verification and disclosure hardening — 2026-08-12
+
+| Verification item | Status | Evidence | Exact command or file | Remaining limitation |
+| --- | --- | --- | --- | --- |
+| Fresh-database reproducibility | VERIFIED | cluster dropped and rebuilt from `db/migrations/0001…0008` + seed, no manual repair | `npm run db:migrate && npm run db:seed` | PostgreSQL 17.9, documented target is 16 |
+| Full SQL suite | VERIFIED | 241 assertions ok, exit 0 (was 178; +63 disclosure assertions) | `npm run db:test` | disclosure suite runs as `airs_app`, asserted non-superuser |
+| Full TypeScript suite | VERIFIED | 61/61 passing against a live database (was 53; +12 disclosure tests, 4 skipped need the maintenance URL) | `npx vitest run` with `TEST_DATABASE_URL`, `TEST_ADMIN_DATABASE_URL` | — |
+| Permission parity | VERIFIED | 9 roles / 38 permissions / 92 grants identical in SQL and TypeScript; disclosure adds no new permission and reuses `resource.share` | `db/tests/role_parity.sql`, `tests/role-parity.test.ts` | — |
+| Typecheck | VERIFIED | no diagnostics | `npx tsgo --noEmit` | — |
+| Both builds | VERIFIED | portable build and editor build both complete; `dist/server` + `dist/client` emitted | `npm run build`, `LOVABLE_SANDBOX=1 npm run build` | Worker path exercised only in the sandbox |
+| Preview | VERIFIED | `/`, `/resources`, `/incidents` render, unique titles, zero console errors, unauthenticated view is default-deny ("Session required") | headless load of `http://localhost:8080` | — |
+| Disclosure vocabulary parity | VERIFIED | 60 fields / 12 sensitive / 242 profile-grid rows identical in `airs.disclosure_fields` and `disclosure.ts` | `tests/disclosure.test.ts`, `db/tests/disclosure_projection.sql` | vocabulary is fixed; adding a field is a migration |
+| Sensitive fields never partner-visible | VERIFIED | excluded from every partner profile and rejected inside a custom profile at both the trigger and the service layer | `disclosure_projection.sql` assertions | — |
+| Receiving org cannot widen | VERIFIED | `airs_app` denied `INSERT` on both reference tables; cross-tenant profile change denied as `tenant_mismatch` | `disclosure_projection.sql` | — |
+| Narrowing, revocation, closure end field disclosure | VERIFIED | narrowed profile applies to the next read; revoked share and closed room both resolve to zero disclosure | `disclosure_projection.sql` | — |
+| Qualification expiry | VERIFIED | expired qualification stops being current the same day; partners see currency only, never the record | `disclosure_projection.sql` | expiry is evaluated per read, no notification |
+| Documentation | UPDATED | disclosure model documented end to end | `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`, `CHANGELOG.md` | — |
+
+### Honest limitations
+
+1. Disclosure is per share and per assignment, not per individual recipient user.
+2. The field vocabulary is fixed in migration `0008`; adding a field requires a migration plus the
+   matching TypeScript key, and the parity tests fail until both exist.
+3. Custom profiles are composed server-side only — there is no interface yet for building one.
+4. There is no disclosure-history view; changes are recoverable from `airs.audit_events`, not from a
+   dedicated screen.
+5. Docker and pg_cron paths were reviewed, not executed, in this environment.

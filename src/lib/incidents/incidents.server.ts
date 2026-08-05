@@ -711,6 +711,20 @@ export async function closeIncident(
         RETURNING id, partner_org_id AS partner`,
         [incidentId],
       );
+      // Stage 7: closing a room also ends its geography. Operating areas are
+      // completed, incident map features are archived and every temporary
+      // position is superseded — in this same transaction, so a partner can
+      // never observe a closed room that still carries live coordinates.
+      const geography = await q.query<{
+        areas_completed: number;
+        features_archived: number;
+        positions_expired: number;
+      }>(`SELECT * FROM airs.terminate_incident_geography($1)`, [incidentId]);
+      const geo = geography[0] ?? {
+        areas_completed: 0,
+        features_archived: 0,
+        positions_expired: 0,
+      };
       const room = await transition(
         ctx,
         q,

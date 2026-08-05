@@ -1,9 +1,10 @@
 // Portable MapLibre GL JS renderer.
 //
 // MapLibre is BSD-licensed and self-hostable; nothing here depends on a hosted
-// map service. The basemap style URL is a prop with a plain raster fallback, so
-// an operator can point it at an internal tile server and the component keeps
-// working offline-by-configuration.
+// map service. The basemap style URL is supplied by the operator
+// (VITE_MAP_STYLE_URL). When it is absent the component renders an explicit
+// configuration notice: it never silently selects a third-party tile provider,
+// and it never shows a blank map frame pretending to be a basemap.
 //
 // The renderer only DRAWS what the server released. It never fetches a
 // coordinate, never fills in a missing geometry and never widens precision:
@@ -22,8 +23,10 @@ export interface MapLayerItem {
 
 export interface CopMapProps {
   items: readonly MapLayerItem[];
-  /** Override for an internal/offline tile server. */
+  /** Operator-supplied style for an internal/offline tile server. */
   styleUrl?: string;
+  /** Attribution the operator's tile licence requires. Always displayed. */
+  attribution?: string;
   className?: string;
   onPickPoint?: (lngLat: [number, number]) => void;
   picking?: boolean;
@@ -37,23 +40,7 @@ const TONE: Record<MapLayerItem["tone"], string> = {
   muted: "#94a3b8",
 };
 
-/** Raster fallback style: no API key, no vendor SDK, swappable for local tiles. */
-function fallbackStyle(): Record<string, unknown> {
-  return {
-    version: 8,
-    sources: {
-      base: {
-        type: "raster",
-        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-        tileSize: 256,
-        attribution: "© OpenStreetMap contributors",
-      },
-    },
-    layers: [{ id: "base", type: "raster", source: "base" }],
-  };
-}
-
-export function CopMap({ items, styleUrl, className, onPickPoint, picking }: CopMapProps) {
+export function CopMap({ items, styleUrl, attribution, className, onPickPoint, picking }: CopMapProps) {
   const holder = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<unknown>(null);
   const pickRef = useRef(onPickPoint);
@@ -77,6 +64,7 @@ export function CopMap({ items, styleUrl, className, onPickPoint, picking }: Cop
   // MapLibre touches window/document at import time, so it is imported after
   // hydration rather than at module scope.
   useEffect(() => {
+    if (!styleUrl) return;
     let disposed = false;
     let map: import("maplibre-gl").Map | null = null;
     (async () => {
@@ -85,7 +73,7 @@ export function CopMap({ items, styleUrl, className, onPickPoint, picking }: Cop
       if (disposed || !holder.current) return;
       map = new maplibre.Map({
         container: holder.current,
-        style: (styleUrl ?? fallbackStyle()) as never,
+        style: styleUrl,
         center: [-73.7562, 42.6526], // Albany, NY — the demo agencies' area
         zoom: 11,
         attributionControl: { compact: true },
@@ -159,14 +147,42 @@ export function CopMap({ items, styleUrl, className, onPickPoint, picking }: Cop
     else map.once("load", apply);
   }, [collection]);
 
+  // No configured provider: say so plainly. The authorized feature, area and
+  // position lists elsewhere on the page remain the working alternative.
+  if (!styleUrl) {
+    const drawn = items.filter((i) => i.geometry).length;
+    return (
+      <div
+        role="status"
+        className={`${className ?? ""} flex flex-col items-start justify-center gap-2 bg-muted/30 p-6`}
+      >
+        <p className="text-sm font-semibold text-foreground">Basemap not configured</p>
+        <p className="max-w-prose text-sm text-muted-foreground">
+          No map style URL is set, so no basemap is loaded and no third-party tile provider is
+          contacted. Set <code>VITE_MAP_STYLE_URL</code> to a MapLibre style served by your own or
+          an approved tile service, then reload.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {drawn} authorized item{drawn === 1 ? "" : "s"} with released geography are listed below;
+          the lists remain fully usable without a basemap.
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div
-      ref={holder}
-      className={className}
-      style={{ cursor: picking ? "crosshair" : undefined }}
-      role="application"
-      aria-label="Common operating picture map"
-    />
+    <div className={className}>
+      <div
+        ref={holder}
+        className="h-full w-full"
+        style={{ cursor: picking ? "crosshair" : undefined }}
+        role="application"
+        aria-label="Common operating picture map"
+      />
+      {attribution ? (
+        <p className="px-2 py-1 text-xs text-muted-foreground">{attribution}</p>
+      ) : null}
+    </div>
   );
 }
 

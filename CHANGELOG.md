@@ -259,3 +259,38 @@ clean-clone install.
 - Map awareness layer: observations released with geography are drawn on the common
   operating picture behind their own toggle; withheld reports are counted, not placed.
 - Console navigation now links the common operating picture and awareness board.
+
+## Stage 8 closure — Manual Airspace Observations and Awareness Layer (2026-08-18)
+
+Closure pass. No new operational features; the map-click coordinate picker
+remains deliberately out of scope.
+
+### Fixed
+- **Test isolation.** Database-backed TypeScript suites left accounts,
+  memberships, organizations, observations and audit evidence behind, so
+  `db/tests/auth_rls.sql` failed on a second run unless the database was
+  rebuilt. Added `tests/support/fixtures.ts` (`cleanupRunFixtures`,
+  `ensureTrustedAgency`) and wired it into `tests/auth-integration.test.ts`,
+  `tests/awareness.test.ts` and `tests/map-geography.test.ts`.
+- **Shared demo state.** The Albany PD → Albany County trusted-agency approval
+  is now created only when absent and removed only by the run that created it.
+- **Brittle assertion.** `db/tests/auth_rls.sql` asserted a table-wide
+  membership count; it now asserts the four specific fixture membership ids,
+  which is a stronger check and immune to unrelated rows.
+
+### Added
+- `vitest.config.ts` with `fileParallelism: false` (correctness, not speed —
+  suite files share the demo organizations).
+- `DESIGN_SYSTEM.md`, documenting the token layer, awareness status palette and
+  the disclosure-absence convention.
+- Stage 8 sections titled *Manual Airspace Observations and Awareness Layer* in
+  `BUILD_AUDIT.md`, `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md` and
+  `LOCAL_SETUP.md`.
+
+### Verified
+- `tsc --noEmit` — exit 0.
+- `npm run db:test` — 408/408 assertions, three consecutive runs.
+- `vitest run` — 7 files, 124 passed / 4 skipped, three consecutive runs.
+- Row census after each of the three cycles: 2 organizations, 0 accounts,
+  0 memberships, 0 observations, 0 audit events, 0 trusted-agency rows —
+  identical to the seeded state, with no rebuild between cycles.

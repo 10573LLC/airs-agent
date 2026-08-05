@@ -654,3 +654,92 @@ No manual schema repair was performed.
 No Stage 8 work, external integration, telemetry, ADS-B, Remote ID, weather or
 vendor connector was started. The only code changes were the missing Stage 7
 test suite and the map-provider/layer-control defects listed above.
+
+## Stage 8 — Manual Airspace Observations and Awareness Layer (closure, 2026-08-18)
+
+Closure pass only. No new operational features, no map-click coordinate picker.
+
+### 1. Test isolation defect
+
+**Symptom.** After a TypeScript run, `npm run db:test` failed at
+`db/tests/auth_rls.sql:229` with
+`AUTH-RLS FAIL: org A context: sees the four org A memberships`. The database
+had to be dropped and rebuilt before the SQL suite would pass again.
+
+**Root cause (two independent faults).**
+1. The database-backed TypeScript suites (`auth-integration`, `map-geography`,
+   `awareness`) created accounts, users, memberships, organizations, incident
+   rooms, resources, map features, observations and audit evidence and removed
+   only a fraction of it. Residue accumulated linearly: after three runs the
+   database held 8 organizations, 45 accounts, 45 observations and 285 audit
+   events instead of the seeded 2/0/0/0.
+2. One SQL assertion counted a whole table (`count(*) FROM airs.memberships = 4`)
+   rather than the fixtures it had created, so any unrelated org A membership
+   broke it.
+
+**Fix.**
+- Added `tests/support/fixtures.ts` with `cleanupRunFixtures()` and
+  `ensureTrustedAgency()`. Every suite tags its accounts with a per-run token
+  and, in `afterAll`, deletes every row reachable from that run's accounts,
+  users and organizations in foreign-key-safe order across the awareness,
+  resource, geography, incident and identity planes. Append-only triggers
+  (audit events, observation annotations) are suspended for the duration of the
+  delete via `session_replication_role = replica` on the fixture-owner
+  connection only; application roles never run in that mode.
+- Shared demo-org state is restored, not just fixture rows:
+  `ensureTrustedAgency()` reports whether it created the Albany PD → Albany
+  County trust approval, and only a run that created it removes it.
+- Added `vitest.config.ts` with `fileParallelism: false`. This is a correctness
+  requirement: concurrent suite files would let one suite's restoration of a
+  shared demo row land while another suite still depends on it.
+- `db/tests/auth_rls.sql` now asserts against the four fixture membership ids
+  (`mship_a`, `mship_invited`, `mship_suspended`, `mship_revoked`) instead of a
+  table-wide count. The assertion is strictly stronger: it proves the org A
+  context sees each specific fixture row.
+
+**Proof.** Three consecutive cycles of `db:test` + `vitest run` against the same
+database, with a row census taken after each cycle:
+
+| Cycle | SQL assertions | TypeScript | orgs | accounts | observations | memberships | audit events |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| 1 | 408 pass, exit 0 | 124 passed, 4 skipped, exit 0 | 2 | 0 | 0 | 0 | 0 |
+| 2 | 408 pass, exit 0 | 124 passed, 4 skipped, exit 0 | 2 | 0 | 0 | 0 | 0 |
+| 3 | 408 pass, exit 0 | 124 passed, 4 skipped, exit 0 | 2 | 0 | 0 | 0 | 0 |
+
+`airs.trusted_agencies` returns to 0 rows after every cycle. The database is
+byte-for-byte back to its seeded state; no rebuild is required between runs.
+Before the fix, cycle 2 exited 3.
+
+### 2. Verification results (this pass)
+
+| Check | Command | Result |
+| --- | --- | --- |
+| Typecheck | `tsc --noEmit` | exit 0, no diagnostics |
+| SQL assertions | `npm run db:test` | 408/408, three times |
+| TypeScript suite | `vitest run` | 7 files, 124 passed / 4 skipped, three times |
+| Fresh migration chain | `0001 → 0010` + `db/seed/demo_orgs.sql` | exit 0 on an empty database (PostgreSQL 17.9 / PostGIS 3.6.1) |
+
+The 4 skips are pre-existing and unrelated to Stage 8 (they gate on optional
+environment).
+
+### 3. Documentation closure
+
+`BUILD_AUDIT.md`, `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`,
+`LOCAL_SETUP.md`, `CHANGELOG.md` each carry a Stage 8 section titled
+*Manual Airspace Observations and Awareness Layer*. `DESIGN_SYSTEM.md` was
+created in this pass (it did not previously exist) and documents the token
+layer, the awareness status palette and the disclosure-absence convention.
+
+### 4. Stage 8 status
+
+| Item | Status | Evidence | Limitation |
+| --- | --- | --- | --- |
+| Observation schema + forced RLS | COMPLETE | `db/migrations/0010_awareness_observations.sql` (7 tables) | — |
+| Awareness RBAC | COMPLETE | 12 `observation.*` permissions in `src/lib/rbac/roles.ts` | — |
+| Service layer | COMPLETE | `src/lib/awareness/awareness.server.ts` | — |
+| Awareness interface | COMPLETE | `/awareness`, `/awareness/$observationId` | No map-click point picker (deferred by instruction) |
+| Map awareness layer | COMPLETE | layer toggle in `src/routes/map.tsx` | Withheld reports are counted, never plotted |
+| Dedicated SQL verification | VERIFIED | `db/tests/awareness_observations_rls.sql`, 99 assertions | — |
+| Dedicated TS verification | VERIFIED | `tests/awareness.test.ts`, 41/41 | — |
+| Repeatable test runs | VERIFIED | table above, three cycles, no rebuild | Requires the fixture-owner role for cleanup |
+| Documentation | COMPLETE | seven documents | — |

@@ -177,6 +177,12 @@ function ConsolePage() {
             <Link to="/resources" className="underline">
               Readiness board
             </Link>
+            <Link to="/map" className="underline">
+              Common operating picture
+            </Link>
+            <Link to="/awareness" className="underline">
+              Awareness board
+            </Link>
           </nav>
         </div>
         <button

@@ -859,7 +859,7 @@ describe("incident closure ends the awareness plane it created", () => {
       tokenIcA,
       ORG_A,
       incidentId,
-      { expectedVersion: current.version, reason: "Awareness verification complete." },
+      { expectedVersion: current.incident.version, reason: "Awareness verification complete." },
       meta,
     );
 

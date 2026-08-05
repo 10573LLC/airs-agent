@@ -291,7 +291,8 @@ BEGIN
   SELECT count(*) INTO n FROM airs.qualifications q
    WHERE q.id = qual AND airs.qualification_is_current(q.*);
   PERFORM pg_temp.ok(n = 1, 'a verified, unexpired qualification is current');
-  UPDATE airs.qualifications SET expires_on = current_date - 1 WHERE id = qual;
+  UPDATE airs.qualifications SET effective_date = current_date - 2, expires_on = current_date - 1
+   WHERE id = qual;
   SELECT count(*) INTO n FROM airs.qualifications q
    WHERE q.id = qual AND airs.qualification_is_current(q.*);
   PERFORM pg_temp.ok(n = 0, 'an expired qualification is never current');

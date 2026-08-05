@@ -371,6 +371,7 @@ function MapPage() {
                 ["Operating areas", showAreas, setShowAreas] as const,
                 ["Map features", showFeatures, setShowFeatures] as const,
                 ["Reported positions", showPositions, setShowPositions] as const,
+                ["Awareness observations", showObservations, setShowObservations] as const,
               ]
             ).map(([label, checked, set]) => (
               <label key={label} className="flex items-center gap-2 text-xs text-foreground">

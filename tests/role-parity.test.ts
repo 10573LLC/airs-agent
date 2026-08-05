@@ -22,6 +22,7 @@ const SEED_FILES = [
   "db/migrations/0005_incident_rooms.sql",
   "db/migrations/0007_resource_registry.sql",
   "db/migrations/0009_common_operating_picture.sql",
+  "db/migrations/0010_awareness_observations.sql",
 ];
 const sources = SEED_FILES.map((f) => readFileSync(join(process.cwd(), f), "utf8"));
 

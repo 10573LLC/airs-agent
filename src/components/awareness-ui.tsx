@@ -27,7 +27,7 @@ export const AWARENESS_DENY_MESSAGES: Record<string, string> = {
 };
 
 export const FRESHNESS_TONE: Record<ObservationFreshness, StatusTone> = {
-  fresh: "active",
+  current: "active",
   recent: "info",
   aging: "caution",
   stale: "critical",
@@ -43,13 +43,13 @@ export const URGENCY_TONE: Record<UrgencyLevel, StatusTone> = {
 };
 
 export const VERIFICATION_TONE: Record<VerificationStatus, StatusTone> = {
-  unverified: "neutral",
+  unreviewed: "neutral",
   under_review: "info",
   corroborated: "info",
   confirmed: "active",
   disputed: "caution",
-  refuted: "critical",
-  unfounded: "critical",
+  rejected: "critical",
+  unable_to_verify: "caution",
 };
 
 export function FreshnessPill({ value }: { value: ObservationFreshness }) {

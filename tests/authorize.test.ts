@@ -50,8 +50,26 @@ describe("tenant isolation", () => {
 });
 
 describe("role model", () => {
-  it("defines all nine roles", () => {
-    expect(ROLE_KEYS).toHaveLength(9);
+  it("defines the nine agency roles plus the platform role", () => {
+    expect(ROLE_KEYS).toHaveLength(10);
+    expect(ROLE_KEYS).toContain("platform_admin");
+  });
+
+  it("gives the platform administrator no agency operational permission", () => {
+    const granted = permissionsForRoles(["platform_admin"]);
+    for (const p of granted) {
+      expect(p.startsWith("incident.")).toBe(false);
+      expect(p.startsWith("resource.")).toBe(false);
+      expect(p.startsWith("map.")).toBe(false);
+      expect(p.startsWith("observation.")).toBe(false);
+      expect(p.startsWith("airspace.")).toBe(false);
+    }
+    // And it can never reach another tenant's records: authorize() denies on
+    // tenant mismatch before any permission is consulted.
+    expect(
+      authorize(P(["platform_admin"]), { resourceOrgId: ORG_B, permission: "incident.read" })
+        .allowed,
+    ).toBe(false);
   });
 
   it("only grants permissions from the declared catalogue", () => {

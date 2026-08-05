@@ -138,9 +138,11 @@ A partner may only accept/decline/withdraw its own row (`incident_participant_gu
 Helpers (all `SECURITY DEFINER`, executable by `airs_app` only):
 `airs.has_incident_access(uuid)` (the single definition of partner visibility),
 `airs.pending_incident_invitations()`, `airs.related_org_name(uuid)`,
-`airs.expire_incident_state()` (time-based sweep that only ever removes access and audits every change).
+`airs.expire_incident_state()` (time-based sweep that only ever removes access and audits every
+change — executable by `airs_maintenance` only, see below).
 
-Role model is now 9 roles / 23 permissions / 52 grants. Apply order: `0001 → 0002 → 0003 → 0004 → 0005`.
+Role model is now 9 roles / 23 permissions / 52 grants.
+Apply order: `0001 → 0002 → 0003 → 0004 → 0005 → 0006`.
 `npm run db:test` additionally runs `db/tests/incident_rls.sql`.
 
 ## Scheduled expiration
@@ -151,8 +153,28 @@ participations, closes rooms whose scheduled window elapsed and revokes their pa
 temporary data past its retention window. It returns counters only and writes an audit row for
 every change. It can only remove access — no code path in the function grants or restores any.
 
-Callers must hold advisory lock `8421701`. Running it twice in a row is a no-op; this is asserted
-in `db/tests/expiration.sql` (21 assertions, included in `npm run db:test`).
+## Maintenance plane (0006_maintenance.sql)
+
+| Object | Purpose |
+| --- | --- |
+| `airs_maintenance` (role) | `NOSUPERUSER`, `NOBYPASSRLS`; the only role that may run the sweep |
+| `airs.maintenance_events` | non-tenant, append-only operator audit; forced RLS, no UPDATE/DELETE policy |
+| `airs.run_incident_expiration(uuid)` | advisory lock `8421701` → sweep → completion record, one transaction |
+| `airs.record_maintenance_event(...)` | validated append-only writer; used for start and failure records |
+| `airs.strip_sensitive_detail(jsonb)` | removes secret-like keys from audit metadata |
+| `airs.maintenance_expiration_status()` | last success, last failure, runs in the past 24 hours |
+
+`EXECUTE` on `airs.expire_incident_state()` is **revoked from `airs_app`** here; the application
+role can no longer invoke time-based state changes. `airs_maintenance` holds no privilege on any
+tenant table.
+
+A runner records `maintenance.expiration_started` outside the sweep transaction (so it survives a
+rollback), runs `airs.run_incident_expiration()` inside one, and records
+`maintenance.expiration_failed` after a rollback if the sweep raised. Running twice in a row is a
+no-op and a concurrent second runner returns `skipped_locked = true`. All of this is asserted in
+`db/tests/incident_expiration.sql` (43 assertions, included in `npm run db:test`) and
+`tests/maintenance-expiration.test.ts`.
 
 Optional in-database scheduling lives in `db/scheduler/pg_cron.sql`. It is not part of the
-migration chain and is applied only where the `pg_cron` extension exists.
+migration chain and is applied only where the `pg_cron` extension exists; schedule it as
+`airs_maintenance` so it carries no more privilege than an external scheduler.

@@ -164,22 +164,58 @@ the recipient address, so a leaked link cannot be used to harvest e-mails or enu
 5. Superusers still bypass RLS; the application must never hold superuser or owner credentials.
 6. Signed-in UI verified through service-level integration tests, not an in-browser walkthrough.
 
-## Scheduled expiration endpoint
+## Incident expiration maintenance (Stage 5B)
 
-`POST /api/public/cron/expire-incidents` is the only unauthenticated-by-session route in the app,
-so it is locked down independently:
+Time-based expiration is an operator function, not an application function, so it runs on its own
+privilege plane.
 
-- **Disabled unless configured.** Without `INCIDENT_EXPIRY_TOKEN` (minimum 24 characters) the route
-  returns 503 and never touches the database. It fails closed, not open.
-- **Bearer token, constant-time compare.** `Authorization: Bearer <token>` is compared with
-  `timingSafeEqualString`; anything else is 401.
-- **POST only.** `GET` returns 405, so a crawler or link preview can never trigger a sweep.
-- **No data disclosure.** The response is aggregate counters — no tenant identifiers, no room
-  names, no PII — and errors are reduced to `{"status":"error"}` with detail sent to server logs.
-- **Bounded blast radius.** The underlying function can only remove access, and audits every row it
-  changes, so a hypothetical unauthorised call cannot leak or grant anything.
-- **No concurrency.** Advisory lock `8421701` serialises sweeps across every invocation path.
+**Least privilege.** Migration `0006_maintenance.sql` creates the `airs_maintenance` role:
+`NOSUPERUSER`, `NOBYPASSRLS`, `NOCREATEDB`, `NOCREATEROLE`. It holds exactly three privileges —
+`EXECUTE` on `airs.run_incident_expiration()`, `airs.record_maintenance_event()` and
+`airs.maintenance_expiration_status()`, plus `SELECT`/`INSERT` on `airs.maintenance_events`. It has
+no privilege on any tenant table, so a stolen maintenance credential cannot read one incident, one
+account or one audit row. The same migration **revokes** `EXECUTE` on `airs.expire_incident_state()`
+from `airs_app`: the role that serves browser traffic can no longer trigger cross-tenant state
+changes at all. Both facts are asserted in `db/tests/incident_expiration.sql`.
 
-The token lives in the environment only. It is never logged and is not present in the repository.
-Operators who prefer no HTTP surface at all should leave it unset and use `npm run incidents:expire`
-or `db/scheduler/pg_cron.sql`.
+**Credential separation.** The runner reads `AIRS_MAINTENANCE_DATABASE_URL`, never `DATABASE_URL`.
+Maintenance therefore never borrows the application pool, the application role, or a pooled session
+that might still carry `airs.*` tenant GUCs. The password is set outside the repository
+(`MAINTENANCE_DB_PASSWORD` in the container, or peer/IAM authentication elsewhere) and can be
+rotated without touching application credentials.
+
+**Bounded blast radius.** The sweep can only remove access. It has no code path that grants,
+restores, or elevates anything — asserted directly ("sweep granted no new access"). Every row it
+changes produces a tenant audit event, and every run produces a `maintenance.expiration_started`
+plus a `maintenance.expiration_completed` or `maintenance.expiration_failed` record.
+
+**Maintenance audit isolation.** Operator activity is recorded in `airs.maintenance_events`, a
+non-tenant, append-only table with forced RLS and no `UPDATE`/`DELETE` policy. Tenants cannot read
+it; `airs_app` has no grant on it. Metadata passes through `airs.strip_sensitive_detail()`, which
+removes `secret`, `token`, `authorization`, `password`, `database_url` and similar keys before the
+row is written. Failure records store an error *class*, never a raw driver message.
+
+**Concurrency.** `airs.run_incident_expiration()` takes transaction-level advisory lock `8421701`
+before doing anything. A second runner that loses the race returns `skipped_locked = true`, writes a
+`skipped` maintenance record and exits 0 without touching a row.
+
+### Optional HTTP trigger
+
+`POST /api/maintenance/expire-incidents` exists only for schedulers that cannot run a command. It is
+**off by default** and is deliberately not under `/api/public/`.
+
+- **Disabled unless enabled.** Without `AIRS_MAINTENANCE_ENDPOINT_ENABLED=true` it returns 404.
+- **Fails closed.** Without `AIRS_MAINTENANCE_SECRET`, or with a secret shorter than 24 characters,
+  it returns 503 and never touches the database.
+- **Operator secret only.** No session, organization role or incident role is ever consulted — an
+  Agency Administrator with a valid session is rejected exactly like an anonymous caller. The
+  credential is compared with `timingSafeEqualString` (SHA-256 digests, constant time).
+- **Header only.** A secret presented in the query string is refused with 400 so it cannot leak into
+  proxy or browser history logs.
+- **POST only** (405 otherwise) and **rate limited** to one accepted invocation per
+  `AIRS_MAINTENANCE_MIN_INTERVAL_MS` (default 30s), returning 429.
+- **No disclosure.** Responses are aggregate counters and a classification; the secret is never
+  echoed, logged or audited. All of the above is asserted in `tests/maintenance-expiration.test.ts`.
+
+Operators who want no HTTP surface leave the endpoint disabled and use
+`npm run maintenance:expire-incidents` or `db/scheduler/pg_cron.sql`.

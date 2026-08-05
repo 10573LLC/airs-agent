@@ -191,18 +191,32 @@ PageShell / PageHeading / SectionCard       page skeleton
 StatusPill                                  lifecycle and verification states
 ```
 
-## Incident expiration operations (Stage 5A)
+## Incident expiration maintenance (Stage 5B)
 
-Expiration logic stays in the database — `airs.expire_incident_state()` — so every invocation path
-gets the same behaviour and the same audit trail. Three interchangeable triggers exist; an operator
-picks one and none is required:
+Maintenance is a separate plane from the application. All decision logic stays in the database, so
+every invocation path produces identical behaviour and an identical audit trail:
 
 ```
-npm run incidents:expire        scripts/expire-incidents.mjs, plain pg driver, for cron/systemd
-POST /api/public/cron/…         bearer-token endpoint, for a hosted scheduler
-db/scheduler/pg_cron.sql        optional in-database schedule, no external caller at all
-docker compose                  expiration-scheduler service wrapping the script
+airs.expire_incident_state()      Stage 5 sweep — unchanged by this stage
+airs.run_incident_expiration()    maintenance entry point: advisory lock + sweep + audit record
+airs.record_maintenance_event()   append-only operator audit (runner-side, survives a rollback)
+airs.maintenance_expiration_status()  last success / last failure / runs in 24h
 ```
+
+Runners are deliberately thin — connect, record start, call one function, log — so no rule can drift
+between them:
+
+```
+npm run maintenance:expire-incidents   scripts/expire-incident-state.mjs — plain Node + pg driver;
+                                       the primary path for cron, systemd, Kubernetes CronJob, CI
+POST /api/maintenance/expire-incidents optional, off by default, operator-secret only
+db/scheduler/pg_cron.sql               optional in-database schedule, no external caller at all
+docker compose                         expiration-scheduler service wrapping the CLI runner
+```
+
+Privilege is separated from the application: the runner connects as `airs_maintenance` via
+`AIRS_MAINTENANCE_DATABASE_URL`, and `airs_app` no longer holds `EXECUTE` on the sweep at all. See
+SECURITY.md for the full privilege and endpoint model.
 
 All paths take PostgreSQL advisory lock `8421701` first, so overlapping schedulers cannot run
 concurrent sweeps; a caller that loses the race returns `skippedLocked: true` and exits cleanly.

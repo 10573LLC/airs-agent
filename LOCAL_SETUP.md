@@ -172,19 +172,54 @@ that role has neither SUPERUSER nor BYPASSRLS.
 
 ## Running the expiration sweep locally
 
+The sweep runs as the dedicated `airs_maintenance` role, never as the application role. Give that
+role a password once (already handled inside the compose stack by
+`db/init/05_maintenance_role_login.sh`):
+
 ```bash
-export DATABASE_URL="postgres://airs_app:…@localhost:5432/airs"
-npm run incidents:expire        # prints JSON counters, exits 0
+psql "$OWNER_DATABASE_URL" -c "ALTER ROLE airs_maintenance LOGIN PASSWORD 'choose-one';"
+export AIRS_MAINTENANCE_DATABASE_URL="postgres://airs_maintenance:choose-one@localhost:5432/airs"
+npm run maintenance:expire-incidents   # structured JSON log, exits 0
 ```
 
-To exercise the HTTP path, set a token of at least 24 characters and build first:
+Exit code 0 means the sweep ran, or that another runner held the lock. Exit code 1 means a
+configuration, connection or database failure; the reason is printed as JSON on stderr and, when the
+connection succeeded, recorded as `maintenance.expiration_failed`.
+
+Point it at the application role to see the privilege boundary working:
 
 ```bash
-export INCIDENT_EXPIRY_TOKEN="$(openssl rand -hex 24)"
+AIRS_MAINTENANCE_DATABASE_URL="postgres://airs_app:…@localhost:5432/airs" \
+  npm run maintenance:expire-incidents
+# → {"event":"maintenance.expiration_failed","errorClass":"database",
+#    "message":"permission denied for function record_maintenance_event"}  (exit 1)
+```
+
+Scheduling options, all equivalent and all optional:
+
+```
+crontab            */5 * * * * cd /srv/airs && npm run maintenance:expire-incidents
+systemd timer      same command, OnUnitActiveSec=5min
+Kubernetes         CronJob running node scripts/expire-incident-state.mjs
+docker compose     the bundled expiration-scheduler service
+in-database        psql -f db/scheduler/pg_cron.sql   (only where pg_cron exists)
+```
+
+To exercise the optional HTTP path, enable it and set a secret of at least 24 characters:
+
+```bash
+export AIRS_MAINTENANCE_ENDPOINT_ENABLED=true
+export AIRS_MAINTENANCE_SECRET="$(openssl rand -hex 32)"
 npm run build && node .output/server/index.mjs
-curl -X POST -H "authorization: Bearer $INCIDENT_EXPIRY_TOKEN" \
-  http://localhost:3000/api/public/cron/expire-incidents
+curl -X POST -H "authorization: Bearer $AIRS_MAINTENANCE_SECRET" \
+  http://localhost:3000/api/maintenance/expire-incidents
 ```
 
-With the token unset the endpoint answers 503 by design. Verify brand assets any time with
+Left disabled it answers 404; enabled without a secret it answers 503. Both are by design.
+
+Review recent runs at any time:
+
+```bash
+psql "$AIRS_MAINTENANCE_DATABASE_URL" -c "SELECT * FROM airs.maintenance_expiration_status()"
+``` Verify brand assets any time with
 `npm run brand:verify`.

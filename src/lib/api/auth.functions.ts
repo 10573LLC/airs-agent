@@ -313,3 +313,46 @@ export const revokeAllSessionsFn = createServerFn({ method: "POST" }).handler(as
     return { revoked: count };
   }),
 );
+// --- invitation-driven account activation -----------------------------------
+// Unauthenticated by design: the one-time invitation token is the credential
+// for this step only. Every validity rule is enforced server-side, and the
+// result is a normal authenticated session — access itself is never bypassed.
+
+export const previewActivationFn = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string }) =>
+    z.object({ token: z.string().min(16).max(512) }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { previewActivation } = await import("@/lib/auth/activation.server");
+      return previewActivation(data.token);
+    }),
+  );
+
+export const activateAccountFn = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string; displayName: string; password: string }) =>
+    z
+      .object({
+        token: z.string().min(16).max(512),
+        displayName: z.string().min(2).max(120),
+        password: z.string().min(12).max(512),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const [{ activateInvitation }, { writeSessionCookie }] = await Promise.all([
+        import("@/lib/auth/activation.server"),
+        import("./session-cookie.server"),
+      ]);
+      const { meta } = await serverCtx();
+      const result = await activateInvitation(
+        data.token,
+        { displayName: data.displayName, password: data.password },
+        meta,
+      );
+      writeSessionCookie(result.token, result.expiresAt);
+      // The session token stays in the httpOnly cookie; it is never returned.
+      return { orgId: result.orgId, roleKey: result.roleKey, expiresAt: result.expiresAt };
+    }),
+  );

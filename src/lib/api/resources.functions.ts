@@ -16,6 +16,13 @@ const name = z.string().min(1).max(160);
 const note = z.string().max(2000).nullish();
 const shortText = z.string().max(160).nullish();
 const iso = z.string().min(4).max(64).nullish();
+// A profile key is the ONLY disclosure input the browser may send. Field names
+// are never accepted from a request except as keys of the server-side
+// vocabulary, and those are re-validated in the service layer.
+const disclosureProfile = z
+  .enum(["summary", "operational", "aviation", "incident_command", "full", "custom"])
+  .nullish();
+const customFieldKeys = z.array(z.string().max(64)).max(64).nullish();
 
 async function guard<T>(run: () => Promise<T>): Promise<ApiResult<T>> {
   const { isAccessError } = await import("@/lib/auth/errors");
@@ -226,6 +233,8 @@ export const shareResourceFn = createServerFn({ method: "POST" })
         classification: z.string().max(40).nullish(),
         expiresAt: iso,
         namedRecipientOrgIds: z.array(uuid).max(50).nullish(),
+        disclosureProfile,
+        customFieldKeys,
       })
       .parse(d),
   )
@@ -234,6 +243,33 @@ export const shareResourceFn = createServerFn({ method: "POST" })
       const { shareResource } = await res();
       const { token, meta } = await serverCtx();
       return shareResource(token, data.orgId ?? null, data, meta);
+    }),
+  );
+
+export const setShareDisclosureFn = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) =>
+    z
+      .object({
+        orgId: orgIdField,
+        resourceId: uuid,
+        incidentId: uuid,
+        profile: z.enum([
+          "summary",
+          "operational",
+          "aviation",
+          "incident_command",
+          "full",
+          "custom",
+        ]),
+        customFieldKeys,
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { setShareDisclosure } = await res();
+      const { token, meta } = await serverCtx();
+      return setShareDisclosure(token, data.orgId ?? null, data, meta);
     }),
   );
 
@@ -486,6 +522,8 @@ export const assignToIncidentFn = createServerFn({ method: "POST" })
         visibilityClassification: z.string().max(40).nullish(),
         startsAt: iso,
         endsAt: iso,
+        disclosureProfile,
+        customFieldKeys,
       })
       .parse(d),
   )

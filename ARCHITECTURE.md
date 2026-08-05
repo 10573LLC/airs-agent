@@ -220,3 +220,32 @@ SECURITY.md for the full privilege and endpoint model.
 
 All paths take PostgreSQL advisory lock `8421701` first, so overlapping schedulers cannot run
 concurrent sweeps; a caller that loses the race returns `skippedLocked: true` and exits cleanly.
+
+## Field-level disclosure (Stage 6 closure)
+
+Sharing is now decided on two independent axes, both owned by the originating organization:
+
+1. **Row release** — `airs.resource_shares` / `airs.incident_assignments` decide whether a partner
+   organization sees the record at all. Enforced by forced RLS in the database.
+2. **Field release** — a *disclosure profile* on that same share decides which fields of the
+   released row may be transmitted. Enforced twice: in the database by
+   `airs.effective_disclosure()` / `airs.disclosure_allows()`, and in the service layer by
+   `projectFields()` in `src/lib/resources/disclosure.ts`.
+
+```text
+request -> session -> membership -> role permission -> RLS row release
+        -> effective_disclosure(resource) -> projectFields() -> response
+```
+
+The vocabulary is a fixed server-side allow-list of 60 field keys, 12 of which are marked sensitive
+and belong to no partner profile at all. Profiles are cumulative — `summary` < `operational` <
+`aviation` < `incident_command` — so widening never silently removes a field and narrowing takes
+effect on the next read. `full` resolves to the full authorized record only for an explicitly
+named recipient; for any other partner it resolves down to `incident_command`.
+
+Projection **deletes** withheld properties rather than nulling them, so a partner cannot distinguish
+"the owner has no value" from "the owner withheld the value". Unknown profiles and unknown field
+keys fail closed to `summary`.
+
+Portability note: the model is plain TypeScript plus plain SQL reference tables. No platform
+service participates in the decision.

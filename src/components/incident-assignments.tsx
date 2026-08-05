@@ -19,6 +19,11 @@ import {
   shareResourceFn,
 } from "@/lib/api/resources.functions";
 import { CATEGORY_LABELS, SHARING_CLASSIFICATIONS } from "@/lib/resources/model";
+import {
+  DISCLOSURE_PROFILE_LABELS,
+  PARTNER_DISCLOSURE_PROFILES,
+  type DisclosureProfile,
+} from "@/lib/resources/disclosure";
 
 const label = (value: string) => value.replaceAll("_", " ");
 
@@ -51,6 +56,7 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
   const [resourceId, setResourceId] = useState("");
   const [personId, setPersonId] = useState("");
   const [classification, setClassification] = useState<string>("participating_orgs");
+  const [profile, setProfile] = useState<DisclosureProfile>("summary");
 
   const assignments = useQuery({
     queryKey: ["incident-assignments", incidentId],
@@ -76,10 +82,11 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
           assignmentType: "resource",
           resourceId,
           visibilityClassification: classification,
+          disclosureProfile: profile,
         },
       });
       if (assigned.ok && classification !== "originating_org_only") {
-        await shareFn({ data: { resourceId, incidentId, classification } });
+        await shareFn({ data: { resourceId, incidentId, classification, disclosureProfile: profile } });
       }
       return assigned;
     },
@@ -94,6 +101,7 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
           assignmentType: "person",
           personId,
           visibilityClassification: classification,
+          disclosureProfile: profile,
         },
       }),
     onSuccess: (result) => report(result, "Person assigned to this room."),
@@ -162,6 +170,18 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
             </option>
           ))}
         </select>
+        <select
+          className={inputClass}
+          value={profile}
+          onChange={(event) => setProfile(event.target.value as DisclosureProfile)}
+          aria-label="Disclosure profile"
+        >
+          {PARTNER_DISCLOSURE_PROFILES.map((value) => (
+            <option key={value} value={value}>
+              Discloses: {DISCLOSURE_PROFILE_LABELS[value]}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           className={buttonClass}
@@ -192,6 +212,9 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
                   {label(row.assignmentType)}
                   {row.ownerOrgName ? ` · ${row.ownerOrgName}` : " · your agency"}
                   {` · ${label(row.visibilityClassification)}`}
+                  {row.disclosureProfile
+                    ? ` · discloses ${DISCLOSURE_PROFILE_LABELS[row.disclosureProfile]}`
+                    : ""}
                 </span>
               </span>
               <StatusPill tone={tone(row.status)}>{label(row.status)}</StatusPill>

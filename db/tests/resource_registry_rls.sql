@@ -325,6 +325,7 @@ DO $$
 DECLARE
   room uuid := (SELECT v FROM rids WHERE k='room');
 BEGIN
+  PERFORM set_config('airs.org_id', (SELECT v FROM rids WHERE k='org_a')::text, true);
   UPDATE airs.incident_rooms SET status = 'closed', closed_at = now() WHERE id = room;
   PERFORM airs.terminate_incident_resource_access(room);
 END $$;

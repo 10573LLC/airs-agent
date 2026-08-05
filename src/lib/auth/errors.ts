@@ -35,7 +35,14 @@ export type AccessCode =
   | "qualification_not_found"
   | "shift_conflict"
   | "assignment_not_found"
-  | "assignment_terminated";
+  | "assignment_terminated"
+  // Stage 7 — common operating picture and operating areas
+  | "invalid_geometry"
+  | "invalid_altitude_block"
+  | "invalid_time_window"
+  | "map_feature_not_found"
+  | "operating_area_not_found"
+  | "operating_area_state_invalid";
 
 const STATUS: Record<AccessCode, number> = {
   unauthenticated: 401,
@@ -70,6 +77,12 @@ const STATUS: Record<AccessCode, number> = {
   shift_conflict: 409,
   assignment_not_found: 404,
   assignment_terminated: 409,
+  invalid_geometry: 400,
+  invalid_altitude_block: 400,
+  invalid_time_window: 400,
+  map_feature_not_found: 404,
+  operating_area_not_found: 404,
+  operating_area_state_invalid: 409,
 };
 
 export class AccessError extends Error {

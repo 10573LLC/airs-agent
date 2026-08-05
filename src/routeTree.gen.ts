@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as MapRouteImport } from './routes/map'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as ConsoleRouteImport } from './routes/console'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -23,6 +24,11 @@ import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/
 const ResourcesRoute = ResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapRoute = MapRouteImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IncidentsRoute = IncidentsRouteImport.update({
@@ -77,6 +83,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
+  '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -88,6 +95,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
+  '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -101,6 +109,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
+  '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/console'
     | '/incidents'
+    | '/map'
     | '/resources'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/console'
+    | '/map'
     | '/resources'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/console'
     | '/incidents'
+    | '/map'
     | '/resources'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -151,6 +163,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ConsoleRoute: typeof ConsoleRoute
   IncidentsRoute: typeof IncidentsRouteWithChildren
+  MapRoute: typeof MapRoute
   ResourcesRoute: typeof ResourcesRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiMaintenanceExpireIncidentsRoute: typeof ApiMaintenanceExpireIncidentsRoute
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       path: '/resources'
       fullPath: '/resources'
       preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/map': {
+      id: '/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof MapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/incidents': {
@@ -251,6 +271,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ConsoleRoute: ConsoleRoute,
   IncidentsRoute: IncidentsRouteWithChildren,
+  MapRoute: MapRoute,
   ResourcesRoute: ResourcesRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiMaintenanceExpireIncidentsRoute: ApiMaintenanceExpireIncidentsRoute,

@@ -1,0 +1,19 @@
+{
+  "brand_folder": "public/brand/airs-agent/",
+  "primary_icon": "airs-agent-emblem-transparent.png",
+  "primary_horizontal_logo": "airs-agent-horizontal-transparent.png",
+  "tests": {
+    "icon_black": "airs-agent-emblem-black-test.png",
+    "icon_white": "airs-agent-emblem-white-test.png",
+    "horizontal_black": "airs-agent-horizontal-black-test.png",
+    "horizontal_white": "airs-agent-horizontal-white-test.png"
+  },
+  "web_icons": {
+    "favicon_16": "favicon-16x16.png",
+    "favicon_32": "favicon-32x32.png",
+    "apple_touch_icon": "apple-touch-icon.png",
+    "android_192": "android-chrome-192x192.png",
+    "android_512": "android-chrome-512x512.png",
+    "ico": "favicon.ico"
+  }
+}

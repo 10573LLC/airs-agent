@@ -159,6 +159,7 @@ let withheldFeatureId = "";
 let unsharedFeatureId = "";
 let areaId = "";
 let participantId = "";
+let resourceId = "";
 
 async function seedMember(name: string, orgId: string, roleKey: string) {
   const { hashPassword } = await import("@/lib/auth/password");
@@ -290,6 +291,7 @@ beforeAll(async () => {
     { category: "aircraft", displayName: `UAS ${RUN}`, readinessStatus: "available" },
     meta,
   );
+  resourceId = resource.id;
   await map.reportResourceLocation(
     tokenIcA,
     ORG_A,
@@ -389,6 +391,15 @@ describe("Stage 7 geography enforcement", () => {
     expect(sector.precision).toBe("area_only");
     expect(JSON.stringify(sector)).not.toContain(String(EXACT[0]));
 
+    // A position is visible to a partner only when the RESOURCE is also shared:
+    // incident participation alone is not enough (two independent keys).
+    expect(await map.listResourceLocations(tokenPartnerB, ORG_B, { incidentId }, meta)).toEqual([]);
+    await resources.shareResource(
+      tokenAdminA,
+      ORG_A,
+      { resourceId, incidentId, classification: "participating_orgs", disclosureProfile: "operational" },
+      meta,
+    );
     const locations = await map.listResourceLocations(tokenPartnerB, ORG_B, { incidentId }, meta);
     expect(locations.length).toBeGreaterThan(0);
     for (const loc of locations) {

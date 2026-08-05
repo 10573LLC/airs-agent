@@ -77,23 +77,26 @@ BEGIN
 
   INSERT INTO airs.incident_participants
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
-        invitation_status, participation_status, accepted_at, approved_at, expires_at)
+        invitation_status, participation_status, invitation_expires_at,
+        accepted_at, approved_at, expires_at)
        VALUES (future_room, org_a, org_b, org_a, 'operational', 'accepted', 'active',
-               now(), now(), now() - interval '1 minute')
+               now() + interval '2 days', now(), now(), now() - interval '1 minute')
     RETURNING id INTO due_part;
 
   INSERT INTO airs.incident_participants
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
-        invitation_status, participation_status, accepted_at, approved_at)
+        invitation_status, participation_status, invitation_expires_at,
+        accepted_at, approved_at)
        VALUES (retain_room, org_a, org_b, org_a, 'operational', 'accepted', 'active',
-               now(), now())
+               now() + interval '2 days', now(), now())
     RETURNING id INTO live_part;
 
   INSERT INTO airs.incident_participants
        (incident_id, org_id, partner_org_id, invited_by_org_id, access_level,
-        invitation_status, participation_status, accepted_at, approved_at)
+        invitation_status, participation_status, invitation_expires_at,
+        accepted_at, approved_at)
        VALUES (due_room, org_a, org_b, org_a, 'operational', 'accepted', 'active',
-               now(), now())
+               now() + interval '2 days', now(), now())
     RETURNING id INTO due_partner;
 
   SELECT count(*)::int INTO audit_before FROM airs.audit_events;

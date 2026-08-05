@@ -518,9 +518,6 @@ BEGIN
          (org_id, observation_id, reference_type, display_name)
        VALUES ('%s','%s','document','partner evidence')$q$, org_b, obs),
     'a partner cannot attach evidence to a foreign observation');
-  void_marker := NULL;
-EXCEPTION WHEN undefined_column THEN
-  RETURN;
 END $$;
 
 -- ===========================================================================

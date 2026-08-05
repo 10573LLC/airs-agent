@@ -214,20 +214,25 @@ BEGIN
   SELECT count(*) INTO n FROM airs.resource_aircraft WHERE resource_id = ac;
   PERFORM pg_temp.ok(n = 0, 'revocation also removes the detail row');
 
-  -- 9. expiry ends access without any further action ---------------------------
+  -- 9. a revoked share is final; expiry ends access on its own -----------------
   PERFORM set_config('airs.org_id', org_a::text, true);
-  UPDATE airs.resource_shares
-     SET revoked_at = NULL, revocation_reason = NULL, expires_at = now() - interval '1 minute'
-   WHERE resource_id = ac AND incident_id = room;
+  PERFORM pg_temp.denied(
+    format('UPDATE airs.resource_shares SET revoked_at = NULL WHERE resource_id = %L
+              AND incident_id = %L', ac, room),
+    'a revoked share can never be un-revoked');
+
+  -- a second resource proves the time-based path independently
+  INSERT INTO airs.resource_shares (resource_id, org_id, incident_id, classification, expires_at)
+       VALUES (veh, org_a, room, 'participating_orgs', now() - interval '1 minute');
   PERFORM set_config('airs.org_id', org_b::text, true);
-  SELECT count(*) INTO n FROM airs.resources WHERE id = ac;
+  SELECT count(*) INTO n FROM airs.resources WHERE id = veh;
   PERFORM pg_temp.ok(n = 0, 'an expired share confers no visibility');
   PERFORM set_config('airs.org_id', org_a::text, true);
-  UPDATE airs.resource_shares SET expires_at = NULL
-   WHERE resource_id = ac AND incident_id = room;
+  UPDATE airs.resource_shares SET expires_at = now() + interval '1 hour'
+   WHERE resource_id = veh AND incident_id = room;
   PERFORM set_config('airs.org_id', org_b::text, true);
-  SELECT count(*) INTO n FROM airs.resources WHERE id = ac;
-  PERFORM pg_temp.ok(n = 1, 'clearing the expiry restores the live share');
+  SELECT count(*) INTO n FROM airs.resources WHERE id = veh;
+  PERFORM pg_temp.ok(n = 1, 'extending the expiry window restores the live share');
 
   -- 10. assignment rules --------------------------------------------------------
   PERFORM set_config('airs.org_id', org_a::text, true);
@@ -268,11 +273,11 @@ BEGIN
   -- 12. retirement keeps the record and its history -----------------------------
   UPDATE airs.resources
      SET lifecycle_status = 'retired', readiness_status = 'retired', retired_at = now()
-   WHERE id = veh;
-  SELECT count(*) INTO n FROM airs.resources WHERE id = veh AND lifecycle_status = 'retired';
+   WHERE id = ac;
+  SELECT count(*) INTO n FROM airs.resources WHERE id = ac AND lifecycle_status = 'retired';
   PERFORM pg_temp.ok(n = 1, 'a retired resource is preserved, not deleted');
   PERFORM pg_temp.denied(
-    format('UPDATE airs.resources SET readiness_status = %L WHERE id = %L', 'available', veh),
+    format('UPDATE airs.resources SET readiness_status = %L WHERE id = %L', 'available', ac),
     'a retired resource cannot be returned to service by a status change alone');
 
   -- 13. qualifications: expiry and revocation are enforced on read --------------
@@ -300,7 +305,7 @@ BEGIN
 
   -- 15. closing the room terminates all resource access -------------------------
   PERFORM set_config('airs.org_id', org_b::text, true);
-  SELECT count(*) INTO n FROM airs.resources WHERE id = ac;
+  SELECT count(*) INTO n FROM airs.resources WHERE id = veh;
   PERFORM pg_temp.ok(n = 1, 'partner access is live immediately before closure');
 END $$;
 
@@ -324,13 +329,14 @@ DECLARE
   org_b uuid := (SELECT v FROM rids WHERE k='org_b');
   room  uuid := (SELECT v FROM rids WHERE k='room');
   ac    uuid := (SELECT v FROM rids WHERE k='ac');
+  veh   uuid := (SELECT v FROM rids WHERE k='veh');
   n int;
 BEGIN
   PERFORM set_config('airs.org_id', org_b::text, true);
-  SELECT count(*) INTO n FROM airs.resources WHERE id = ac;
+  SELECT count(*) INTO n FROM airs.resources WHERE id = veh;
   PERFORM pg_temp.ok(n = 0, 'closing the room ends partner visibility of shared resources');
-  SELECT count(*) INTO n FROM airs.resource_aircraft WHERE resource_id = ac;
-  PERFORM pg_temp.ok(n = 0, 'closing the room ends partner visibility of detail rows');
+  SELECT count(*) INTO n FROM airs.resources WHERE id = ac;
+  PERFORM pg_temp.ok(n = 0, 'no resource of the owner remains visible after closure');
 
   PERFORM set_config('airs.org_id', org_a::text, true);
   SELECT count(*) INTO n FROM airs.resource_shares
@@ -339,8 +345,8 @@ BEGIN
   SELECT count(*) INTO n FROM airs.incident_assignments
    WHERE incident_id = room AND status IN ('proposed','assigned','deploying','active');
   PERFORM pg_temp.ok(n = 0, 'closure releases every live assignment in the room');
-  SELECT count(*) INTO n FROM airs.resources WHERE id = ac;
-  PERFORM pg_temp.ok(n = 1, 'the owning agency still holds its resource after closure');
+  SELECT count(*) INTO n FROM airs.resources WHERE id IN (ac, veh);
+  PERFORM pg_temp.ok(n = 2, 'the owning agency still holds its resources after closure');
   PERFORM pg_temp.denied(
     format('INSERT INTO airs.resource_shares (resource_id, org_id, incident_id) VALUES (%L,%L,%L)',
            ac, org_a, room),

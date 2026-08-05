@@ -241,3 +241,21 @@ clean-clone install.
 - Added an always-visible attribution line (`VITE_MAP_ATTRIBUTION`).
 - Added keyboard-accessible layer visibility controls on `/map`.
 - Recorded the full verification result in `BUILD_AUDIT.md`.
+
+## Stage 8 (continued) — Awareness verification and interface
+
+- Dedicated Stage 8 verification: `db/tests/awareness_observations_rls.sql` (99 assertions)
+  and `tests/awareness.test.ts` (41 tests). Full suites on a rebuilt PostgreSQL 17.9 /
+  PostGIS 3.6.1 database: 408 SQL assertions and 124 TypeScript tests, exit 0.
+- Service fixes found by verification: observation geography joined the wrong
+  resource-location column; lifecycle closure bound the closing account as text;
+  sharing an observation with a non-approved agency now fails as
+  `partner_not_eligible`; filing into a closed or archived room now fails as
+  `incident_closed` instead of surfacing a raw database exception.
+- Awareness interface: `/awareness` board (summary tiles, filters, report form with a
+  clearly separated restricted plane) and `/awareness/$observationId` review screen
+  (verification transitions, annotations, links, information gaps, evidence references,
+  partner releases with per-release disclosure profile and geographic precision).
+- Map awareness layer: observations released with geography are drawn on the common
+  operating picture behind their own toggle; withheld reports are counted, not placed.
+- Console navigation now links the common operating picture and awareness board.

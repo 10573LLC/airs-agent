@@ -15,6 +15,16 @@ export const DENY_MESSAGES: Record<string, string> = {
   partner_not_eligible: "That agency is not an approved trusted partner.",
   participation_inactive: "Your organization's participation in this room is not active.",
   invalid_input: "Check the values you entered.",
+  incident_closed: "That incident room is closed.",
+  observation_not_found: "That observation does not exist at your access level.",
+  observation_state_invalid: "That review step is not allowed from the current status.",
+  observation_stale_version: "The observation changed since you loaded it. Reload and try again.",
+  observation_terminal: "This observation is closed and can no longer be edited.",
+  observation_relationship_invalid: "That link between observations is not allowed.",
+  observation_gap_not_found: "That information gap no longer exists.",
+  observation_evidence_not_found: "That evidence reference no longer exists.",
+  observation_share_not_found: "That release does not exist.",
+  observation_share_revoked: "That release was already revoked.",
   internal_error: "Something went wrong on the server.",
 };
 

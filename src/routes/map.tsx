@@ -7,6 +7,8 @@ import { PageHeading, PageShell, SectionCard, StatusPill, type StatusTone } from
 import { CopMap, type MapLayerItem } from "@/components/map/cop-map";
 import { DENY_MESSAGES } from "@/components/incident-ui";
 import { getMe } from "@/lib/api/auth.functions";
+import { listObservationsFn } from "@/lib/api/awareness.functions";
+import { OBSERVATION_TYPE_LABELS, OBSERVATION_FRESHNESS_LABELS } from "@/lib/awareness/model";
 import { listIncidentsFn } from "@/lib/api/incidents.functions";
 import { listResourcesFn } from "@/lib/api/resources.functions";
 import {
@@ -124,6 +126,7 @@ function MapPage() {
   const featuresFn = useServerFn(listMapFeaturesFn);
   const areasFn = useServerFn(listOperatingAreasFn);
   const locationsFn = useServerFn(listResourceLocationsFn);
+  const observationsFn = useServerFn(listObservationsFn);
 
   const createFeature = useServerFn(createMapFeatureFn);
   const archiveFeature = useServerFn(archiveMapFeatureFn);
@@ -152,6 +155,7 @@ function MapPage() {
   const [showAreas, setShowAreas] = useState(true);
   const [showFeatures, setShowFeatures] = useState(true);
   const [showPositions, setShowPositions] = useState(true);
+  const [showObservations, setShowObservations] = useState(true);
 
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
   const signedIn = session.data?.ok === true;
@@ -182,6 +186,12 @@ function MapPage() {
     enabled: signedIn,
   });
 
+  const observations = useQuery({
+    queryKey: ["observations", "map", incidentId],
+    queryFn: () => observationsFn({ data: { incidentId: incidentId || null } }),
+    enabled: signedIn,
+  });
+
   const report = (result: { ok: boolean; code?: string }, success: string) =>
     setNotice(result.ok ? success : (DENY_MESSAGES[result.code ?? ""] ?? `Denied (${result.code}).`));
   const refresh = (...keys: string[]) => {
@@ -193,6 +203,7 @@ function MapPage() {
   const locationRows = locations.data?.ok ? locations.data.data : [];
   const incidentRows = incidents.data?.ok ? incidents.data.data : [];
   const resourceRows = resources.data?.ok ? resources.data.data : [];
+  const observationRows = observations.data?.ok ? observations.data.data : [];
 
   const layers = useMemo<MapLayerItem[]>(() => {
     const items: MapLayerItem[] = [];
@@ -226,13 +237,26 @@ function MapPage() {
         detail: FRESHNESS_LABELS[l.freshness],
       });
     }
+    // Awareness layer. A manual report is drawn only when the server released
+    // geography for it; a withheld or area-only report contributes no point.
+    if (showObservations)
+    for (const o of observationRows) {
+      items.push({
+        id: `obs-${o.id}`,
+        label: o.title,
+        geometry: o.geometry,
+        tone: "muted",
+        detail: `${OBSERVATION_TYPE_LABELS[o.observationType]} · ${OBSERVATION_FRESHNESS_LABELS[o.freshness]}`,
+      });
+    }
     return items;
-  }, [areaRows, featureRows, locationRows, showAreas, showFeatures, showPositions]);
+  }, [areaRows, featureRows, locationRows, observationRows, showAreas, showFeatures, showPositions, showObservations]);
 
   const withheld =
     featureRows.filter((f) => !f.geometry).length +
     areaRows.filter((a) => !a.geometry).length +
-    locationRows.filter((l) => !l.geometry).length;
+    locationRows.filter((l) => !l.geometry).length +
+    observationRows.filter((o) => !o.geometry).length;
 
   const addFeature = useMutation({
     mutationFn: () =>
@@ -347,6 +371,7 @@ function MapPage() {
                 ["Operating areas", showAreas, setShowAreas] as const,
                 ["Map features", showFeatures, setShowFeatures] as const,
                 ["Reported positions", showPositions, setShowPositions] as const,
+                ["Awareness observations", showObservations, setShowObservations] as const,
               ]
             ).map(([label, checked, set]) => (
               <label key={label} className="flex items-center gap-2 text-xs text-foreground">

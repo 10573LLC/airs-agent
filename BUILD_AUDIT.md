@@ -511,3 +511,60 @@ open — the script and pg_cron paths remain available for operators who prefer 
 Docker runtime (no daemon available), pg_cron path (extension not installed), clean-clone install,
 interactive signed-in UI in the editor preview, and the authentication gaps recorded in Stage 4
 (MFA, rate limiting, account lockout, password-reset delivery, per-request CSRF token).
+
+---
+
+# Stage 5B — Incident Expiration Operations
+
+**Date:** 2026-08-05 · **Scope:** implement, secure, test and document the operational process that
+invokes the existing `airs.expire_incident_state()`. No incident-room feature was added, redesigned
+or expanded; the routine itself is unchanged. Branding, authentication and lifecycle work from
+earlier stages is untouched.
+
+### Verification table
+
+| Verification item | Status | Evidence | Exact command or file | Remaining limitation |
+| --- | --- | --- | --- | --- |
+| Dedicated maintenance role | VERIFIED | `airs_maintenance` created NOSUPERUSER, NOBYPASSRLS, NOCREATEDB, NOCREATEROLE; assertion "airs_maintenance is not superuser and cannot bypass RLS" passes | `db/migrations/0006_maintenance.sql`, `db/tests/incident_expiration.sql` | password is set outside the repo per deployment; not enforced by the migration |
+| Least privilege for that role | VERIFIED | holds no privilege on any tenant table (`role_table_grants` count = 0 outside `maintenance_events`); may execute only the three maintenance functions | assertion "airs_maintenance holds no privilege on any tenant table" | connects over the same network path as the app; no separate network policy shipped |
+| Application role can no longer sweep | VERIFIED | `EXECUTE` revoked from `airs_app`; direct call rejected with "permission denied for function expire_incident_state" | assertions 1–8 in `db/tests/incident_expiration.sql` | — |
+| Separate maintenance connection | VERIFIED | runner reads `AIRS_MAINTENANCE_DATABASE_URL` only; never the app pool or app role | `src/lib/maintenance/expiration.server.ts`, `.env.example` | operator must actually point it at `airs_maintenance`; a misconfigured URL fails closed at first query |
+| Portable CLI runner | VERIFIED | ran green as `airs_maintenance` (exit 0); permission-denied as `airs_app` (exit 1); configuration error unconfigured (exit 1) | `npm run maintenance:expire-incidents` → `scripts/expire-incident-state.mjs` | plain Node + `pg` only; no built-in retry or backoff |
+| Scheduler independence | COMPLETE | cron / systemd / Kubernetes CronJob / compose service / pg_cron all documented against the same command | `LOCAL_SETUP.md`, `docker-compose.yml`, `db/scheduler/pg_cron.sql` | compose and pg_cron paths reviewed, not executed (no Docker daemon; extension absent) |
+| Protected HTTP endpoint | VERIFIED | 404 when disabled, 405 non-POST, 401 anonymous, 401 session cookie, 401 wrong same-length secret, 400 secret in query, 503 unset/short secret, 429 immediate repeat, 200 correct secret | `tests/maintenance-expiration.test.ts` (10 authorization tests) | shared secret only — no mTLS, IP allowlist or signature scheme |
+| Constant-time credential compare | COMPLETE | SHA-256 digests compared with `timingSafeEqual` | `timingSafeEqualString` in `src/lib/maintenance/endpoint.server.ts` | — |
+| Secret never disclosed | VERIFIED | secret absent from every response body; rejected in query strings; stripped from audit metadata | assertion "never echoes the secret in a response body"; `airs.strip_sensitive_detail()` | server logs may contain driver errors (not the secret) |
+| Maintenance audit events | VERIFIED | every run writes `maintenance.expiration_started` and `maintenance.expiration_completed`; failures write `maintenance.expiration_failed` after rollback | `airs.maintenance_events`, live test "closes the elapsed room and records a maintenance event" | records duration and counts only; no per-row detail |
+| Audit trail is append-only | VERIFIED | UPDATE and DELETE rejected for the maintenance role; forced RLS with no UPDATE/DELETE policy | assertions "maintenance audit rows cannot be updated / deleted" | — |
+| Maintenance audit isolated from tenants | VERIFIED | `airs_app` has neither SELECT nor INSERT; direct select rejected | assertions 4, 5, 8 in `db/tests/incident_expiration.sql` | no in-app System Auditor screen yet; read via `airs.maintenance_expiration_status()` |
+| Correct rows expired, controls untouched | VERIFIED | overdue invitation, overdue participation, elapsed room and elapsed retention window all transitioned; in-window invitation, window-less room and terminal declined row unchanged | assertions in section 3 of `db/tests/incident_expiration.sql` | fixtures cover the four sweep branches, not every status permutation |
+| Never grants access | VERIFIED | "sweep granted no new access" and "sweep created no incident room" | `db/tests/incident_expiration.sql` | — |
+| Tokens destroyed on expiry | VERIFIED | `token_hash IS NULL` after invitation and participation expiry | same file | — |
+| Idempotence | VERIFIED | second run returns all-zero counters; no room, participant or tenant audit row differs | assertions in section 4; live test "is idempotent" | — |
+| Concurrency safety | VERIFIED | second concurrent runner returns `skipped_locked = true`, `ran = false`, zero counters, exits cleanly | live test "skips cleanly when another runner already holds the lock" (two real connections) | single global lock — no partitioned or batched sweeps |
+| Failure handling | VERIFIED | failure recorded outside the sweep transaction with an error class, never a raw message; runner exits 1 | `expiration.server.ts`, `scripts/expire-incident-state.mjs`, CLI run as `airs_app` | no alerting or paging integration |
+| Rate limiting | COMPLETE | one accepted HTTP invocation per `AIRS_MAINTENANCE_MIN_INTERVAL_MS` (default 30s) → 429 | assertion "accepts the correct secret, then rate-limits an immediate repeat" | in-process counter; a multi-instance deployment limits per instance (the DB advisory lock still serialises actual sweeps) |
+| No secrets in the repository | VERIFIED | `.gitignore` covers `.env` and `.env.*` except `.env.example`; only placeholders committed | `.gitignore:35-37`, `.env.example` | — |
+| Full SQL suite | VERIFIED | 126 assertions ok, exit 0 (was 104; 43 expiration assertions replace the previous 21) | `npm run db:test` | PostgreSQL 17.9, not the documented 16 target |
+| Full TypeScript suite | VERIFIED | 53/53 passing against a live database (was 39) | `npx vitest run` with `TEST_DATABASE_URL`, `TEST_ADMIN_DATABASE_URL`, `TEST_MAINTENANCE_DATABASE_URL` | — |
+| Typecheck and builds | VERIFIED | `npx tsgo --noEmit` clean; portable build emits `.output/server/index.mjs`; editor build emits `dist/server` + `dist/client` | `npm run build`, `LOVABLE_SANDBOX=1 npm run build` | Worker path exercised only in the sandbox |
+| Earlier stages intact | VERIFIED | foundation, authentication and incident-lifecycle suites all still green inside the totals above | `npm run db:test`, `npx vitest run` | — |
+| Documentation | UPDATED | maintenance plane documented end to end | `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`, `LOCAL_SETUP.md`, `CHANGELOG.md` | — |
+
+### Removed in this stage
+
+`src/lib/incidents/expiration.server.ts`, `scripts/expire-incidents.mjs`,
+`src/routes/api/public/cron/expire-incidents.ts`, `db/tests/expiration.sql` and the
+`INCIDENT_EXPIRY_TOKEN` variable. Their behaviour is superseded by the maintenance plane, which runs
+with strictly less privilege. The public `/api/public/cron/...` surface no longer exists.
+
+### Honest limitations
+
+1. The maintenance credential is a database password (or peer/IAM authentication). No secret manager
+   integration is shipped.
+2. The HTTP trigger is optional and off by default; the CLI runner is the supported primary path.
+3. HTTP rate limiting is per process. Actual sweep serialisation is enforced by the database
+   advisory lock, which is cluster-wide.
+4. Docker and pg_cron scheduling were reviewed but not executed in this environment.
+5. There is no in-app screen for maintenance history yet; `airs.maintenance_expiration_status()` is
+   the read path.

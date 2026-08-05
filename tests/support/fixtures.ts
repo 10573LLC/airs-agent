@@ -244,7 +244,8 @@ export async function cleanupRunFixtures(
   await run(
     `DELETE FROM airs.audit_events
       WHERE actor_user_id = ANY($1::uuid[]) OR org_id = ANY($2::uuid[])
-         OR resource_id = ANY($3::uuid[]) OR resource_id = ANY($4::uuid[])`,
+         OR resource_id::text = ANY($3::uuid[]::text[])
+         OR resource_id::text = ANY($4::uuid[]::text[])`,
     [a[2], a[1], a[3], a[4]],
   );
   await run(

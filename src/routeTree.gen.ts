@@ -13,6 +13,7 @@ import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as ConsoleRouteImport } from './routes/console'
+import { Route as AwarenessRouteImport } from './routes/awareness'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as IncidentsIndexRouteImport } from './routes/incidents.index'
@@ -39,6 +40,11 @@ const IncidentsRoute = IncidentsRouteImport.update({
 const ConsoleRoute = ConsoleRouteImport.update({
   id: '/console',
   path: '/console',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AwarenessRoute = AwarenessRouteImport.update({
+  id: '/awareness',
+  path: '/awareness',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -81,6 +87,7 @@ const ApiMaintenanceExpireIncidentsRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/awareness': typeof AwarenessRoute
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/awareness': typeof AwarenessRoute
   '/console': typeof ConsoleRoute
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/awareness': typeof AwarenessRoute
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/awareness'
     | '/console'
     | '/incidents'
     | '/map'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/awareness'
     | '/console'
     | '/map'
     | '/resources'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
+    | '/awareness'
     | '/console'
     | '/incidents'
     | '/map'
@@ -161,6 +173,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  AwarenessRoute: typeof AwarenessRoute
   ConsoleRoute: typeof ConsoleRoute
   IncidentsRoute: typeof IncidentsRouteWithChildren
   MapRoute: typeof MapRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       path: '/console'
       fullPath: '/console'
       preLoaderRoute: typeof ConsoleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/awareness': {
+      id: '/awareness'
+      path: '/awareness'
+      fullPath: '/awareness'
+      preLoaderRoute: typeof AwarenessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -269,6 +289,7 @@ const IncidentsRouteWithChildren = IncidentsRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  AwarenessRoute: AwarenessRoute,
   ConsoleRoute: ConsoleRoute,
   IncidentsRoute: IncidentsRouteWithChildren,
   MapRoute: MapRoute,

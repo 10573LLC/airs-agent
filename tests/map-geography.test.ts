@@ -150,6 +150,7 @@ let resources: typeof import("@/lib/resources/resources.server");
 
 let ORG_C = "";
 let tokenAdminA = "";
+const createdTrustedPairs: Array<{ orgId: string; partnerOrgId: string }> = [];
 let tokenIcA = "";
 let tokenPartnerB = "";
 let tokenOutsiderC = "";
@@ -207,13 +208,9 @@ beforeAll(async () => {
   );
   ORG_C = org.rows[0]!.id;
 
-  await admin.query(
-    `INSERT INTO airs.trusted_agencies (org_id, partner_org_id, status, approved_at)
-     VALUES ($1,$2,'approved', now())
-     ON CONFLICT (org_id, partner_org_id) DO UPDATE
-       SET status = 'approved', approved_at = now()`,
-    [ORG_A, ORG_B],
-  );
+  const { ensureTrustedAgency } = await import("./support/fixtures");
+  const trust = await ensureTrustedAgency(admin, ORG_A, ORG_B);
+  if (trust.created) createdTrustedPairs.push({ orgId: ORG_A, partnerOrgId: ORG_B });
 
   tokenAdminA = await seedMember("admin-a", ORG_A, "agency_admin");
   tokenIcA = await seedMember("ic-a", ORG_A, "incident_commander");
@@ -332,6 +329,15 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (!enabled) return;
+  if (admin) {
+    // Deterministic fixture cleanup keyed by this run's identifier.
+    const { cleanupRunFixtures } = await import("./support/fixtures");
+    await cleanupRunFixtures(admin, {
+      emailLike: `map.%.${RUN}@example.test`,
+      orgIds: [ORG_C].filter(Boolean),
+      trustedPairs: createdTrustedPairs,
+    });
+  }
   await admin?.end();
 });
 

@@ -192,6 +192,7 @@ let incidents: typeof import("@/lib/incidents/incidents.server");
 let participation: typeof import("@/lib/incidents/participation.server");
 
 let ORG_C = "";
+const createdTrustedPairs: Array<{ orgId: string; partnerOrgId: string }> = [];
 let tokenAdminA = "";
 let tokenIcA = "";
 let tokenSupervisorA = "";
@@ -299,13 +300,9 @@ beforeAll(async () => {
   );
   ORG_C = org.rows[0]!.id;
 
-  await admin.query(
-    `INSERT INTO airs.trusted_agencies (org_id, partner_org_id, status, approved_at)
-     VALUES ($1,$2,'approved', now())
-     ON CONFLICT (org_id, partner_org_id) DO UPDATE
-       SET status = 'approved', approved_at = now()`,
-    [ORG_A, ORG_B],
-  );
+  const { ensureTrustedAgency } = await import("./support/fixtures");
+  const trust = await ensureTrustedAgency(admin, ORG_A, ORG_B);
+  if (trust.created) createdTrustedPairs.push({ orgId: ORG_A, partnerOrgId: ORG_B });
 
   tokenAdminA = await seedMember("admin-a", ORG_A, "agency_admin");
   tokenIcA = await seedMember("ic-a", ORG_A, "incident_commander");
@@ -346,7 +343,16 @@ beforeAll(async () => {
 }, 120_000);
 
 afterAll(async () => {
-  if (admin) await admin.end();
+  if (!admin) return;
+  // Deterministic fixture cleanup keyed by this run's identifier; runs after
+  // failures too, so the awareness suite never alters authentication counts.
+  const { cleanupRunFixtures } = await import("./support/fixtures");
+  await cleanupRunFixtures(admin, {
+    emailLike: `awareness.%.${RUN}@example.test`,
+    orgIds: [ORG_C].filter(Boolean),
+    trustedPairs: createdTrustedPairs,
+  });
+  await admin.end();
 });
 
 const dbit = enabled ? it : it.skip;

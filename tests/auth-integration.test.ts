@@ -130,15 +130,10 @@ beforeAll(async () => {
 afterAll(async () => {
   if (!enabled) return;
   const like = `it.%.${RUN}@example.test`;
-  // Audit rows are immutable to the app role; the owner clears fixture evidence.
-  await admin.query(
-    `DELETE FROM airs.audit_events
-      WHERE actor_user_id IN (SELECT id FROM airs.users WHERE email_address LIKE $1)`,
-    [like],
-  );
-  await admin.query(`DELETE FROM airs.invitations WHERE email LIKE $1`, [like]);
-  await admin.query(`DELETE FROM airs.accounts WHERE email LIKE $1`, [like]);
-  await admin.query(`DELETE FROM airs.users WHERE email_address LIKE $1`, [like]);
+  // Deterministic fixture cleanup keyed by this run's identifier. Runs even
+  // when a test above failed, so the database is left exactly as found.
+  const { cleanupRunFixtures } = await import("./support/fixtures");
+  await cleanupRunFixtures(admin, { emailLike: like });
   await admin.end();
   await db.getDatabase().close();
 });

@@ -253,3 +253,51 @@ tables; `setShareDisclosure` requires the owning organization plus `resource.sha
 **Qualification expiry.** An expired, revoked or unverified qualification stops being current
 immediately via `airs.qualification_is_current()`. Partners at aviation level and above see only the
 currency flag, never the qualification record.
+
+## Manual Airspace Observations and Awareness Layer (Stage 8)
+
+**Threat model for this layer.** An observation frequently carries the identity
+of a member of the public, an internal case number and an exact location. The
+layer is built so that each of those can be released independently, to a named
+partner, for a bounded time, and withdrawn.
+
+**Controls.**
+- *Default deny.* 12 `observation.*` permissions (create, read, update_own,
+  review, verify, reject, close, reopen, share, revoke_share, link,
+  evidence_reference_manage) are granted per role in `src/lib/rbac/roles.ts`.
+  A role without the grant receives `forbidden`; the record is never sent and
+  then hidden.
+- *Forced RLS.* Every Stage 8 table carries `FORCE ROW LEVEL SECURITY`, so the
+  unprivileged `airs_app` role cannot read another tenant's observation even
+  with a correct primary key. Proven by 99 assertions in
+  `db/tests/awareness_observations_rls.sql`.
+- *Restricted source protection.* `reporterIdentity`, `reporterContact`,
+  `internalNotes`, `internalCaseNumber`, `sourceDetail`, `classification` and
+  `declaredPrecision` are removed from the payload before it leaves the owning
+  organization's plane. They are absent from partner responses, not masked.
+- *Geographic minimisation.* Precision is reduced server-side to the reader's
+  entitlement (exact → generalized → approximate → area only → withheld). A
+  withheld observation is counted on the map layer, never plotted.
+- *Explicit, revocable release.* Sharing requires an approved trusted-agency
+  relationship (`partner_not_eligible` otherwise), names the partner, records
+  the disclosure profile and precision, and supports expiry and revocation.
+  Closing an incident room terminates the associated releases through
+  `airs.terminate_incident_observations()`.
+- *Provenance integrity.* Annotations are append-only at the database level;
+  verification and lifecycle transitions are validated against the current state
+  and guarded by optimistic version checks, so a stale client cannot silently
+  overwrite a review decision.
+- *Audit.* Every awareness action writes an `airs.audit_events` row in the same
+  transaction, with allow/deny outcome. Credentials, tokens and password
+  material are excluded from audit detail by construction.
+
+**Known gaps unchanged by this stage.** No MFA, no rate limiting, no password
+reset, no evidence file custody (only references are stored).
+
+### Test-fixture privilege note
+
+`tests/support/fixtures.ts` briefly sets `session_replication_role = replica` to
+delete append-only fixture rows. This requires the fixture-owner/superuser
+connection (`TEST_ADMIN_DATABASE_URL`) and is confined to test teardown. The
+application role has no such privilege, and no application code path sets it —
+append-only remains enforced for the running system.

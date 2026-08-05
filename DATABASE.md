@@ -213,3 +213,47 @@ Functions:
 
 Verified by `db/tests/disclosure_projection.sql` (63 assertions, run without superuser and without
 `BYPASSRLS`).
+
+## Migration 0010 — Manual Airspace Observations and Awareness Layer (Stage 8)
+
+Seven tables, all in `airs`, all with `ENABLE` + `FORCE ROW LEVEL SECURITY`:
+
+| Table | Purpose |
+| --- | --- |
+| `observation_freshness_thresholds` | Per-observation-type aging thresholds driving `airs.observation_freshness()` |
+| `observations` | The observation record: what, where, when, who reported it, how reliable |
+| `observation_annotations` | Append-only internal or shared notes |
+| `observation_relationships` | Corroborates / conflicts / supersedes / duplicates links, invalidatable |
+| `observation_information_gaps` | Declared unknowns, resolvable or cancellable |
+| `observation_evidence_references` | Pointers to evidence held elsewhere; no payload is stored |
+| `observation_shares` | Explicit releases to a partner organization, with profile, precision and expiry |
+
+**Columns of note.**
+- `org_id` on every table — tenancy is never inferred from a parent row.
+- `declared_precision` / `precision_policy` — the owner's declaration and the
+  policy applied to readers; the reader's effective precision is resolved in SQL.
+- `source_reliability`, `information_credibility`, `confidence_level` — recorded
+  separately so a credible report from an unreliable source stays distinguishable.
+- `verification_status` and `lifecycle_status` — reviewed independently; a
+  terminal lifecycle blocks further edits.
+- `expected_version` optimistic locking on every mutating path.
+
+**Functions.** `airs.observation_freshness()` derives freshness from the
+observation type's thresholds; `airs.terminate_incident_observations()` is
+called by the incident closure flow and revokes observation shares tied to the
+closing room.
+
+**Verification.** `db/tests/awareness_observations_rls.sql` — 99 assertions
+covering tenant isolation, partner projection, precision reduction, restricted
+source stripping, lifecycle guards and share revocation. The full SQL suite is
+408 assertions.
+
+### Test-database hygiene (Stage 8 closure)
+
+The SQL suites build their own fixtures and the TypeScript suites clean up after
+themselves (`tests/support/fixtures.ts`), so `npm run db:test` and `vitest run`
+can be run repeatedly against the same database without a rebuild. After any
+number of cycles the database holds exactly the seeded state: 2 organizations
+and no accounts, memberships, observations, audit events or trusted-agency rows.
+Assertions are fixture-scoped rather than table-wide, so unrelated rows in a
+developer's database cannot make the suite fail.

@@ -249,3 +249,62 @@ keys fail closed to `summary`.
 
 Portability note: the model is plain TypeScript plus plain SQL reference tables. No platform
 service participates in the decision.
+
+## Stage 8 — Manual Airspace Observations and Awareness Layer
+
+The Awareness layer records what people report, as distinct from what sensors
+and registries assert. An observation is a claim with a provenance, not a fact.
+
+**Planes.** The layer is split so that no browser ever holds a decision:
+
+```text
+route (/awareness, /awareness/$observationId)
+  -> src/lib/api/awareness.functions.ts   transport: Zod validation, session cookie
+    -> src/lib/awareness/awareness.server.ts   session -> membership -> permission
+                                               -> ownership -> validation
+    -> PostgreSQL as airs_app (FORCE ROW LEVEL SECURITY)
+    -> projection: field disclosure -> geographic precision -> freshness
+    -> airs.audit_events (same transaction as the action)
+```
+
+The browser sends ids and validated fields only. It never sends an owner id, an
+effective disclosure profile, an effective precision, a freshness value, a
+relationship verdict or an access outcome; each of those is computed server-side
+from the reader's own membership.
+
+**Domain model.** `src/lib/awareness/model.ts` mirrors migration 0010 exactly —
+observation types, source types, reliability and credibility scales, urgency,
+verification lifecycle, freshness states, and the restricted-source field set.
+`tests/awareness.test.ts` asserts the mirror, so the model cannot drift from the
+schema without a failing test.
+
+**Reader projection.** `projectForReader()` applies, in order: field disclosure
+by profile (summary → operational → aviation → incident_command → full),
+restricted-source stripping (`reporterIdentity`, `reporterContact`,
+`internalNotes`, `internalCaseNumber`, `sourceDetail`, `classification`,
+`declaredPrecision` never leave the owning organization), then geographic
+precision reduction. A field that was withheld is absent from the payload, not
+nulled and not blanked at the edge.
+
+**Presentation.** `src/components/awareness-ui.tsx` renders absence explicitly
+("Not released at your access level") rather than inventing a placeholder, and
+derives every tone and label from a value the server already released.
+
+**Map integration.** The awareness layer in `src/components/map/cop-map.tsx` is
+fed from the same projection. Observations whose geography resolved to
+`withheld` are counted in the layer summary and never placed on the map.
+
+**Incident coupling.** `airs.terminate_incident_observations()` runs inside the
+incident closure flow, so closing a room ends observation sharing with partner
+agencies at the same moment it ends everything else.
+
+## Test isolation architecture (Stage 8 closure)
+
+The enforcement suites cannot use transaction-per-test: they exercise the real
+service chain, which opens its own pooled connections as `airs_app`, so a
+fixture transaction on the admin connection would be invisible to the code under
+test. Instead each suite tags its fixtures with a per-run identifier and
+`tests/support/fixtures.ts` deletes exactly those rows in foreign-key-safe order
+from `afterAll` (which also runs after a failure). Suite files run sequentially
+(`vitest.config.ts`, `fileParallelism: false`) because the two demo
+organizations are shared state.

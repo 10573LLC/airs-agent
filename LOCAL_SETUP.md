@@ -223,3 +223,42 @@ Review recent runs at any time:
 psql "$AIRS_MAINTENANCE_DATABASE_URL" -c "SELECT * FROM airs.maintenance_expiration_status()"
 ``` Verify brand assets any time with
 `npm run brand:verify`.
+
+## Running the Stage 8 (Awareness) verification
+
+Stage 8 needs PostGIS, because observations resolve against the same geography
+plane as the Common Operating Picture.
+
+```bash
+# 1. schema 0001 -> 0010 plus demo organizations, on an empty database
+for f in db/migrations/*.sql db/seed/demo_orgs.sql; do
+  psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f" || break
+done
+
+# 2. SQL assertions (includes db/tests/awareness_observations_rls.sql, 99 of them)
+npm run db:test              # 408 assertions total
+
+# 3. TypeScript suites
+export TEST_DATABASE_URL="postgres://airs_app:localdev@127.0.0.1:5432/airs"
+export TEST_ADMIN_DATABASE_URL="$DATABASE_URL"
+npm test                     # 7 files, 124 passed, 4 skipped
+```
+
+### Repeatable runs (no rebuild between runs)
+
+Steps 2 and 3 can be repeated against the same database indefinitely. Each
+TypeScript suite tags its fixtures with a per-run identifier and removes them in
+`afterAll` via `tests/support/fixtures.ts`; the SQL suites build and assert
+against their own fixtures. After any cycle the database is back to the seeded
+state (2 organizations, no accounts, memberships, observations, audit events or
+trusted-agency rows).
+
+Two requirements for this to work:
+- `TEST_ADMIN_DATABASE_URL` must point at the fixture owner (the role that owns
+  the `airs` schema). Cleanup deletes append-only rows and needs that privilege.
+- Do not re-enable Vitest file parallelism. `vitest.config.ts` sets
+  `fileParallelism: false` on purpose: the suites share the two demo
+  organizations, and concurrent files would race on shared-row restoration.
+
+If the suite ever fails on a count assertion, that is a cleanup regression, not
+a flake — check `afterAll` ran rather than rebuilding the database.

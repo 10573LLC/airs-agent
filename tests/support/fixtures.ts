@@ -102,6 +102,11 @@ export async function cleanupRunFixtures(
   const a = [accounts, orgIds, users, observations, incidentRooms] as const;
   const run = (sql: string, params: unknown[]) => admin.query(sql, params);
 
+  // Several planes are append-only by trigger (audit events, observation
+  // annotations). The fixture owner suspends trigger firing for the duration of
+  // the cleanup only; application code never runs in this mode.
+  await admin.query(`SET session_replication_role = replica`);
+  try {
   // Awareness plane (children first — several reference accounts NO ACTION).
   await run(
     `DELETE FROM airs.observation_shares
@@ -266,7 +271,10 @@ export async function cleanupRunFixtures(
     [a[0], a[2], a[1]],
   );
   await run(`DELETE FROM airs.sessions WHERE account_id = ANY($1::uuid[])`, [a[0]]);
-  await run(`DELETE FROM airs.users WHERE id = ANY($1::uuid[])`, [a[2]]);
-  await run(`DELETE FROM airs.accounts WHERE id = ANY($1::uuid[])`, [a[0]]);
-  await run(`DELETE FROM airs.organizations WHERE id = ANY($1::uuid[])`, [a[1]]);
+    await run(`DELETE FROM airs.users WHERE id = ANY($1::uuid[])`, [a[2]]);
+    await run(`DELETE FROM airs.accounts WHERE id = ANY($1::uuid[])`, [a[0]]);
+    await run(`DELETE FROM airs.organizations WHERE id = ANY($1::uuid[])`, [a[1]]);
+  } finally {
+    await admin.query(`SET session_replication_role = origin`);
+  }
 }

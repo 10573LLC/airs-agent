@@ -9,6 +9,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: airs
       APP_DB_PASSWORD: ${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}
+      MAINTENANCE_DB_PASSWORD: ${MAINTENANCE_DB_PASSWORD:?set MAINTENANCE_DB_PASSWORD in .env}
     ports:
       - "5432:5432"
     volumes:
@@ -21,8 +22,10 @@ services:
       - ./db/migrations/0003_auth.sql:/docker-entrypoint-initdb.d/03_auth.sql:ro
       - ./db/migrations/0004_org_context_guard.sql:/docker-entrypoint-initdb.d/04_org_context_guard.sql:ro
       - ./db/migrations/0005_incident_rooms.sql:/docker-entrypoint-initdb.d/05_incident_rooms.sql:ro
-      - ./db/seed/demo_orgs.sql:/docker-entrypoint-initdb.d/06_demo_orgs.sql:ro
-      - ./db/init/04_app_role_login.sh:/docker-entrypoint-initdb.d/07_app_role_login.sh:ro
+      - ./db/migrations/0006_maintenance.sql:/docker-entrypoint-initdb.d/06_maintenance.sql:ro
+      - ./db/seed/demo_orgs.sql:/docker-entrypoint-initdb.d/07_demo_orgs.sql:ro
+      - ./db/init/04_app_role_login.sh:/docker-entrypoint-initdb.d/08_app_role_login.sh:ro
+      - ./db/init/05_maintenance_role_login.sh:/docker-entrypoint-initdb.d/09_maintenance_role_login.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U airs_owner -d airs"]
       interval: 5s
@@ -41,7 +44,10 @@ services:
       DB_DRIVER: postgres
       NODE_ENV: production
       PORT: "3000"
-      INCIDENT_EXPIRY_TOKEN: ${INCIDENT_EXPIRY_TOKEN:?set INCIDENT_EXPIRY_TOKEN in .env}
+      # The optional HTTP maintenance trigger is off by default; the scheduler
+      # service below uses the command-line runner instead.
+      AIRS_MAINTENANCE_ENDPOINT_ENABLED: ${AIRS_MAINTENANCE_ENDPOINT_ENABLED:-false}
+      AIRS_MAINTENANCE_SECRET: ${AIRS_MAINTENANCE_SECRET:-}
     ports:
       - "3000:3000"
 
@@ -55,12 +61,13 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgres://airs_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/airs
+      # Connects as airs_maintenance, never as the application role.
+      AIRS_MAINTENANCE_DATABASE_URL: postgres://airs_maintenance:${MAINTENANCE_DB_PASSWORD:?set MAINTENANCE_DB_PASSWORD in .env}@db:5432/airs
       NODE_ENV: production
-      INCIDENT_EXPIRY_INTERVAL_SECONDS: ${INCIDENT_EXPIRY_INTERVAL_SECONDS:-60}
+      AIRS_MAINTENANCE_INTERVAL_SECONDS: ${AIRS_MAINTENANCE_INTERVAL_SECONDS:-60}
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - 'while true; do node scripts/expire-incidents.mjs || echo "sweep failed"; sleep "$${INCIDENT_EXPIRY_INTERVAL_SECONDS:-60}"; done'
+      - 'while true; do node scripts/expire-incident-state.mjs || echo "sweep failed"; sleep "$${AIRS_MAINTENANCE_INTERVAL_SECONDS:-60}"; done'
 
 volumes:
   airs_pgdata:

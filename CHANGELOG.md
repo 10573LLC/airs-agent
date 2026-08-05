@@ -192,3 +192,19 @@ clean-clone install.
 - RBAC extended to 23 permissions / 52 grants, in parity across SQL and TypeScript.
 - Tests: `db/tests/incident_rls.sql` (26 incident assertions; 82 across the SQL suite) and the
   existing vitest suites, all passing.
+
+## Stage 6 — Operational Resource Registry and Readiness Board
+
+- `db/migrations/0007_resource_registry.sql`: organization-owned `resources` plus aircraft, vehicle,
+  dock, launch-site and sensor detail tables; `personnel_profiles`, `qualifications`, `shifts`;
+  `resource_shares` and `incident_assignments`. Forced RLS on every table, immutable ownership,
+  category-valid readiness states, no overlapping shifts, and
+  `airs.terminate_incident_resource_access()` so closing a room ends every share and live assignment.
+- Role model expanded to 9 roles / 38 permissions / 92 grants.
+- `src/lib/resources/`: portable domain model, resource lifecycle and sharing services, personnel and
+  qualification services, incident assignment services — all behind the existing authorization chain.
+- `src/lib/api/resources.functions.ts`: validated transport layer; `/resources` readiness board and an
+  assignments panel inside each incident room.
+- `db/tests/resource_registry_rls.sql`: 52 assertions proving default deny, owner-only writes,
+  share-scoped partner reads, classification handling, revocation, expiry and closure termination.
+  Full suite: 178 assertions green; typecheck clean.

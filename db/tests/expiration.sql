@@ -166,7 +166,7 @@ BEGIN
   PERFORM pg_temp.ok(audit_after > audit_before, 'the sweep writes audit rows');
 
   SELECT count(*)::int INTO n FROM airs.audit_events
-   WHERE resource_id = due_room AND action = 'incident.closed'
+   WHERE resource_id = due_room::text AND action = 'incident.closed'
      AND detail->>'cause' = 'scheduled_expiration';
   PERFORM pg_temp.ok(n = 1, 'scheduled closure is audited with its cause');
 
@@ -179,11 +179,11 @@ BEGIN
   PERFORM pg_temp.ok(n = 1, 'participation expiry is audited');
 
   SELECT count(*)::int INTO n FROM airs.audit_events
-   WHERE resource_id = retain_room AND action = 'incident.temp_data_expired';
+   WHERE resource_id = retain_room::text AND action = 'incident.temp_data_expired';
   PERFORM pg_temp.ok(n = 1, 'temporary-data expiry is audited');
 
   SELECT count(*)::int INTO n FROM airs.audit_events
-   WHERE resource_id IN (due_room, retain_room) AND actor_user_id IS NOT NULL
+   WHERE resource_id IN (due_room::text, retain_room::text) AND actor_user_id IS NOT NULL
      AND detail->>'cause' IN ('schedule', 'scheduled_expiration', 'retention_window');
   PERFORM pg_temp.ok(n = 0, 'scheduled audit rows carry no impersonated actor');
 

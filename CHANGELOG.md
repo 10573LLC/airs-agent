@@ -231,3 +231,13 @@ clean-clone install.
 - `db/tests/resource_registry_rls.sql`: 52 assertions proving default deny, owner-only writes,
   share-scoped partner reads, classification handling, revocation, expiry and closure termination.
   Full suite: 178 assertions green; typecheck clean.
+
+## Stage 7 closure verification
+- Added `tests/map-geography.test.ts` (22 tests): model↔migration parity plus
+  live enforcement of precision, withholding, revocation and closure.
+- Removed the silent OpenStreetMap raster fallback from `CopMap`; the operator's
+  `VITE_MAP_STYLE_URL` is now read, and its absence produces an explicit
+  "Basemap not configured" notice instead of an unconfigured provider.
+- Added an always-visible attribution line (`VITE_MAP_ATTRIBUTION`).
+- Added keyboard-accessible layer visibility controls on `/map`.
+- Recorded the full verification result in `BUILD_AUDIT.md`.

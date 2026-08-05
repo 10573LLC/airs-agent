@@ -612,3 +612,45 @@ with strictly less privilege. The public `/api/public/cron/...` surface no longe
 4. There is no disclosure-history view; changes are recoverable from `airs.audit_events`, not from a
    dedicated screen.
 5. Docker and pg_cron paths were reviewed, not executed, in this environment.
+
+## Stage 7 closure verification (Common Operating Picture)
+
+Environment: PostgreSQL 17.9, PostGIS 3.6.1, fresh empty database `airs_fresh`,
+migrations `0001_init.sql` … `0009_common_operating_picture.sql` applied in order
+as the owner role; application role `airs_app` (NOT superuser, NOT BYPASSRLS),
+maintenance role `airs_maintenance` (same). Migration exit code 0, seed exit code 0.
+No manual schema repair was performed.
+
+| Verification item | Status | Evidence | Exact command or file | Remaining limitation |
+| --- | --- | --- | --- | --- |
+| Fresh database migrates cleanly | VERIFIED | 0001–0009 applied, exit 0 | `npm run db:migrate` against empty DB | sandbox-built PostGIS 3.6.1 |
+| Forced RLS, no privileged app role | VERIFIED | `rolsuper=f`, `rolbypassrls=f` | `db/tests/rls_matrix.sql` | — |
+| Full SQL assertion suite | VERIFIED | 359 assertions pass, 0 fail, 0 skipped, exit 0 | `npm run db:test` | count exceeds the earlier "309" figure because the matrix and parity scripts are included |
+| Full TypeScript suite | VERIFIED | 6 files, 87 tests, 87 passed, 0 failed, 0 skipped, exit 0 | `npx vitest run` | 61 tests are database-backed; without `TEST_DATABASE_URL` they skip |
+| Stage 7-specific TS tests | VERIFIED | 22 tests | `tests/map-geography.test.ts` (added this stage) | previously referenced but missing |
+| Role/permission parity | VERIFIED | 9 roles, 44 permissions, 114 grants; SQL == TypeScript | `db/tests/role_parity.sql`, `tests/role-parity.test.ts` | — |
+| Stage 7 permissions | VERIFIED | `map.read`, `map.feature.manage`, `map.operating_area.propose`, `map.operating_area.approve`, `map.position.report`, `map.precision.manage` | `src/lib/rbac/roles.ts` | `system_auditor` holds none; exactness is not a permission but an ownership/profile outcome |
+| Owner receives exact geometry | VERIFIED | owner read returns the exact coordinate pair | `tests/map-geography.test.ts` | — |
+| Partner reduced to profile ceiling | VERIFIED | `operational` partner receives `area_only` envelope; exact coordinates absent from the whole payload | same | `view_only` collapses to `withheld` |
+| Withheld geometry omitted, not nulled | VERIFIED | `"geometry" in view === false` | same | — |
+| Partner cannot widen precision or edit foreign geometry | VERIFIED | all three write attempts rejected; owner record unchanged | same | — |
+| Unauthorized organization sees nothing | VERIFIED | third organization sees no features, areas or positions | same | — |
+| Positions need BOTH incident participation and a resource share | VERIFIED | empty until `shareResource`, reduced afterwards | same | — |
+| Invalid geometry rejected | VERIFIED | out-of-range point and unclosed ring both rejected | same + `db/tests/map_geography_rls.sql` | — |
+| Revocation and closure end geography | VERIFIED | partner lists empty immediately after revoke and after close | same | — |
+| Freshness from the server clock | VERIFIED | `airs.location_freshness()`; browser never asserts age | `db/migrations/0009` | — |
+| Typecheck | VERIFIED | exit 0 | `npx tsgo --noEmit` | — |
+| Portable production build + boot | VERIFIED | build exit 0, server answered 200 on `/`, `/map`, `/api/public/health` | `NITRO_PRESET=node-server npm run build` | — |
+| Editor build | VERIFIED | exit 0, `cloudflare-module` preset | `LOVABLE_SANDBOX=1 npm run build` | — |
+| `/map` configured-provider state | PARTIALLY VERIFIED | route renders, layer controls, feature/area/position lists, freshness labels, withheld markers | `src/routes/map.tsx` | no approved tile service is configured in this environment, so a live basemap canvas was not exercised end to end |
+| `/map` missing-provider state | VERIFIED | explicit "Basemap not configured" notice, no third-party provider contacted, lists remain usable, no crash | `src/components/map/cop-map.tsx` | — |
+| Silent provider selection removed | VERIFIED (defect fixed) | the previous OpenStreetMap raster fallback was removed; `VITE_MAP_STYLE_URL` is now actually read | `src/routes/map.tsx`, `.env.example` | operator must supply a style URL |
+| Attribution | VERIFIED | MapLibre attribution control plus an always-visible `VITE_MAP_ATTRIBUTION` line | `src/components/map/cop-map.tsx` | text is operator-supplied |
+| Keyboard-accessible layer controls | VERIFIED | native checkbox fieldset with a legend, reachable and toggleable by keyboard | `src/routes/map.tsx` | controls are presentation-only |
+| Status not by colour alone | VERIFIED | every status pill carries text; withheld geography is stated in words | `src/routes/map.tsx` | — |
+| Selected-feature non-colour indicator | NOT VERIFIED | the page has no map-selection concept in Stage 7 | — | selection is a later stage |
+| Responsive layout | PARTIALLY VERIFIED | desktop and tablet/mobile grid collapse via `lg:` breakpoints | `src/routes/map.tsx` | no device-lab measurement was performed |
+
+No Stage 8 work, external integration, telemetry, ADS-B, Remote ID, weather or
+vendor connector was started. The only code changes were the missing Stage 7
+test suite and the map-provider/layer-control defects listed above.

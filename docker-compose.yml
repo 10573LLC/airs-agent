@@ -18,8 +18,11 @@ services:
       # Mounted as individual files: the entrypoint ignores mounted directories.
       - ./db/migrations/0001_init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
       - ./db/migrations/0002_roles_seed.sql:/docker-entrypoint-initdb.d/02_roles_seed.sql:ro
-      - ./db/seed/demo_orgs.sql:/docker-entrypoint-initdb.d/03_demo_orgs.sql:ro
-      - ./db/init/04_app_role_login.sh:/docker-entrypoint-initdb.d/04_app_role_login.sh:ro
+      - ./db/migrations/0003_auth.sql:/docker-entrypoint-initdb.d/03_auth.sql:ro
+      - ./db/migrations/0004_org_context_guard.sql:/docker-entrypoint-initdb.d/04_org_context_guard.sql:ro
+      - ./db/migrations/0005_incident_rooms.sql:/docker-entrypoint-initdb.d/05_incident_rooms.sql:ro
+      - ./db/seed/demo_orgs.sql:/docker-entrypoint-initdb.d/06_demo_orgs.sql:ro
+      - ./db/init/04_app_role_login.sh:/docker-entrypoint-initdb.d/07_app_role_login.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U airs_owner -d airs"]
       interval: 5s
@@ -38,8 +41,26 @@ services:
       DB_DRIVER: postgres
       NODE_ENV: production
       PORT: "3000"
+      INCIDENT_EXPIRY_TOKEN: ${INCIDENT_EXPIRY_TOKEN:?set INCIDENT_EXPIRY_TOKEN in .env}
     ports:
       - "3000:3000"
+
+  # Portable scheduler. Runs the same standalone Node script an OS cron or a
+  # Kubernetes CronJob would run; it talks to PostgreSQL directly and needs no
+  # hosting-provider scheduler.
+  expiration-scheduler:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://airs_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/airs
+      NODE_ENV: production
+      INCIDENT_EXPIRY_INTERVAL_SECONDS: ${INCIDENT_EXPIRY_INTERVAL_SECONDS:-60}
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'while true; do node scripts/expire-incidents.mjs || echo "sweep failed"; sleep "$${INCIDENT_EXPIRY_INTERVAL_SECONDS:-60}"; done'
 
 volumes:
   airs_pgdata:

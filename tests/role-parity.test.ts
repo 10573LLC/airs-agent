@@ -23,6 +23,7 @@ const SEED_FILES = [
   "db/migrations/0007_resource_registry.sql",
   "db/migrations/0009_common_operating_picture.sql",
   "db/migrations/0010_awareness_observations.sql",
+  "db/migrations/0011_platform_administration.sql",
 ];
 const sources = SEED_FILES.map((f) => readFileSync(join(process.cwd(), f), "utf8"));
 
@@ -47,16 +48,16 @@ const sqlRoles = new Map<string, string>(
     m[2],
   ]),
 );
-const sqlPermissions = [
-  ...permissionsBlock.matchAll(/\(\s*'([a-z_.]+)'\s*,\s*'[^']*'\s*\)/g),
-].map((m) => m[1]);
+const sqlPermissions = [...permissionsBlock.matchAll(/\(\s*'([a-z_.]+)'\s*,\s*'[^']*'\s*\)/g)].map(
+  (m) => m[1],
+);
 const sqlGrants = [...grantsBlock.matchAll(/\(\s*'([a-z_]+)'\s*,\s*'([a-z_.]+)'\s*\)/g)].map(
   (m) => `${m[1]}:${m[2]}`,
 );
 
 describe("role model parity between TypeScript and PostgreSQL seed", () => {
-  it("declares exactly nine roles on both sides", () => {
-    expect(ROLE_KEYS).toHaveLength(9);
+  it("declares exactly ten roles on both sides", () => {
+    expect(ROLE_KEYS).toHaveLength(10);
     expect([...sqlRoles.keys()].sort()).toEqual([...ROLE_KEYS].sort());
   });
 

@@ -262,3 +262,29 @@ Two requirements for this to work:
 
 If the suite ever fails on a count assertion, that is a cleanup regression, not
 a flake — check `afterAll` ran rather than rebuilding the database.
+
+
+## Bootstrapping the platform administrator (2026-08-05)
+
+The first Anconison platform administrator is created out of band, by an operator with a database
+owner connection. The application cannot do this for itself by design.
+
+```bash
+export AIRS_BOOTSTRAP_DATABASE_URL=postgres://postgres:...@localhost:5432/airs
+export APP_BASE_URL=https://your-deployment.example.gov
+
+# Optional dry run: what already exists for these addresses?
+npm run bootstrap:platform-admin -- --report-only --check owner@example.gov
+
+# Issue the single-use link (default lifetime 72 hours)
+npm run bootstrap:platform-admin -- --email owner@example.gov --ttl 259200
+```
+
+The command prints one activation link. Deliver it out of band and do not paste it into tickets,
+chat, screenshots or version control — it is a credential until it is redeemed or expires. Running
+the command again revokes the previous pending link.
+
+The recipient opens the link, sets a display name and a password of at least 12 characters, and is
+signed in as `platform_admin` of the Anconison platform organization. From then on they
+authenticate normally at `/auth`. If an account for that address already exists, the CLI prints an
+`/invite/...` link instead and the recipient signs in first.

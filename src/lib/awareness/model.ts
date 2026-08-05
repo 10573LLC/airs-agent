@@ -187,7 +187,14 @@ export const REVIEW_STATUSES: readonly VerificationStatus[] = ["under_review"];
  * table is refused before any database write is attempted.
  */
 export const VERIFICATION_TRANSITIONS: Record<VerificationStatus, readonly VerificationStatus[]> = {
-  unreviewed: ["under_review", "corroborated", "confirmed", "disputed", "unable_to_verify", "rejected"],
+  unreviewed: [
+    "under_review",
+    "corroborated",
+    "confirmed",
+    "disputed",
+    "unable_to_verify",
+    "rejected",
+  ],
   under_review: ["corroborated", "confirmed", "disputed", "unable_to_verify", "rejected"],
   corroborated: ["confirmed", "disputed", "unable_to_verify", "under_review"],
   confirmed: ["disputed", "under_review"],

@@ -53,7 +53,9 @@ export const VERIFICATION_TONE: Record<VerificationStatus, StatusTone> = {
 };
 
 export function FreshnessPill({ value }: { value: ObservationFreshness }) {
-  return <StatusPill tone={FRESHNESS_TONE[value]}>{OBSERVATION_FRESHNESS_LABELS[value]}</StatusPill>;
+  return (
+    <StatusPill tone={FRESHNESS_TONE[value]}>{OBSERVATION_FRESHNESS_LABELS[value]}</StatusPill>
+  );
 }
 
 export function UrgencyPill({ value }: { value: UrgencyLevel }) {
@@ -61,7 +63,9 @@ export function UrgencyPill({ value }: { value: UrgencyLevel }) {
 }
 
 export function VerificationPill({ value }: { value: VerificationStatus }) {
-  return <StatusPill tone={VERIFICATION_TONE[value]}>{VERIFICATION_STATUS_LABELS[value]}</StatusPill>;
+  return (
+    <StatusPill tone={VERIFICATION_TONE[value]}>{VERIFICATION_STATUS_LABELS[value]}</StatusPill>
+  );
 }
 
 export function Field({ label, children }: { label: string; children: ReactNode }) {

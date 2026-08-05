@@ -168,9 +168,10 @@ describe.skipIf(!enabled)("opaque tokens", () => {
   });
 
   it("never stores the session token in clear text", async () => {
-    const rows = await admin.query(`SELECT count(*)::int AS n FROM airs.sessions WHERE token_hash = $1`, [
-      adminAToken,
-    ]);
+    const rows = await admin.query(
+      `SELECT count(*)::int AS n FROM airs.sessions WHERE token_hash = $1`,
+      [adminAToken],
+    );
     expect(rows.rows[0].n).toBe(0);
   });
 });
@@ -204,9 +205,10 @@ describe.skipIf(!enabled)("session lifecycle", () => {
   it("stops accepting an expired session", async () => {
     const token = await signIn(adminA.email);
     const { hashToken } = await import("@/lib/auth/tokens");
-    await admin.query(`UPDATE airs.sessions SET expires_at = now() - interval '1 minute' WHERE token_hash = $1`, [
-      await hashToken(token),
-    ]);
+    await admin.query(
+      `UPDATE airs.sessions SET expires_at = now() - interval '1 minute' WHERE token_hash = $1`,
+      [await hashToken(token)],
+    );
     expect(await auth.getAuthAdapter().resolve(token)).toBeNull();
   });
 });
@@ -296,7 +298,7 @@ describe.skipIf(!enabled)("tenant isolation through the enforced chain", () => {
 
   it("refuses to set a GUC outside the airs namespace", async () => {
     await expect(
-      db.getDatabase().withContext({ "role": "postgres" }, async () => null),
+      db.getDatabase().withContext({ role: "postgres" }, async () => null),
     ).rejects.toBeTruthy();
   });
 });
@@ -359,9 +361,11 @@ describe.skipIf(!enabled)("invitation lifecycle", () => {
     });
 
     // Single use.
-    await expect(invites.acceptInvitation(inviteeToken, created.token, meta)).rejects.toMatchObject({
-      code: "invitation_used",
-    });
+    await expect(invites.acceptInvitation(inviteeToken, created.token, meta)).rejects.toMatchObject(
+      {
+        code: "invitation_used",
+      },
+    );
   }, 30_000);
 
   it("refuses an expired invitation", async () => {
@@ -371,9 +375,10 @@ describe.skipIf(!enabled)("invitation lifecycle", () => {
       { email: email("expired"), roleKey: "visual_observer" },
       meta,
     );
-    await admin.query(`UPDATE airs.invitations SET expires_at = now() - interval '1 day' WHERE id = $1`, [
-      created.invitationId,
-    ]);
+    await admin.query(
+      `UPDATE airs.invitations SET expires_at = now() - interval '1 day' WHERE id = $1`,
+      [created.invitationId],
+    );
     await expect(invites.previewInvitation(inviteeToken, created.token)).rejects.toMatchObject({
       code: "invitation_expired",
     });

@@ -78,9 +78,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
       { title: "AIRS Agent — Airspace Incident Coordination" },
-      { name: "description", content: "Secure, incident-based airspace coordination for public-safety agencies." },
-            { property: "og:title", content: "AIRS Agent" },
-      { property: "og:description", content: "Secure, incident-based airspace coordination for public-safety agencies." },
+      {
+        name: "description",
+        content: "Secure, incident-based airspace coordination for public-safety agencies.",
+      },
+      { property: "og:title", content: "AIRS Agent" },
+      {
+        property: "og:description",
+        content: "Secure, incident-based airspace coordination for public-safety agencies.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

@@ -8,16 +8,16 @@ export const Route = createFileRoute("/api/public/health")({
       GET: async () => {
         const url = process.env.DATABASE_URL;
         if (!url) {
-          return Response.json(
-            { status: "degraded", database: "unconfigured" },
-            { status: 503 },
-          );
+          return Response.json({ status: "degraded", database: "unconfigured" }, { status: 503 });
         }
         try {
           const { getDatabase } = await import("@/lib/adapters/index.server");
           const db = getDatabase();
           await db.withTenant(
-            { orgId: "00000000-0000-4000-8000-000000000000", userId: "00000000-0000-4000-8000-000000000000" },
+            {
+              orgId: "00000000-0000-4000-8000-000000000000",
+              userId: "00000000-0000-4000-8000-000000000000",
+            },
             (q) => q.query("SELECT 1"),
           );
           return Response.json({ status: "ok", database: "reachable" });

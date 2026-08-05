@@ -57,9 +57,7 @@ describe("resolveDisclosedFields", () => {
   });
 
   it("fails closed on an unknown profile", () => {
-    const keys = new Set(
-      resolveDisclosedFields({ profile: "wide_open" as never, owner: false }),
-    );
+    const keys = new Set(resolveDisclosedFields({ profile: "wide_open" as never, owner: false }));
     expect(keys.has("displayName")).toBe(true);
     expect(keys.has("description")).toBe(false);
   });
@@ -99,7 +97,11 @@ describe("resolveDisclosedFields", () => {
 
 describe("projectFields", () => {
   const sources = {
-    resource: { displayName: "Air-1", description: "primary DFR ship", restrictedNotes: "internal" },
+    resource: {
+      displayName: "Air-1",
+      description: "primary DFR ship",
+      restrictedNotes: "internal",
+    },
     detail: { model: "X10", serial_number: "SN-SECRET", location_description: "roof pad" },
   };
 

@@ -226,15 +226,11 @@ const DETAIL_TABLES = {
   sensor: "resource_sensors",
 } as const;
 
-async function loadDetail(
-  q: QueryRunner,
-  resource: ResourceRow,
-): Promise<DetailRecord | null> {
+async function loadDetail(q: QueryRunner, resource: ResourceRow): Promise<DetailRecord | null> {
   const table = DETAIL_TABLES[detailKindFor(resource.category)];
-  const rows = await q.query<DetailRecord>(
-    `SELECT * FROM airs.${table} WHERE resource_id = $1`,
-    [resource.id],
-  );
+  const rows = await q.query<DetailRecord>(`SELECT * FROM airs.${table} WHERE resource_id = $1`, [
+    resource.id,
+  ]);
   return rows[0] ?? null;
 }
 
@@ -381,7 +377,12 @@ export async function readResource(
       const owner = row.orgId === ctx.orgId;
       const detail = await loadDetail(q, row);
       if (owner) {
-        return { ...row, relationship: "owner" as const, detail, disclosureProfile: "full" as const };
+        return {
+          ...row,
+          relationship: "owner" as const,
+          detail,
+          disclosureProfile: "full" as const,
+        };
       }
       // The database, not the request, decides what this organization may see.
       const entitlement = await effectiveDisclosure(q, row.id);
@@ -797,7 +798,10 @@ export async function saveResourceDetail(
             value = n;
           } else if (field.kind === "array") {
             const arr = Array.isArray(raw) ? raw : String(raw).split(",");
-            value = arr.map((v) => String(v).trim()).filter(Boolean).slice(0, 25);
+            value = arr
+              .map((v) => String(v).trim())
+              .filter(Boolean)
+              .slice(0, 25);
           } else {
             value = text(raw, field.column, 400);
           }
@@ -950,7 +954,12 @@ export async function shareResource(
 export async function setShareDisclosure(
   token: string | null | undefined,
   orgId: string | null,
-  input: { resourceId: string; incidentId: string; profile: string; customFieldKeys?: string[] | null },
+  input: {
+    resourceId: string;
+    incidentId: string;
+    profile: string;
+    customFieldKeys?: string[] | null;
+  },
   meta?: RequestMeta,
 ): Promise<ShareRow> {
   const resourceId = assertUuid(input.resourceId, "resource id");

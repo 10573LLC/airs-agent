@@ -208,10 +208,7 @@ export async function withIncidentAction<T>(
     },
     async (ctx, q) => {
       const access = await resolveIncidentAccess(q, ctx, opts.incidentId);
-      if (
-        access.relationship !== "origin_admin" &&
-        OWNER_ONLY_ACTIONS.includes(opts.action)
-      ) {
+      if (access.relationship !== "origin_admin" && OWNER_ONLY_ACTIONS.includes(opts.action)) {
         throw new AccessError("forbidden");
       }
       if (!incidentLevelAllows(access.relationship, opts.action)) {
@@ -688,8 +685,7 @@ export async function closeIncident(
       if (Number(input.expectedVersion) !== incident.version) {
         throw new AccessError("incident_stale_version");
       }
-      const reason =
-        text(input.reason, "closure reason", 1000) ?? incident.closureReason ?? null;
+      const reason = text(input.reason, "closure reason", 1000) ?? incident.closureReason ?? null;
       if (!reason) throw new AccessError("invalid_input", "closure reason is required");
 
       // Every live partner grant ends, and every pending invitation expires,
@@ -784,14 +780,7 @@ export async function archiveIncident(
       if (Number(expectedVersion) !== incident.version) {
         throw new AccessError("incident_stale_version");
       }
-      return transition(
-        ctx,
-        q,
-        incident,
-        "archived",
-        "incident.archived",
-        ", archived_at = now()",
-      );
+      return transition(ctx, q, incident, "archived", "incident.archived", ", archived_at = now()");
     },
   );
 }

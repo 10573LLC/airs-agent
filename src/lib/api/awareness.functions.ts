@@ -17,8 +17,12 @@ const orgIdField = uuid.nullish();
 const iso = z.string().min(4).max(64).nullish();
 const shortText = z.string().max(240).nullish();
 const longText = z.string().max(8000).nullish();
-const precision = z.enum(["withheld", "area_only", "generalized", "approximate", "exact"]).nullish();
-const profile = z.enum(["summary", "operational", "aviation", "incident_command", "full"]).nullish();
+const precision = z
+  .enum(["withheld", "area_only", "generalized", "approximate", "exact"])
+  .nullish();
+const profile = z
+  .enum(["summary", "operational", "aviation", "incident_command", "full"])
+  .nullish();
 
 const position = z.tuple([z.number(), z.number()]);
 const geometry = z
@@ -140,7 +144,12 @@ export const awarenessSummaryFn = createServerFn({ method: "GET" })
     guard(async () => {
       const { awarenessSummary } = await svc();
       const { token, meta } = await serverCtx();
-      return awarenessSummary(token, data.orgId ?? null, { incidentId: data.incidentId ?? null }, meta);
+      return awarenessSummary(
+        token,
+        data.orgId ?? null,
+        { incidentId: data.incidentId ?? null },
+        meta,
+      );
     }),
   );
 
@@ -263,9 +272,7 @@ export const relateObservationsFn = createServerFn({ method: "POST" })
   );
 
 export const invalidateRelationshipFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
-    z.object({ orgId: orgIdField, relationshipId: uuid }).parse(d),
-  )
+  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, relationshipId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { invalidateRelationship } = await svc();

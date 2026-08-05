@@ -64,7 +64,8 @@ function futureTimestamp(value: unknown, label: string): string {
     throw new AccessError("invalid_input", `invalid ${label}`);
   }
   const iso = new Date(value).toISOString();
-  if (Date.parse(iso) <= Date.now()) throw new AccessError("invalid_input", `${label} is in the past`);
+  if (Date.parse(iso) <= Date.now())
+    throw new AccessError("invalid_input", `${label} is in the past`);
   return iso;
 }
 
@@ -200,7 +201,10 @@ const OWNER_ACTION_MAP: Record<
 > = {
   revoke_invitation: { incidentAction: "invite_partner", audit: "incident.invitation_revoked" },
   approve_partner: { incidentAction: "approve_partner", audit: "incident.participant_approved" },
-  restrict_partner: { incidentAction: "restrict_partner", audit: "incident.participant_restricted" },
+  restrict_partner: {
+    incidentAction: "restrict_partner",
+    audit: "incident.participant_restricted",
+  },
   revoke_partner: { incidentAction: "revoke_partner", audit: "incident.participant_revoked" },
   remove_partner: { incidentAction: "remove_partner", audit: "incident.participant_removed" },
 };

@@ -1,7 +1,7 @@
 -- Confirms the seeded role model in the database matches the counts the
--- TypeScript model declares (9 roles, 56 permissions, 171 grants).
+-- TypeScript model declares (10 roles, 56 permissions, 175 grants).
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/tests/role_parity.sql
-SELECT 'roles' AS entity, count(*) AS actual, 9 AS expected FROM airs.roles
+SELECT 'roles' AS entity, count(*) AS actual, 10 AS expected FROM airs.roles
 UNION ALL SELECT 'permissions', count(*), 56 FROM airs.permissions
 UNION ALL SELECT 'role_permissions', count(*), 171 FROM airs.role_permissions;
 
@@ -11,8 +11,8 @@ BEGIN
   SELECT count(*) INTO r FROM airs.roles;
   SELECT count(*) INTO p FROM airs.permissions;
   SELECT count(*) INTO g FROM airs.role_permissions;
-  IF (r, p, g) IS DISTINCT FROM (9, 56, 171) THEN
-    RAISE EXCEPTION 'role model drift: roles=% permissions=% grants=% (expected 9/56/171)', r, p, g;
+  IF (r, p, g) IS DISTINCT FROM (10, 56, 175) THEN
+    RAISE EXCEPTION 'role model drift: roles=% permissions=% grants=% (expected 10/56/175)', r, p, g;
   END IF;
-  RAISE NOTICE 'role model parity: 9 roles, 56 permissions, 171 grants';
+  RAISE NOTICE 'role model parity: 10 roles, 56 permissions, 175 grants';
 END $$;

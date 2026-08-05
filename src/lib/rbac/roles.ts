@@ -11,6 +11,8 @@ export const ROLE_KEYS = [
   "intel_analyst",
   "partner_agency_user",
   "system_auditor",
+  // Platform plane (Anconison). Never granted inside an agency organization.
+  "platform_admin",
 ] as const;
 export type RoleKey = (typeof ROLE_KEYS)[number];
 
@@ -84,6 +86,7 @@ export const ROLE_LABELS: Record<RoleKey, string> = {
   intel_analyst: "Intelligence Analyst",
   partner_agency_user: "Partner-Agency User",
   system_auditor: "System Auditor",
+  platform_admin: "Platform Administrator",
 };
 
 export const ROLE_PERMISSIONS: Record<RoleKey, readonly PermissionKey[]> = {
@@ -274,4 +277,7 @@ export const ROLE_PERMISSIONS: Record<RoleKey, readonly PermissionKey[]> = {
     "observation.read",
   ],
   system_auditor: ["audit.read"],
+  // Platform administration only. No incident, resource, map or observation
+  // permission, so a platform administrator cannot read agency operational data.
+  platform_admin: ["org.manage", "user.manage", "audit.read", "retention.manage"],
 };

@@ -16,7 +16,9 @@ const orgIdField = uuid.nullish();
 const name = z.string().min(1).max(160);
 const note = z.string().max(2000).nullish();
 const iso = z.string().min(4).max(64).nullish();
-const precision = z.enum(["withheld", "area_only", "generalized", "approximate", "exact"]).nullish();
+const precision = z
+  .enum(["withheld", "area_only", "generalized", "approximate", "exact"])
+  .nullish();
 
 // GeoJSON is accepted structurally here and re-validated coordinate by
 // coordinate in the service layer, then again by PostGIS.
@@ -195,7 +197,13 @@ export const setFeaturePrecisionFn = createServerFn({ method: "POST" })
     guard(async () => {
       const { setFeaturePrecision } = await map();
       const { token, meta } = await serverCtx();
-      return setFeaturePrecision(token, data.orgId ?? null, data.featureId, data.precisionPolicy, meta);
+      return setFeaturePrecision(
+        token,
+        data.orgId ?? null,
+        data.featureId,
+        data.precisionPolicy,
+        meta,
+      );
     }),
   );
 

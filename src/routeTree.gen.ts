@@ -21,6 +21,7 @@ import { Route as AwarenessIndexRouteImport } from './routes/awareness.index'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 import { Route as AwarenessObservationIdRouteImport } from './routes/awareness.$observationId'
+import { Route as ActivateTokenRouteImport } from './routes/activate/$token'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/maintenance/expire-incidents'
 
@@ -84,6 +85,11 @@ const AwarenessObservationIdRoute = AwarenessObservationIdRouteImport.update({
   path: '/$observationId',
   getParentRoute: () => AwarenessRoute,
 } as any)
+const ActivateTokenRoute = ActivateTokenRouteImport.update({
+  id: '/activate/$token',
+  path: '/activate/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHealthRoute = ApiPublicHealthRouteImport.update({
   id: '/api/public/health',
   path: '/api/public/health',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/activate/$token': typeof ActivateTokenRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/console': typeof ConsoleRoute
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/activate/$token': typeof ActivateTokenRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/activate/$token': typeof ActivateTokenRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/map'
     | '/resources'
+    | '/activate/$token'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -167,6 +177,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/map'
     | '/resources'
+    | '/activate/$token'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -183,6 +194,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/map'
     | '/resources'
+    | '/activate/$token'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -200,6 +212,7 @@ export interface RootRouteChildren {
   IncidentsRoute: typeof IncidentsRouteWithChildren
   MapRoute: typeof MapRoute
   ResourcesRoute: typeof ResourcesRoute
+  ActivateTokenRoute: typeof ActivateTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiMaintenanceExpireIncidentsRoute: typeof ApiMaintenanceExpireIncidentsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -291,6 +304,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AwarenessObservationIdRouteImport
       parentRoute: typeof AwarenessRoute
     }
+    '/activate/$token': {
+      id: '/activate/$token'
+      path: '/activate/$token'
+      fullPath: '/activate/$token'
+      preLoaderRoute: typeof ActivateTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/health': {
       id: '/api/public/health'
       path: '/api/public/health'
@@ -344,6 +364,7 @@ const rootRouteChildren: RootRouteChildren = {
   IncidentsRoute: IncidentsRouteWithChildren,
   MapRoute: MapRoute,
   ResourcesRoute: ResourcesRoute,
+  ActivateTokenRoute: ActivateTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiMaintenanceExpireIncidentsRoute: ApiMaintenanceExpireIncidentsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,

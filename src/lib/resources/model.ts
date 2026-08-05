@@ -119,7 +119,12 @@ export function statusAllowedForCategory(
   return (CATEGORY_STATUSES[category] ?? []).includes(status);
 }
 
-export const OPERATIONAL_STATUSES = ["operational", "limited", "non_operational", "unknown"] as const;
+export const OPERATIONAL_STATUSES = [
+  "operational",
+  "limited",
+  "non_operational",
+  "unknown",
+] as const;
 export type OperationalStatus = (typeof OPERATIONAL_STATUSES)[number];
 
 export const SHARING_CLASSIFICATIONS = [

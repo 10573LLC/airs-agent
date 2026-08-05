@@ -19,4 +19,10 @@ export function getDatabase(): DatabaseAdapter {
   }
 }
 
-export type { DatabaseAdapter, AuthAdapter, RealtimeAdapter, ObjectStorageAdapter, AuditSink } from "./types";
+export type {
+  DatabaseAdapter,
+  AuthAdapter,
+  RealtimeAdapter,
+  ObjectStorageAdapter,
+  AuditSink,
+} from "./types";

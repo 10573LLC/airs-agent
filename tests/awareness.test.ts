@@ -65,16 +65,16 @@ describe("awareness model mirrors migration 0010", () => {
     ];
     for (const [label, values] of lists) {
       for (const value of values) {
-        expect(MIGRATION, `${label} '${value}' missing from migration 0010`).toContain(`'${value}'`);
+        expect(MIGRATION, `${label} '${value}' missing from migration 0010`).toContain(
+          `'${value}'`,
+        );
       }
     }
   });
 
   it("uses the same freshness thresholds the database uses", () => {
     for (const [type, t] of Object.entries(FRESHNESS_THRESHOLDS)) {
-      const row = new RegExp(
-        `\\('${type}',\\s*(\\d+),\\s*(\\d+),\\s*(\\d+)\\)`,
-      ).exec(MIGRATION);
+      const row = new RegExp(`\\('${type}',\\s*(\\d+),\\s*(\\d+),\\s*(\\d+)\\)`).exec(MIGRATION);
       expect(row, `threshold row for ${type} missing`).toBeTruthy();
       expect(Number(row![1])).toBe(t.currentMinutes);
       expect(Number(row![2])).toBe(t.recentMinutes);
@@ -451,7 +451,11 @@ describe("the verification lifecycle is separate from the report", () => {
       tokenSupervisorA,
       ORG_A,
       target,
-      { status: "confirmed", rationale: "Corroborated by a second caller.", confidenceLevel: "high" },
+      {
+        status: "confirmed",
+        rationale: "Corroborated by a second caller.",
+        confidenceLevel: "high",
+      },
       meta,
     );
     expect(confirmed.verificationStatus).toBe("confirmed");
@@ -459,7 +463,9 @@ describe("the verification lifecycle is separate from the report", () => {
     // The original report text is untouched by the review.
     expect(confirmed.title).toBe(`Quadcopter over the perimeter ${RUN}`);
     expect(confirmed.sourceReliability).toBe("usually_reliable");
-    expect((await auditRows("observation.verification.confirmed", target))[0]?.outcome).toBe("allow");
+    expect((await auditRows("observation.verification.confirmed", target))[0]?.outcome).toBe(
+      "allow",
+    );
   });
 
   dbit("records the reviewer decision as an annotation, not as an edit", async () => {
@@ -869,7 +875,12 @@ describe("incident closure ends the awareness plane it created", () => {
       meta,
     );
 
-    const partnerAfter = await awareness.listObservations(tokenPartnerB, ORG_B, { limit: 500 }, meta);
+    const partnerAfter = await awareness.listObservations(
+      tokenPartnerB,
+      ORG_B,
+      { limit: 500 },
+      meta,
+    );
     expect(partnerAfter.some((o) => o.incidentId === incidentId)).toBe(false);
 
     const rows = await admin.query<{ n: string }>(

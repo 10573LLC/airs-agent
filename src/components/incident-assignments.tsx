@@ -70,7 +70,9 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
     void qc.invalidateQueries({ queryKey: ["shared-resources"] });
   };
   const report = (result: { ok: boolean; code?: string }, success: string) => {
-    setNotice(result.ok ? success : (DENY_MESSAGES[result.code ?? ""] ?? `Denied (${result.code}).`));
+    setNotice(
+      result.ok ? success : (DENY_MESSAGES[result.code ?? ""] ?? `Denied (${result.code}).`),
+    );
     refresh();
   };
 
@@ -86,7 +88,9 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
         },
       });
       if (assigned.ok && classification !== "originating_org_only") {
-        await shareFn({ data: { resourceId, incidentId, classification, disclosureProfile: profile } });
+        await shareFn({
+          data: { resourceId, incidentId, classification, disclosureProfile: profile },
+        });
       }
       return assigned;
     },

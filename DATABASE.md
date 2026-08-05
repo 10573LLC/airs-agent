@@ -257,3 +257,23 @@ number of cycles the database holds exactly the seeded state: 2 organizations
 and no accounts, memberships, observations, audit events or trusted-agency rows.
 Assertions are fixture-scoped rather than table-wide, so unrelated rows in a
 developer's database cannot make the suite fail.
+
+
+## Migration 0011 — platform administration (2026-08-05)
+
+| Object | Purpose |
+|---|---|
+| `airs.organizations.org_kind` | `'agency'` (default) or `'platform'`; unique partial index allows exactly one platform tenant |
+| `anconison-platform` organization | the Anconison platform tenant; owns no operational records |
+| role `platform_admin` | `org.manage`, `user.manage`, `audit.read`, `retention.manage` — nothing operational |
+| `airs.enforce_platform_role_scope()` | BEFORE INSERT/UPDATE trigger on `memberships`, `user_roles`, `invitations`; keeps the two planes apart |
+| `airs.platform_identity_report(text)` | aggregate-only pre-flight report for one address (no credentials, no hashes) |
+| `airs.bootstrap_platform_invitation(text, text, int)` | revokes any pending invitation for the address, inserts one `platform_admin` invitation from a supplied SHA-256 hash, audits the event |
+
+Both routines are `SECURITY DEFINER` and `REVOKE ALL ... FROM PUBLIC`: they are reachable only
+from the owner/operator connection (`AIRS_BOOTSTRAP_DATABASE_URL`), never from `airs_app`.
+
+Role model after 0011: **10 roles, 56 permissions, 175 grants**
+(`db/tests/role_parity.sql`).
+
+Verification: `db/tests/platform_admin_rls.sql`, run by `npm run db:test`.

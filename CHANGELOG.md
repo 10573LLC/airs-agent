@@ -2,6 +2,39 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Platform Administration Bootstrap] 2026-08-05
+
+### Added
+- `db/migrations/0011_platform_administration.sql` — platform administration plane:
+  `airs.organizations.org_kind` (`agency` | `platform`, unique partial index allowing exactly one
+  platform tenant), the `Anconison — AIRS Agent Platform` organization, the `platform_admin` role
+  with four platform-only permissions (`org.manage`, `user.manage`, `audit.read`,
+  `retention.manage`), a `BEFORE INSERT/UPDATE` guard on `memberships`, `user_roles` and
+  `invitations` keeping `platform_admin` out of agency tenants (and agency roles out of the
+  platform tenant), plus two operator-only `SECURITY DEFINER` routines:
+  `airs.platform_identity_report(text)` and `airs.bootstrap_platform_invitation(text, text, int)`.
+  Neither is executable by `airs_app`.
+- `scripts/bootstrap-platform-admin.mjs` (`npm run bootstrap:platform-admin`) — portable Node
+  runner. Generates the one-time token locally, sends only its SHA-256 hash to the database,
+  reports pre-existing identity records, refuses to duplicate an active platform administrator,
+  and prints the single-use link to stdout only.
+- `src/lib/auth/activation.server.ts`, `previewActivationFn` / `activateAccountFn`, and
+  `/activate/$token` — first-time account activation from a single-use invitation. Address,
+  organization and role come from the stored invitation row; an existing account is never
+  overwritten (the recipient is sent to normal sign-in + `/invite/$token`).
+- `db/tests/platform_admin_rls.sql` — plane-separation assertions.
+
+### Changed
+- `src/lib/rbac/roles.ts`, `db/tests/role_parity.sql`, `tests/role-parity.test.ts`,
+  `tests/authorize.test.ts` — role model is now 10 roles / 56 permissions / 175 grants.
+
+### Security
+- No token, token hash, password or recovery value is written to the audit trail, the structured
+  log lines, the repository or this changelog.
+- A platform administrator holds no `incident.*`, `resource.*`, `map.*`, `observation.*`,
+  `airspace.*` or `personnel.*` permission, and `airs.current_org_id()` still requires an ACTIVE
+  membership, so agency-owned operational records remain unreachable from the platform plane.
+
 ## [Stage 6 closure — Disclosure Hardening] 2026-08-12
 
 ### Added

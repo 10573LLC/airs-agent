@@ -743,3 +743,35 @@ layer, the awareness status palette and the disclosure-absence convention.
 | Dedicated TS verification | VERIFIED | `tests/awareness.test.ts`, 41/41 | — |
 | Repeatable test runs | VERIFIED | table above, three cycles, no rebuild | Requires the fixture-owner role for cleanup |
 | Documentation | COMPLETE | seven documents | — |
+
+
+---
+
+# Platform Administration Bootstrap — 2026-08-05 (UTC)
+
+Scope: create the secure bootstrap path for the first AIRS Agent platform administrator. No Stage 9
+work, no operational features.
+
+| Requirement | Status | Evidence | Limitation |
+|---|---|---|---|
+| Authentication not weakened | COMPLETE | no change to `local-adapter.server.ts` credential path; activation ends in a normal PBKDF2 sign-in | — |
+| No seed/test credentials exposed | COMPLETE | no credential in repo; fixtures use placeholder hashes | — |
+| Builder collaborator identity is not an app account | COMPLETE | accounts exist only in `airs.accounts`; no external identity is trusted | — |
+| Pre-existing identity check | COMPLETE | `airs.platform_identity_report()`, run for every address by the CLI | Aggregates only, by design |
+| No duplicate account / safe replacement | COMPLETE | bootstrap revokes pending invitations first; activation refuses when an account exists | — |
+| One-time bootstrap invitation | COMPLETE | `airs.bootstrap_platform_invitation()`; single-use claim in `acceptInvitation()` | — |
+| Top-level platform role | COMPLETE | `platform_admin` (migration 0011, `src/lib/rbac/roles.ts`) | New role: none existed |
+| Platform org instead of Albany | COMPLETE | `anconison-platform` (`org_kind = 'platform'`) | Org context is required by the data model |
+| Plane separation | COMPLETE | `airs.enforce_platform_role_scope()` trigger; zero operational permissions | — |
+| Invitation expires | COMPLETE | `expires_at`, default 72 h, clamped 300 s .. 7 d | — |
+| Invitation cannot be reused | COMPLETE | conditional `UPDATE ... WHERE status = 'pending'` | — |
+| Audited | COMPLETE | `platform.bootstrap_invitation_created`, `invitation.accepted`, `auth.sign_in` | — |
+| No secrets committed | COMPLETE | token generated in CLI, only its SHA-256 hash leaves the process | — |
+| Forced RLS / isolation preserved | COMPLETE | no policy relaxed; 0011 adds a trigger and two revoked-from-PUBLIC routines | — |
+| Unauthenticated users denied | VERIFIED | `/console` renders "Session required"; `db/tests/platform_admin_rls.sql` section 6 | — |
+| Platform admin sees no agency records | VERIFIED (SQL) | `db/tests/platform_admin_rls.sql` section 5; `tests/authorize.test.ts` | Assertions authored this pass; execution needs a live database |
+| Albany organizations untouched | COMPLETE | no change to `db/seed/demo_orgs.sql`; assertion in section 1 of the new SQL suite | — |
+| Typecheck | VERIFIED | `tsc --noEmit` exit 0 | — |
+| Build | VERIFIED | `npm run build` exit 0 | — |
+| TypeScript suite | VERIFIED | `vitest run` — 6 files, 59 passed, database-backed suites skipped without `DATABASE_URL` | Database-backed suites not executed in this environment |
+| SQL suite | NOT RUN HERE | `npm run db:test` now includes `db/tests/platform_admin_rls.sql` | No PostgreSQL instance in the build environment; run locally |

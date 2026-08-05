@@ -13,7 +13,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
-import { acceptInvitationFn, getMe, previewInvitationFn, selectOrganization } from "@/lib/api/auth.functions";
+import {
+  acceptInvitationFn,
+  getMe,
+  previewInvitationFn,
+  selectOrganization,
+} from "@/lib/api/auth.functions";
 import { ROLE_LABELS, type RoleKey } from "@/lib/rbac/roles";
 
 export const Route = createFileRoute("/invite/$token")({
@@ -148,10 +153,14 @@ function AcceptInvitationPage() {
   }
 
   if (!previewQuery.data || !previewQuery.data.ok) {
-    const code = previewQuery.data && !previewQuery.data.ok ? previewQuery.data.code : "internal_error";
+    const code =
+      previewQuery.data && !previewQuery.data.ok ? previewQuery.data.code : "internal_error";
     return (
       <Shell>
-        <p role="alert" className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {message(code)}
         </p>
         <Link to="/console" className="mt-8 text-xs text-muted-foreground underline">
@@ -167,7 +176,10 @@ function AcceptInvitationPage() {
   if (!invite.recipientMatches) {
     return (
       <Shell>
-        <p role="alert" className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {message("invitation_wrong_recipient")}
         </p>
         <p className="mt-3 text-xs text-muted-foreground">
@@ -183,8 +195,8 @@ function AcceptInvitationPage() {
   return (
     <Shell>
       <p className="mt-2 text-sm text-muted-foreground">
-        The organization and role below were set by the inviting administrator and cannot be
-        changed here.
+        The organization and role below were set by the inviting administrator and cannot be changed
+        here.
       </p>
 
       <dl className="mt-8 space-y-4 rounded-lg border border-border px-4 py-4 text-sm">
@@ -209,7 +221,10 @@ function AcceptInvitationPage() {
       </dl>
 
       {error ? (
-        <p role="alert" className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+        <p
+          role="alert"
+          className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
           {error}
         </p>
       ) : null}

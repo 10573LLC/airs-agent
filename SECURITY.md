@@ -163,3 +163,23 @@ the recipient address, so a leaked link cannot be used to harvest e-mails or enu
 4. No CSRF token: mutations are same-origin server functions with a `SameSite=Lax` cookie.
 5. Superusers still bypass RLS; the application must never hold superuser or owner credentials.
 6. Signed-in UI verified through service-level integration tests, not an in-browser walkthrough.
+
+## Scheduled expiration endpoint
+
+`POST /api/public/cron/expire-incidents` is the only unauthenticated-by-session route in the app,
+so it is locked down independently:
+
+- **Disabled unless configured.** Without `INCIDENT_EXPIRY_TOKEN` (minimum 24 characters) the route
+  returns 503 and never touches the database. It fails closed, not open.
+- **Bearer token, constant-time compare.** `Authorization: Bearer <token>` is compared with
+  `timingSafeEqualString`; anything else is 401.
+- **POST only.** `GET` returns 405, so a crawler or link preview can never trigger a sweep.
+- **No data disclosure.** The response is aggregate counters — no tenant identifiers, no room
+  names, no PII — and errors are reduced to `{"status":"error"}` with detail sent to server logs.
+- **Bounded blast radius.** The underlying function can only remove access, and audits every row it
+  changes, so a hypothetical unauthorised call cannot leak or grant anything.
+- **No concurrency.** Advisory lock `8421701` serialises sweeps across every invocation path.
+
+The token lives in the environment only. It is never logged and is not present in the repository.
+Operators who prefer no HTTP surface at all should leave it unset and use `npm run incidents:expire`
+or `db/scheduler/pg_cron.sql`.

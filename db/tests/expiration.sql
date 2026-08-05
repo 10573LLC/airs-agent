@@ -48,7 +48,7 @@ BEGIN
   ON CONFLICT DO NOTHING;
 
   INSERT INTO airs.organizations (id, slug, name, agency_type)
-       VALUES (org_c, 'test-expiry-partner', 'Expiry Test Partner Agency', 'fire_rescue');
+       VALUES (org_c, 'test-expiry-partner', 'Expiry Test Partner Agency', 'fire');
   INSERT INTO airs.trusted_agencies (org_id, partner_org_id, status)
        VALUES (org_a, org_c, 'approved');
 

@@ -361,7 +361,11 @@ describe("command safety", () => {
     expect(pkg.scripts["db:migrate"]).not.toContain("reconcile");
     const dockerInit = readFileSync(`${REPO_ROOT}/db/init/00_apply_migrations.sh`, "utf8");
     expect(dockerInit).not.toContain("reconcile");
-    expect(readFileSync(`${REPO_ROOT}/scripts/db-migrate.mjs`, "utf8")).not.toContain("reconcile-legacy");
+    // db-migrate.mjs may POINT AT the reconciliation command, but never runs it
+    const migrate = readFileSync(`${REPO_ROOT}/scripts/db-migrate.mjs`, "utf8");
+    expect(migrate).not.toContain("run(buildReconcileScript(");
+    expect(migrate).not.toContain("toIdempotentSql");
+    expect(migrate).toContain("npm run db:reconcile-legacy");
   });
 
   it("redacts secrets and prints no connection strings", () => {

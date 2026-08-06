@@ -221,7 +221,7 @@ describe("reconciliation on an already reconciled database", () => {
     expect(tail).toContain("npm run db:migrate:adopt");
     expect(tail).toContain("process.exit(0);");
     // the exit happens before any reconciliation unit is applied
-    expect(at).toBeLessThan(cli.indexOf("buildReconcileScript"));
+    expect(at).toBeLessThan(cli.indexOf("run(buildReconcileScript("));
   });
 });
 

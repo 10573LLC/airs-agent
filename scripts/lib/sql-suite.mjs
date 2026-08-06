@@ -51,7 +51,10 @@ export function buildLegacyWrappedScript(sqlText) {
   return `\\set ON_ERROR_STOP on\nBEGIN;\n${sqlText}\nROLLBACK;\n`;
 }
 
-const TX_LINE = /^\s*(BEGIN|START TRANSACTION|COMMIT|ROLLBACK|END)\s*;\s*$/i;
+// Only column-0 statements are psql transaction control. `BEGIN` / `END;`
+// indented inside a plpgsql DO body belong to the function, not the session -
+// mis-reading those was what made the defect invisible to static analysis.
+const TX_LINE = /^(BEGIN|START TRANSACTION|COMMIT|ROLLBACK|END)\s*;\s*$/i;
 const HELPER_DEF = /CREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+pg_temp\.(\w+)/gi;
 const HELPER_USE = /pg_temp\.(\w+)\s*\(/gi;
 

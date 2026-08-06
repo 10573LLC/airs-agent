@@ -36,7 +36,8 @@ describe("platform_admin_rls.sql section 5 fixture", () => {
   it("asserts the platform-admin authorization outcomes", () => {
     for (const label of [
       "a platform administrator cannot assume an agency organization context",
-      "the Albany users probe row alone establishes no organization context",
+      "a platform administrator cannot see the Albany organization row",
+      "a platform administrator still sees its own platform organization",
       "a platform administrator reads no agency user rows",
       "a platform administrator reads no agency incidents",
       "a platform administrator reads no agency audit rows",
@@ -48,6 +49,9 @@ describe("platform_admin_rls.sql section 5 fixture", () => {
   });
 
   it("keeps account-less and invitation-redemption context behaviour under test", () => {
+    expect(SECTION_5.slice(0, SECTION_5.indexOf("-- 5b."))).not.toMatch(
+      /count\(\*\) FROM airs\.organizations\)\s*=\s*0/,
+    );
     expect(SECTION_5).toContain(
       "account-less tenant-only context still resolves the requested organization",
     );

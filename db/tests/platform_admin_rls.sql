@@ -227,8 +227,13 @@ BEGIN
   PERFORM set_config('airs.org_id', '11111111-1111-4111-8111-111111111111', true);
   PERFORM pg_temp.ok(airs.current_org_id() IS NULL,
     'a platform administrator cannot assume an agency organization context');
-  PERFORM pg_temp.ok((SELECT count(*) FROM airs.organizations) = 0,
-    'the Albany users probe row alone establishes no organization context');
+  PERFORM pg_temp.ok(
+    (SELECT count(*) FROM airs.organizations
+      WHERE id = '11111111-1111-4111-8111-111111111111') = 0,
+    'a platform administrator cannot see the Albany organization row');
+  PERFORM pg_temp.ok(
+    (SELECT count(*) FROM airs.organizations WHERE id = plat) = 1,
+    'a platform administrator still sees its own platform organization');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.users) = 0,
     'a platform administrator reads no agency user rows');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.incidents) = 0,

@@ -38,7 +38,8 @@ describe("platform_admin_rls.sql section 5 fixture", () => {
       "a platform administrator cannot assume an agency organization context",
       "a platform administrator cannot see the Albany organization row",
       "a platform administrator still sees its own platform organization",
-      "a platform administrator reads no agency user rows",
+      "the Albany probe user row is invisible to a platform administrator",
+      "the platform administrator still reads its own self-identity row",
       "a platform administrator reads no agency incidents",
       "a platform administrator reads no agency audit rows",
       "a platform administrator may act inside the platform organization",
@@ -63,5 +64,17 @@ describe("platform_admin_rls.sql section 5 fixture", () => {
     expect(SQL).not.toMatch(/CREATE POLICY/i);
     expect(SQL).not.toMatch(/GRANT /i);
     expect(SECTION_5).not.toMatch(/INSERT INTO airs\.memberships/i);
+  });
+
+  it("never re-introduces the over-broad users assertion", () => {
+    expect(SECTION_5).not.toMatch(/count\(\*\) FROM airs\.users\)\s*=\s*0/);
+    expect(SECTION_5).not.toMatch(/DROP POLICY|user_self_identity/i);
+  });
+
+  it("scopes the users assertions to the fixture identifiers", () => {
+    expect(SECTION_5).toMatch(
+      /FROM airs\.users[\s\S]{0,200}11111111-1111-4111-8111-111111111111[\s\S]{0,200}platform\.probe@example\.test/,
+    );
+    expect(SECTION_5).toMatch(/FROM airs\.users\s*\n?\s*WHERE account_id = acct AND org_id = plat/);
   });
 });

@@ -22,19 +22,31 @@ import {
   MIGRATE_HELP_TEXT,
   REPO_ROOT,
   RUNNER_VERSION,
-  VERIFICATION_FILES,
   buildAdoptionScript,
   buildLedgerBootstrapScript,
   buildLedgerReadScript,
   buildLockProbeScript,
   buildMigrationScript,
-  buildVerificationScript,
   diffMigrations,
   loadMigrations,
   parseMigrateArgs,
   planExecution,
   redact,
 } from "./lib/migrate-plan.mjs";
+import { runSqlSuite } from "./lib/sql-suite.mjs";
+import {
+  POSTGIS_MISSING_ERROR,
+  buildPlatformVerificationScript,
+  buildPostgisProbeScript,
+  parsePostgisProbe,
+} from "./lib/legacy-repair.mjs";
+import {
+  DEFAULT_ADMIN_EMAIL,
+  buildObjectProbeScript,
+  buildReconcileVerifyScript,
+  parseObjectProbe,
+  planReconciliation,
+} from "./lib/reconcile-legacy.mjs";
 
 function fail(message, code = 1) {
   console.error(redact(message));
@@ -151,13 +163,44 @@ if (flags["adopt-existing"]) {
   if (rows.length > 0) {
     fail(`The migration ledger already contains ${rows.length} row(s); adoption is not required.`, 4);
   }
-  console.log("Running the SQL assertion suite and role parity before recording anything...");
-  for (const file of VERIFICATION_FILES) {
-    const sqlText = readFileSync(join(REPO_ROOT, file), "utf8");
-    const result = run(buildVerificationScript(sqlText), { capture: true });
-    if (!result.ok) fail(`Adoption aborted: verification suite failed (${file}).\n${result.stderr}`, 4);
-    console.log(`  ok  ${file}`);
+  console.log("  ledger present, zero applied rows - adoption applies.");
+
+  // 1. PostGIS must really be installed before geospatial assertions run.
+  const gis = parsePostgisProbe(run(buildPostgisProbeScript(), { capture: true }).stdout);
+  if (!gis.installed) fail(`Adoption aborted: PostGIS is not installed in this database.\n${POSTGIS_MISSING_ERROR}`, 7);
+  console.log("  ok  postgis installed");
+
+  // 2. Every canonical post-0012 object must already exist. Adoption never
+  //    creates, replaces or replays schema.
+  const probe = run(buildObjectProbeScript(), { capture: true });
+  if (!probe.ok) fail(`Adoption aborted: could not probe the canonical schema.\n${probe.stderr}`, 4);
+  const canonical = planReconciliation(parseObjectProbe(probe.stdout));
+  if (canonical.missing.length) {
+    fail(
+      ["Adoption aborted: canonical objects are missing; this database is not fully reconciled.",
+        ...canonical.missing.map((m) => `  ${m.id} (${m.version})`),
+        "", "Run `npm run db:reconcile-legacy` first. Nothing was recorded."].join("\n"),
+      4,
+    );
   }
+  console.log("  ok  every canonical object present");
+
+  // 3. The full SQL suite (includes role parity 10 roles / 56 permissions /
+  //    175 grants) through the ONE canonical runner.
+  console.log("Running the SQL assertion suite and role parity before recording anything...");
+  const suite = runSqlSuite({ run: (sql) => run(sql, { capture: true }), root: REPO_ROOT, onFile: (file) => console.log(`  ok  ${file}`) });
+  if (!suite.ok) fail(`Adoption aborted: verification suite failed (${suite.failedFile}). Nothing was recorded.\n${suite.stderr}`, 4);
+
+  // 4. Security, tenancy and platform verification.
+  const security = run(buildReconcileVerifyScript(), { capture: true });
+  if (!security.ok) fail(`Adoption aborted: security verification failed. Nothing was recorded.\n${security.stderr}`, 4);
+  console.log("  ok  db/repair/reconcile_verify.sql");
+  const adminEmail = flags["admin-email"] || DEFAULT_ADMIN_EMAIL;
+  const platform = run(buildPlatformVerificationScript(adminEmail), { capture: true });
+  if (!platform.ok) fail(`Adoption aborted: platform verification failed. Nothing was recorded.\n${platform.stderr}`, 4);
+  console.log("  ok  platform organization and platform administrator");
+
+  // 5. Record 0001-0012 with their current checksums. No migration body runs.
   const verifySql = readFileSync(join(REPO_ROOT, ADOPT_VERIFY_FILE), "utf8");
   const script = buildAdoptionScript(migrations, verifySql, {
     lockTimeoutMs,

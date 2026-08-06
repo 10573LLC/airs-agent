@@ -250,6 +250,70 @@ describe("existing-database adoption", () => {
   });
 });
 
+describe("adoption verifier: existence and RLS are separate invariants", () => {
+  const section = (start: string, end: string) => {
+    const from = adoptSql.indexOf(start);
+    const to = end ? adoptSql.indexOf(end) : adoptSql.length;
+    expect(from).toBeGreaterThan(-1);
+    expect(to).toBeGreaterThan(from);
+    return adoptSql.slice(from, to);
+  };
+  const requiredTables = section("-- 3. Required tables", "-- 4. Tenant/identity");
+  const rlsRequired = section("-- 4. Tenant/identity", "-- 5. Exact platform organization");
+  const CATALOGS = ["'airs.roles'", "'airs.permissions'", "'airs.role_permissions'"];
+
+  it("keeps the global RBAC catalogs in required-table verification", () => {
+    for (const t of CATALOGS) expect(requiredTables).toContain(t);
+  });
+
+  it("never subjects the global RBAC catalogs to RLS/policy verification", () => {
+    for (const t of CATALOGS) expect(rlsRequired).not.toContain(t);
+  });
+
+  it("keeps tenant-scoped tables in the RLS-required set", () => {
+    for (const t of [
+      "'airs.organizations'",
+      "'airs.users'",
+      "'airs.memberships'",
+      "'airs.incidents'",
+      "'airs.observations'",
+      "'airs.map_features'",
+    ]) {
+      expect(requiredTables).toContain(t);
+      expect(rlsRequired).toContain(t);
+    }
+  });
+
+  it("verifies ENABLE, FORCE and a policy for every RLS-required table", () => {
+    expect(rlsRequired).toContain("c.relrowsecurity");
+    expect(rlsRequired).toContain("c.relforcerowsecurity");
+    expect(rlsRequired).toContain("no RLS policy exists on %");
+    expect(requiredTables).not.toContain("relrowsecurity");
+    expect(requiredTables).not.toContain("pg_policies");
+  });
+
+  it("never introduces a blanket 'all airs tables need RLS' rule", () => {
+    expect(adoptSql).not.toMatch(/FROM pg_tables[\s\S]{0,200}relrowsecurity/);
+    expect(adoptSql).not.toMatch(/schemaname\s*=\s*'airs'[\s\S]{0,200}relrowsecurity/);
+    for (const t of [
+      "'airs.disclosure_fields'",
+      "'airs.disclosure_precisions'",
+      "'airs.disclosure_profile_fields'",
+      "'airs.geographic_precisions'",
+      "'airs.observation_freshness_thresholds'",
+      "'airs.resource_category_statuses'",
+    ]) {
+      expect(rlsRequired).not.toContain(t);
+    }
+  });
+
+  it("treats seed-only Albany demo organizations as conditional, not mandatory", () => {
+    expect(adoptSql).toContain("Albany Police Department");
+    expect(adoptSql).toContain("org_kind <> 'agency'");
+    expect(adoptSql).not.toContain("name = 'Albany County' AND org_kind = 'agency'");
+  });
+});
+
 describe("ledger access model", () => {
   it("denies airs_app entirely and denies airs_maintenance any write", () => {
     expect(ledgerSql).toContain("REVOKE ALL ON SCHEMA airs_migrations FROM PUBLIC");

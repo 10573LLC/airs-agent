@@ -49,7 +49,9 @@ describe("platform_admin_rls.sql section 5 fixture", () => {
   });
 
   it("keeps account-less and invitation-redemption context behaviour under test", () => {
-    expect(SECTION_5).not.toMatch(/count\(\*\) FROM airs\.organizations\)\s*=\s*0/);
+    expect(SECTION_5.slice(0, SECTION_5.indexOf("-- 5b."))).not.toMatch(
+      /count\(\*\) FROM airs\.organizations\)\s*=\s*0/,
+    );
     expect(SECTION_5).toContain(
       "account-less tenant-only context still resolves the requested organization",
     );

@@ -639,3 +639,94 @@ Finally, sign in as the platform administrator to confirm the account still work
 A fresh Docker installation starts from the PostGIS image, enables PostGIS
 before migration 0009, applies the canonical manifest and records every
 migration in the ledger - with no host-installed PostGIS anywhere.
+
+## Cumulative legacy-schema reconciliation (live Windows database, 2026-08-06)
+
+Use this when `npm run db:migrate:repair-legacy` refuses because migrations are
+only **partially** represented. That refusal is correct: the database is not
+"missing whole migrations", it is missing individual objects of the cumulative
+post-0012 schema. The reconciliation command repairs exactly those objects.
+
+> **DO NOT use `docker compose down -v`.** It destroys the named volume and
+> every account, organization, membership, incident, audit row and resource in
+> it. Nothing in this procedure ever needs it.
+
+The command is operator-only. It never runs automatically, never runs from
+Docker initialization and is not a numbered production migration.
+
+### Exact sequence
+
+```powershell
+# 1. keep the app stopped; the database container and volume stay up and intact
+docker compose stop app expiration-scheduler
+
+# 2. confirm the database is running on the PostGIS image, same volume
+docker compose ps db
+docker compose exec -T db psql -U airs_owner -d airs -c "SELECT postgis_full_version()"
+
+# 3. verify a backup exists OUTSIDE the repository
+docker compose exec -T db pg_dump -U airs_owner -d airs > C:\airs-backups\airs-pre-reconcile.sql
+dir C:\airs-backups\airs-pre-reconcile.sql
+
+# 4. report only - changes nothing
+npm run db:reconcile-legacy
+
+# 5. review the report: every missing object, every superseded object, the
+#    expected actions and whether reconciliation is SAFE
+
+# 6. execute (both flags are required)
+npm run db:reconcile-legacy -- --confirm --backup-confirmed
+
+# 7. migration status - expect zero pending and zero checksum conflicts
+npm run db:migrate:status
+
+# 8. full SQL assertion suite
+npm run db:test
+
+# 9. restart the app
+docker compose up -d app expiration-scheduler
+
+# 10. verify the platform administrator can still sign in (wflack@anconisonpmg.com)
+# 11. verify /resources, /map and /awareness render
+# 12. keep C:\airs-backups\airs-pre-reconcile.sql until step 10 and 11 pass
+```
+
+### What it does, and what it will never do
+
+* Probes **94 canonical objects** of the post-0012 schema individually
+  (tables, columns, functions, seeds, permissions, policies, forced RLS,
+  indexes, extension, exact values).
+* Creates only the objects that are genuinely absent, using the **current
+  canonical migration text** transformed into idempotent form
+  (`scripts/lib/idempotent-sql.mjs`) - so a reconciled database is identical to
+  a freshly migrated one.
+* Never drops a table, column, role or row; never truncates; never deletes.
+  Only policies and triggers are dropped and immediately re-created from the
+  same canonical definition inside the same transaction.
+* Never recreates a **superseded** object (see below).
+* Applies each unit in one advisory-locked transaction. A failure rolls the
+  whole unit back and leaves **no ledger and no adoption state**.
+* Creates the migration ledger and adopts 0001-0012 **only after** the full SQL
+  suite, role parity (10 roles / 56 permissions / 175 grants),
+  `db/repair/reconcile_verify.sql` and the platform administrator verification
+  all passed.
+* Prints no passwords, URLs, tokens or connection strings.
+
+### Superseded objects (reported, never recreated)
+
+| Object | Verdict | Current equivalent |
+| --- | --- | --- |
+| `airs.has_permission` | never canonical | `airs.ctx()`, `airs.current_account_id()`, `airs.current_org_id()` + the TypeScript RBAC model |
+| `airs.disclosure_profiles` | never canonical | `airs.disclosure_fields` + `airs.disclosure_profile_fields` + the profile CHECK constraints |
+
+A historical probe demanded both. Neither is created by any migration in the
+manifest, so a complete database used to be reported as `PARTIAL`. The probes
+are now derived from `scripts/lib/canonical-schema.mjs`, which describes the
+schema that must exist **after 0012**, not what an early migration once made.
+
+### If the report says it is NOT safe
+
+Stop. The report names the conflicting object and the migration that owns it.
+Reconciliation only ever creates objects owned by 0008, 0009 and 0010; anything
+else missing means the database is outside the supported legacy state and needs
+an operator decision. Nothing was changed.

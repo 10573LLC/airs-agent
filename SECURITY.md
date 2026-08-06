@@ -399,3 +399,32 @@ Security properties:
   `airs_migrations` schema after repair;
 * output is redacted: no passwords, connection strings, URLs or tokens are
   printed, and the command never echoes `DATABASE_URL`.
+
+## Cumulative legacy reconciliation (2026-08-06)
+
+`npm run db:reconcile-legacy` is an operator-only, report-first command. It is
+not a migration, never runs automatically, and is not reachable from Docker
+initialization or `npm run db:migrate`.
+
+Controls:
+
+* **Report by default.** Changing anything requires both `--confirm` and
+  `--backup-confirmed`.
+* **No data loss by construction.** The generated body is rejected if it
+  contains `DROP TABLE`, `DROP SCHEMA`, `DROP COLUMN`, `DROP ROLE`, `TRUNCATE`
+  or `DELETE FROM`. Only policies and triggers are dropped, and only alongside
+  their immediate re-creation inside the same transaction.
+* **No blind replay.** Only objects proven absent are created, from the current
+  canonical definition. `already exists` is never treated as success.
+* **Superseded objects are never recreated.** `airs.has_permission` in
+  particular stays absent: database-side permission evaluation would become a
+  second authorization source of truth alongside the TypeScript RBAC model.
+* **Advisory-locked, transactional.** One unit, one transaction, the same
+  `pg_advisory_xact_lock` key the migration runner uses.
+* **Verification gates adoption.** The full SQL assertion suite, role parity
+  (10 roles / 56 permissions / 175 grants), `db/repair/reconcile_verify.sql` and
+  the platform administrator verification must all pass, and a final re-probe
+  must show zero missing canonical objects, before any ledger row exists. A
+  failure at any point leaves no ledger and no adoption state.
+* **Secrets.** All output passes through `redact()`; passwords, connection
+  strings, URLs and tokens are never printed.

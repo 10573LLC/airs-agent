@@ -2,6 +2,21 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Platform Verification Column Fix] 2026-08-06
+
+### Fixed
+- Migration adoption/reconciliation failed with `ERROR: column u.email does not exist`
+  in `buildPlatformVerificationScript()`. The verifier joined `airs.users` and
+  filtered on `lower(u.email)`, but the canonical column has always been
+  `email_address`. Changed the single predicate to `lower(u.email_address)`.
+  No schema, migration, RLS policy, role, permission, membership, identity-model
+  or application change.
+
+### Added
+- `tests/db-repair-legacy.test.ts` regression check: the platform-admin lookup
+  uses `u.email_address`, never `u.email`, while preserving the existing
+  `m.user_id = u.id` join and the `anconison-platform` / `platform_admin` filters.
+
 ## [Platform Admin Test-Fixture Fix] 2026-08-06
 
 ### Fixed

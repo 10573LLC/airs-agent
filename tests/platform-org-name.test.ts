@@ -68,9 +68,14 @@ describe("platform organization display name", () => {
     // eslint-disable-next-line no-control-regex
     const nonAscii = /[^\x00-\x7F]/;
     expect(nonAscii.test(repair)).toBe(false);
-    expect(nonAscii.test(seed.split("\n").filter((l) => l.includes(EXPECTED)).join("\n"))).toBe(
-      false,
-    );
+    expect(
+      nonAscii.test(
+        seed
+          .split("\n")
+          .filter((l) => l.includes(EXPECTED))
+          .join("\n"),
+      ),
+    ).toBe(false);
   });
 
   it("ships a SQL proof exercised by npm run db:test", () => {

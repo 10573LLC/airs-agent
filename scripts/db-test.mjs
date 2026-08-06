@@ -19,9 +19,14 @@ function commandExists(command) {
   return !probe.error && probe.status === 0;
 }
 function dockerDbRunning() {
-  const probe = spawnSync("docker", ["compose", "ps", "--status", "running", "--services"], { encoding: "utf8" });
+  const probe = spawnSync("docker", ["compose", "ps", "--status", "running", "--services"], {
+    encoding: "utf8",
+  });
   if (probe.error || probe.status !== 0) return false;
-  return String(probe.stdout).split(/\r?\n/).map((s) => s.trim()).includes("db");
+  return String(probe.stdout)
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .includes("db");
 }
 
 const hasLocalPsql = commandExists("psql");
@@ -39,11 +44,17 @@ function run(sql) {
   const step = execPlan.exec(sql);
   const result = spawnSync(step.command, step.args, { input: step.stdin, encoding: "utf8" });
   if (result.error) return { ok: false, stdout: "", stderr: String(result.error.message) };
-  return { ok: result.status === 0, stdout: String(result.stdout ?? ""), stderr: String(result.stderr ?? "") };
+  return {
+    ok: result.status === 0,
+    stdout: String(result.stdout ?? ""),
+    stderr: String(result.stderr ?? ""),
+  };
 }
 
 console.log(`AIRS Agent SQL assertion suite (${SQL_SUITE_FILES.length} files)`);
-console.log(`  execution path: ${execPlan.mode === "psql" ? "local psql client" : "Docker Compose `db` service"}`);
+console.log(
+  `  execution path: ${execPlan.mode === "psql" ? "local psql client" : "Docker Compose `db` service"}`,
+);
 
 const suite = runSqlSuite({ run, onFile: (file) => console.log(`  ok  ${file}`) });
 if (!suite.ok) {

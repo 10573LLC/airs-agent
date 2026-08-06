@@ -88,7 +88,8 @@ export function tempHelperSurvival(script) {
         for (const [name, scope] of [...helpers]) if (scope === "uncommitted") helpers.delete(name);
         depth = 0;
       } else {
-        for (const [name, scope] of [...helpers]) if (scope === "uncommitted") helpers.set(name, "session");
+        for (const [name, scope] of [...helpers])
+          if (scope === "uncommitted") helpers.set(name, "session");
         depth = 0;
       }
       continue;

@@ -129,7 +129,12 @@ export function diffMigrations(migrations, appliedRows) {
     if (!row) {
       pending.push(m);
     } else if (row.checksum !== m.checksum) {
-      conflicts.push({ version: m.version, filename: m.filename, recorded: row.checksum, current: m.checksum });
+      conflicts.push({
+        version: m.version,
+        filename: m.filename,
+        recorded: row.checksum,
+        current: m.checksum,
+      });
     } else {
       applied.push(m);
     }
@@ -296,8 +301,20 @@ export function planExecution({
       exec: (sql) => ({
         command: "docker",
         args: [
-          "compose", "exec", "-T", COMPOSE_SERVICE,
-          "psql", "-v", "ON_ERROR_STOP=1", "-q", "-U", dbUser, "-d", dbName, "-f", "-",
+          "compose",
+          "exec",
+          "-T",
+          COMPOSE_SERVICE,
+          "psql",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-q",
+          "-U",
+          dbUser,
+          "-d",
+          dbName,
+          "-f",
+          "-",
         ],
         stdin: sql,
       }),
@@ -310,8 +327,10 @@ export function planExecution({
 export const KNOWN_MIGRATE_FLAGS = {
   "dry-run": "Show applied, pending and conflicting migrations. Changes nothing.",
   status: "Print ledger status, including whether adoption or a lock wait applies.",
-  "adopt-existing": "Record migrations 0001-0012 for a verified existing database, without running them.",
-  "admin-email": "Platform administrator email verified during adoption (default wflack@anconisonpmg.com).",
+  "adopt-existing":
+    "Record migrations 0001-0012 for a verified existing database, without running them.",
+  "admin-email":
+    "Platform administrator email verified during adoption (default wflack@anconisonpmg.com).",
   "lock-timeout-ms": "Milliseconds a second runner waits for the advisory lock (default 30000).",
   help: "Show this help.",
 };

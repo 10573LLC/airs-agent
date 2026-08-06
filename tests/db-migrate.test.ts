@@ -56,8 +56,18 @@ describe("canonical manifest", () => {
 
   it("sorts migrations by numeric version", () => {
     expect(migrations.map((m) => m.version)).toEqual([
-      "0001", "0002", "0003", "0004", "0005", "0006",
-      "0007", "0008", "0009", "0010", "0011", "0012",
+      "0001",
+      "0002",
+      "0003",
+      "0004",
+      "0005",
+      "0006",
+      "0007",
+      "0008",
+      "0009",
+      "0010",
+      "0011",
+      "0012",
     ]);
     expect(parseVersion("db/migrations/0012_fix_platform_org_display_name.sql")).toBe("0012");
   });
@@ -79,7 +89,10 @@ describe("pending-only execution", () => {
   });
 
   it("a fully recorded ledger leaves nothing pending (second run is a no-op)", () => {
-    const { applied, pending } = diffMigrations(migrations, rowsFor(migrations.map((m) => m.version)));
+    const { applied, pending } = diffMigrations(
+      migrations,
+      rowsFor(migrations.map((m) => m.version)),
+    );
     expect(pending).toHaveLength(0);
     expect(applied).toHaveLength(12);
   });
@@ -109,7 +122,9 @@ describe("transaction, failure and concurrency protection", () => {
   });
 
   it("takes the advisory lock before touching migration state", () => {
-    expect(script).toContain(`pg_advisory_xact_lock(${ADVISORY_LOCK_KEYS[0]}, ${ADVISORY_LOCK_KEYS[1]})`);
+    expect(script).toContain(
+      `pg_advisory_xact_lock(${ADVISORY_LOCK_KEYS[0]}, ${ADVISORY_LOCK_KEYS[1]})`,
+    );
     expect(script).toContain("SET LOCAL lock_timeout");
     expect(script.indexOf("pg_advisory_xact_lock")).toBeLessThan(script.indexOf("assert_pending"));
     expect(script.indexOf("assert_pending")).toBeLessThan(script.indexOf("migration body"));
@@ -130,7 +145,9 @@ describe("transaction, failure and concurrency protection", () => {
   });
 
   it("does not let a migration's own BEGIN/COMMIT commit the runner transaction early", () => {
-    const stripped = stripOuterTransaction(readFileSync(`${REPO_ROOT}/${migrations[0].path}`, "utf8"));
+    const stripped = stripOuterTransaction(
+      readFileSync(`${REPO_ROOT}/${migrations[0].path}`, "utf8"),
+    );
     expect(stripped).not.toMatch(/^COMMIT;$/m);
     expect(stripped).not.toMatch(/^BEGIN;$/m);
     // nested plpgsql blocks survive untouched
@@ -141,7 +158,9 @@ describe("transaction, failure and concurrency protection", () => {
 
 describe("checksum immutability", () => {
   it("stops on a modified applied migration and never rewrites the stored checksum", () => {
-    const tampered = [{ version: "0005", filename: "0005_incident_rooms.sql", checksum: "f".repeat(64) }];
+    const tampered = [
+      { version: "0005", filename: "0005_incident_rooms.sql", checksum: "f".repeat(64) },
+    ];
     const { conflicts, pending } = diffMigrations(migrations, [
       ...rowsFor(["0001", "0002", "0003", "0004"]),
       ...tampered,
@@ -178,10 +197,15 @@ describe("existing-database adoption", () => {
 
   it("fails when a required object, role, function or policy is missing", () => {
     for (const needle of [
-      "airs.organizations", "airs.incidents", "airs.observations",
-      "airs.expire_incident_state", "airs_maintenance",
-      "required table % is missing", "row-level security is not enabled on %",
-      "no RLS policy exists on %", "required function % is missing",
+      "airs.organizations",
+      "airs.incidents",
+      "airs.observations",
+      "airs.expire_incident_state",
+      "airs_maintenance",
+      "required table % is missing",
+      "row-level security is not enabled on %",
+      "no RLS policy exists on %",
+      "required function % is missing",
       "required database role % is missing",
     ]) {
       expect(adoptSql).toContain(needle);
@@ -189,7 +213,9 @@ describe("existing-database adoption", () => {
   });
 
   it("fails on role-parity drift", () => {
-    expect(adoptSql).toContain("role parity mismatch (expected 10 roles / 56 permissions / 175 grants)");
+    expect(adoptSql).toContain(
+      "role parity mismatch (expected 10 roles / 56 permissions / 175 grants)",
+    );
   });
 
   it("fails when the platform organization values are wrong", () => {
@@ -229,14 +255,19 @@ describe("ledger access model", () => {
     expect(ledgerSql).toContain("REVOKE ALL ON SCHEMA airs_migrations FROM airs_app");
     expect(ledgerSql).toContain("REVOKE ALL ON ALL TABLES IN SCHEMA airs_migrations FROM airs_app");
     expect(ledgerSql).toContain("REVOKE ALL ON SCHEMA airs_migrations FROM airs_maintenance");
-    expect(ledgerSql).toContain("REVOKE ALL ON ALL TABLES IN SCHEMA airs_migrations FROM airs_maintenance");
+    expect(ledgerSql).toContain(
+      "REVOKE ALL ON ALL TABLES IN SCHEMA airs_migrations FROM airs_maintenance",
+    );
     expect(ledgerSql).not.toMatch(/GRANT[^\n]*airs_app/);
     expect(ledgerSql).not.toMatch(/GRANT[^\n]*airs_maintenance/);
   });
 
   it("keeps migration state outside the tenant schema and out of application traffic", () => {
     expect(LEDGER_TABLE).toBe("airs_migrations.applied_migrations");
-    const appSources = spawnSync("grep", ["-r", "airs_migrations", "src"], { cwd: REPO_ROOT, encoding: "utf8" });
+    const appSources = spawnSync("grep", ["-r", "airs_migrations", "src"], {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+    });
     expect(appSources.stdout.trim()).toBe("");
   });
 });

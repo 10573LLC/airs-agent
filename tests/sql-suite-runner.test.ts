@@ -65,7 +65,9 @@ describe("the exact pg_temp failure", () => {
       "ROLLBACK;",
       "DO $$ BEGIN PERFORM pg_temp.ok(true, 'x'); END $$;",
     ].join("\n");
-    expect(() => assertSqlSuiteFileIsSessionSafe("rolled-back.sql", rolledBack)).toThrow(/ROLLBACK that destroys it/);
+    expect(() => assertSqlSuiteFileIsSessionSafe("rolled-back.sql", rolledBack)).toThrow(
+      /ROLLBACK that destroys it/,
+    );
   });
 });
 
@@ -76,7 +78,7 @@ describe("canonical runner failure semantics", () => {
       seen.push(sql);
       const isFailing = failOn !== null && sql.includes(read(failOn).slice(0, 200));
       return isFailing
-        ? { ok: false, stdout: "", stderr: 'psql:...: ERROR:  AUTH-RLS FAIL: tenant isolation' }
+        ? { ok: false, stdout: "", stderr: "psql:...: ERROR:  AUTH-RLS FAIL: tenant isolation" }
         : { ok: true, stdout: "", stderr: "" };
     };
     return { run, seen };
@@ -164,13 +166,17 @@ describe("adoption of the live reconciled state", () => {
   });
 
   it("refuses adoption while any canonical object is missing", () => {
-    expect(migrate).toContain("canonical objects are missing; this database is not fully reconciled");
+    expect(migrate).toContain(
+      "canonical objects are missing; this database is not fully reconciled",
+    );
     expect(migrate).toContain("npm run db:reconcile-legacy");
   });
 
   it("verifies role parity 10 / 56 / 175, the platform org and Albany tenants", () => {
     expect(read("db/tests/role_parity.sql")).toContain("(10, 56, 175)");
-    expect(adoptSql).toContain("role parity mismatch (expected 10 roles / 56 permissions / 175 grants)");
+    expect(adoptSql).toContain(
+      "role parity mismatch (expected 10 roles / 56 permissions / 175 grants)",
+    );
     expect(adoptSql).toContain("anconison-platform");
     expect(adoptSql).toContain("Anconison - AIRS Agent Platform");
     expect(adoptSql).toContain("org_kind = 'platform'");
@@ -183,16 +189,35 @@ describe("adoption of the live reconciled state", () => {
     const script = buildAdoptionScript(migrations, adoptSql, {});
     const recorded = [...script.matchAll(/record_applied\('(\d{4})'/g)].map((m) => m[1]);
     expect(recorded).toEqual(migrations.map((m) => m.version));
-    expect(recorded).toEqual(["0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009", "0010", "0011", "0012"]);
+    expect(recorded).toEqual([
+      "0001",
+      "0002",
+      "0003",
+      "0004",
+      "0005",
+      "0006",
+      "0007",
+      "0008",
+      "0009",
+      "0010",
+      "0011",
+      "0012",
+    ]);
     for (const m of migrations) expect(script).toContain(m.checksum);
     expect(script).toContain("no migration body is executed during adoption");
     // no schema object is created or replaced by adoption
-    expect(script).not.toMatch(/CREATE TABLE airs\.|DROP TABLE|CREATE EXTENSION|ALTER TABLE airs\./);
+    expect(script).not.toMatch(
+      /CREATE TABLE airs\.|DROP TABLE|CREATE EXTENSION|ALTER TABLE airs\./,
+    );
     expect(script).toMatch(/record_applied\('0012'.*true\);/);
   });
 
   it("after adoption: 12 applied, highest 0012, zero pending, zero conflicts, no adoption required", () => {
-    const rows = migrations.map((m) => ({ version: m.version, filename: m.filename, checksum: m.checksum }));
+    const rows = migrations.map((m) => ({
+      version: m.version,
+      filename: m.filename,
+      checksum: m.checksum,
+    }));
     const { applied, pending, conflicts } = diffMigrations(migrations, rows);
     expect(applied.length).toBe(12);
     expect(applied.at(-1)!.version).toBe("0012");
@@ -227,7 +252,11 @@ describe("reconciliation on an already reconciled database", () => {
 
 describe("security and output safety", () => {
   it("the runner prints no credentials or connection strings", () => {
-    for (const file of ["scripts/db-test.mjs", "scripts/lib/sql-suite.mjs", "scripts/db-migrate.mjs"]) {
+    for (const file of [
+      "scripts/db-test.mjs",
+      "scripts/lib/sql-suite.mjs",
+      "scripts/db-migrate.mjs",
+    ]) {
       const source = read(file);
       expect(source, file).not.toMatch(/console\.log\([^)]*DATABASE_URL/);
       expect(source, file).not.toMatch(/console\.(log|error)\([^)]*password/i);

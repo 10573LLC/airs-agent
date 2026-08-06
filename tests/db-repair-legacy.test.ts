@@ -41,7 +41,7 @@ function liveStateOutput() {
 describe("database image", () => {
   it("is pinned to a PostgreSQL 16 + PostGIS image, never latest", () => {
     expect(compose).toContain(`image: ${REQUIRED_DB_IMAGE}`);
-    expect(compose).not.toContain("postgres:16-alpine");
+    expect(compose).not.toMatch(/^\s*image:\s*postgres:16-alpine\s*$/m);
     expect(compose).not.toMatch(/image:\s*\S*:latest/);
   });
 

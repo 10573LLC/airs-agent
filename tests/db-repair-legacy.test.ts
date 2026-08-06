@@ -267,6 +267,15 @@ describe("repair command safety", () => {
     expect(sql).toContain("REPAIR FAIL");
   });
 
+  it("uses the canonical users.email_address column for the platform admin lookup", () => {
+    const sql = buildPlatformVerificationScript("wflack@anconisonpmg.com");
+    expect(sql).toContain("lower(u.email_address)");
+    expect(sql).not.toMatch(/lower\(u\.email\)/);
+    expect(sql).toContain("JOIN airs.memberships m ON m.user_id = u.id");
+    expect(sql).toContain("o.slug='anconison-platform'");
+    expect(sql).toContain("m.role_key='platform_admin'");
+  });
+
   it("prints no passwords, URLs, tokens or connection strings", () => {
     const source = readFileSync(`${REPO_ROOT}/scripts/db-migrate-repair-legacy.mjs`, "utf8");
     expect(source).toContain("redact(");

@@ -20,8 +20,6 @@
 //  10. only then: create the ledger and adopt 0001-0012 with current checksums
 //  11. migration status: expect zero pending, zero checksum conflicts
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import {
   DEFAULT_LOCK_TIMEOUT_MS,

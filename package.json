@@ -17,7 +17,7 @@
     "db:migrate:adopt": "node scripts/db-migrate.mjs --adopt-existing",
     "db:migrate:repair-legacy": "node scripts/db-migrate-repair-legacy.mjs",
     "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/seed/demo_orgs.sql",
-    "db:test": "node scripts/db-test.mjs"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/tests/rls_matrix.sql -f db/tests/role_parity.sql -f db/tests/auth_rls.sql -f db/tests/incident_rls.sql -f db/tests/incident_expiration.sql -f db/tests/resource_registry_rls.sql -f db/tests/disclosure_projection.sql -f db/tests/map_geography_rls.sql -f db/tests/awareness_observations_rls.sql -f db/tests/platform_admin_rls.sql -f db/tests/platform_org_name.sql",
+    "db:test": "node scripts/db-test.mjs",
     "brand:verify": "node scripts/verify-brand-assets.mjs",
     "typecheck": "tsc --noEmit",
     "maintenance:expire-incidents": "node scripts/expire-incident-state.mjs",

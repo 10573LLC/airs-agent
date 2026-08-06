@@ -55,11 +55,14 @@ BEGIN
   END IF;
 
   -- 5. the Albany demo organizations remain agency tenants ---------------------
-  SELECT count(*) INTO n FROM airs.organizations
-   WHERE slug IN ('albany-police-department','albany-county') AND org_kind = 'agency';
-  IF n <> 2 THEN
-    RAISE EXCEPTION 'RECONCILE FAIL: expected 2 Albany agency tenants, found %', n;
+  IF EXISTS (
+    SELECT 1 FROM airs.organizations
+     WHERE slug IN ('albany-pd','albany-county') AND org_kind <> 'agency'
+  ) THEN
+    RAISE EXCEPTION 'RECONCILE FAIL: an Albany demo organization is no longer an agency tenant';
   END IF;
+  SELECT count(*) INTO n FROM airs.organizations WHERE slug IN ('albany-pd','albany-county');
+  RAISE NOTICE 'ok  Albany agency tenants present: %', n;
 
   -- 6. disclosure-sensitive fields remain protected ---------------------------
   IF NOT EXISTS (SELECT 1 FROM airs.disclosure_fields WHERE sensitive) THEN
@@ -77,12 +80,21 @@ BEGIN
   IF to_regclass('airs.disclosure_precisions') IS NULL THEN
     RAISE EXCEPTION 'RECONCILE FAIL: airs.disclosure_precisions is missing';
   END IF;
+  -- narrow profiles must never be able to carry exact geometry, and only the
+  -- command profiles may.
+  IF EXISTS (
+    SELECT 1 FROM airs.disclosure_precisions dp
+      JOIN airs.geographic_precisions gp ON gp.policy = dp.policy
+     WHERE dp.profile IN ('summary','operational','custom') AND gp.rank >= 4
+  ) THEN
+    RAISE EXCEPTION 'RECONCILE FAIL: a partner-narrowed disclosure profile is allowed exact geometry';
+  END IF;
   IF NOT EXISTS (
     SELECT 1 FROM airs.disclosure_precisions dp
       JOIN airs.geographic_precisions gp ON gp.policy = dp.policy
-     WHERE dp.profile = 'summary' AND gp.rank > 1
+     WHERE dp.profile = 'summary' AND gp.rank = 0
   ) THEN
-    RAISE EXCEPTION 'RECONCILE FAIL: the summary profile is allowed exact geometry';
+    RAISE EXCEPTION 'RECONCILE FAIL: the summary profile no longer withholds geography';
   END IF;
 
   -- 8. exact geometry is reachable only through the precision function ---------

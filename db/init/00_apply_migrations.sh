@@ -12,6 +12,19 @@ set -e
 DB_DIR=/airs-db
 PSQL="psql -v ON_ERROR_STOP=1 -q --username $POSTGRES_USER --dbname $POSTGRES_DB"
 
+# PostGIS preflight. Migrations 0009/0010 require it; failing here with an
+# actionable message is far better than failing mid-migration with
+# `extension "postgis" is not available` or `type public.geometry does not exist`.
+if ! $PSQL -tAc "SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'" | grep -q 1; then
+  echo "airs: FATAL - PostGIS is not available in this PostgreSQL image." >&2
+  echo "airs: use postgis/postgis:16-3.6-alpine (see docker-compose.yml); the plain" >&2
+  echo "airs: postgres:16-alpine image cannot run migrations 0009 and 0010." >&2
+  exit 1
+fi
+echo "airs: enabling PostGIS before any migration runs"
+$PSQL -c "CREATE EXTENSION IF NOT EXISTS postgis"
+$PSQL -tAc "SELECT postgis_full_version()"
+
 echo "airs: creating the migration ledger"
 $PSQL -f "$DB_DIR/ledger/0000_migration_ledger.sql"
 

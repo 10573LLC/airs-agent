@@ -327,3 +327,42 @@ remains deliberately out of scope.
 - Row census after each of the three cycles: 2 organizations, 0 accounts,
   0 memberships, 0 observations, 0 audit events, 0 trusted-agency rows —
   identical to the seeded state, with no rebuild between cycles.
+
+## Windows Bootstrap Hardening — 2026-08-06
+
+### Added
+- Repository-root `.gitattributes`: `text=auto eol=lf` default, explicit
+  `*.sh text eol=lf` (plus `.bash`/`.zsh`, SQL, TS/JS, YAML, JSON, Markdown,
+  `Dockerfile`, `docker-compose.yml`), `*.ps1 text eol=crlf`, binary assets excluded.
+- `scripts/check-line-endings.mjs` + `npm run check:line-endings` — fails when any
+  tracked shell script contains CRLF.
+- `scripts/db-migrate.mjs` and `scripts/lib/migrate-plan.mjs` — portable Node
+  migration runner: local `psql` first, otherwise `docker compose exec -T db psql`,
+  `ON_ERROR_STOP=1` on both paths, established 0001→0011 order, nonzero exit on
+  failure, redacted output, no implicit container start or delete.
+- `scripts/lib/platform-admin-cli.mjs` — `--help` (exit 0, no `--email` required)
+  documenting every flag, required environment variables, what the command changes,
+  what it never prints or stores, a Windows PowerShell example, how to replace an
+  exposed invitation with `--new-link`, and that the account only exists after
+  activation. Unknown flags exit 2 with a clear message.
+- Tests: `tests/line-endings.test.ts`, `tests/db-migrate.test.ts`,
+  `tests/platform-admin-cli.test.ts` (18 new assertions).
+
+### Changed
+- `npm run db:migrate` now runs the Node runner instead of a bare `psql` invocation.
+  The command name is unchanged.
+- `LOCAL_SETUP.md` §9 documents the verified 14-step Windows sequence and its
+  warnings (`docker compose down -v` data loss, never share activation URLs, use
+  `--new-link` after exposure, do not run `npm audit fix` unreviewed).
+
+### Unchanged (verified)
+- Platform/agency plane separation, `platform_admin` role and its zero operational
+  permissions, forced RLS, tenant isolation, authentication, password hashing,
+  session handling, invitation hashing/expiry, single-use activation, the
+  `anconison-platform` organization and both Albany agency organizations.
+
+### Verified
+- `npm run check:line-endings`, `tsc --noEmit`, `vitest run` (77 passed / 70 skipped),
+  `npm run build`, `npm run build:dev`, `platform-admin:setup -- --help` (exit 0).
+- Environment-blocked in this sandbox: `npm run db:test` (no PostgreSQL) and a live
+  Docker Compose migration run (no Docker daemon).

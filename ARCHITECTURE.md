@@ -468,3 +468,18 @@ One transaction per migration: `BEGIN` → advisory lock → pending guard → m
 untouched. No current AIRS Agent migration requires running outside a transaction (none uses
 `CREATE INDEX CONCURRENTLY`, `CREATE DATABASE`, or `ALTER TYPE ... ADD VALUE` outside a block);
 any future one must be documented here explicitly.
+
+## Deployment: database image and legacy repair
+
+The database plane is pinned to `postgis/postgis:16-3.6-alpine` (PostgreSQL 16,
+PostGIS 3.6). PostGIS is part of the portable schema contract: migrations 0009
+and 0010 create geometry-typed columns in SRID 4326, so the image - not the host
+- must provide the extension. Fresh Docker initialization enables PostGIS before
+the first migration runs and still drives everything from the single canonical
+manifest and the persistent ledger.
+
+`scripts/lib/legacy-repair.mjs` holds the pure planning logic (per-migration
+state probes, classification, plan) and `scripts/db-migrate-repair-legacy.mjs`
+the operator-only CLI. Repair applies only the migrations that concrete schema
+probes prove missing, verifies the database, and creates the ledger last. It is
+never invoked by the application, by `npm run db:migrate`, or by Docker.

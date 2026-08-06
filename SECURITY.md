@@ -382,3 +382,20 @@ are all unchanged. No seed administrator credentials exist.
 - Every runner code path (apply, dry-run, status, adoption, error handling) passes printable text
   through `redact()`, so database URLs and passwords are never emitted.
 - Adoption is operator-explicit, verification-first and never executes migration SQL.
+
+## Legacy repair path
+
+`npm run db:migrate:repair-legacy` is operator-only and never runs automatically.
+Security properties:
+
+* explicit `--confirm` plus a `--backup-confirmed` backup attestation;
+* the migration advisory lock is held for every write, so two operators cannot
+  repair concurrently;
+* each migration runs in one transaction - a failure leaves no partial schema,
+  permissions or policies and no ledger row;
+* the ledger is created only after the full SQL assertion suite, role parity and
+  the platform organization / platform administrator verification pass;
+* `airs_app` and `airs_maintenance` remain fully denied on the
+  `airs_migrations` schema after repair;
+* output is redacted: no passwords, connection strings, URLs or tokens are
+  printed, and the command never echoes `DATABASE_URL`.

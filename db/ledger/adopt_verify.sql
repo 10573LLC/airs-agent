@@ -30,7 +30,7 @@ BEGIN
     'airs.role_permissions','airs.audit_events','airs.sessions','airs.invitations',
     'airs.incidents','airs.incident_participants','airs.aircraft','airs.vehicles',
     'airs.sensors','airs.personnel','airs.incident_assignments','airs.disclosure_profiles',
-    'airs.map_features','airs.operating_areas','airs.asset_locations','airs.observations'
+    'airs.map_features','airs.operating_areas','airs.resource_locations','airs.observations'
   ] LOOP
     IF to_regclass(missing) IS NULL THEN
       RAISE EXCEPTION 'ADOPT FAIL: required table % is missing', missing;

@@ -23,7 +23,22 @@ import { createHash, randomBytes } from "node:crypto";
 
 import pg from "pg";
 
+import { HELP_TEXT, KNOWN_FLAGS, parseArgs } from "./lib/platform-admin-cli.mjs";
+
 const args = process.argv.slice(2);
+const parsed = parseArgs(args);
+
+if (parsed.help) {
+  process.stdout.write(`${HELP_TEXT}\n`);
+  process.exit(0);
+}
+if (parsed.error) {
+  console.error(`\n${parsed.error}\n`);
+  console.error("Run `npm run platform-admin:setup -- --help` for usage.\n");
+  process.exit(2);
+}
+void KNOWN_FLAGS;
+
 const flag = (n) => {
   const i = args.indexOf(`--${n}`);
   return i === -1 ? null : args[i + 1];

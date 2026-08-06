@@ -921,3 +921,25 @@ these are host procedures documented in LOCAL_SETUP.md):
 | Live reconciliation against the Windows database | **Environment-blocked** | No PostgreSQL, PostGIS or Docker in this environment | Must be run by the operator per `LOCAL_SETUP.md` |
 | Live `npm run db:test`, `db:migrate:status`, second-run no-op | **Environment-blocked** | Same | Proven in logic tests only |
 | Stage 9 | Not started | No operational feature files added | — |
+
+## SQL test-harness fix and reconciled-state adoption (2026-08-06)
+
+Scope: test harness and operator commands only. No migration, RLS policy,
+permission, canonical object or application feature was changed.
+
+| Requirement | Status | Evidence |
+| --- | --- | --- |
+| Root cause of `schema "pg_temp" does not exist` identified | Verified | Wrapper transaction + the file's own intermediate `ROLLBACK`; test "the old runner destroys pg_temp.ok on the file's own intermediate ROLLBACK" |
+| One canonical SQL-suite runner | Verified | `scripts/lib/sql-suite.mjs`; `db:test`, adopt, reconcile and repair all call `runSqlSuite`; `buildVerificationScript` deleted |
+| Session-safe execution (no runner transaction) | Verified | `buildSqlSuiteScript` adds only `\set ON_ERROR_STOP on`; test asserts no BEGIN/COMMIT/ROLLBACK from the runner |
+| Every suite file self-contained | Verified | `analyzeSqlSuiteFile` over all 11 files: no undefined helpers, survival `safe` |
+| Real assertion failures still fail hard | Verified | Test "stops at the first real assertion failure and identifies the file"; no `console.warn`, no ledger write |
+| `npm run db:test` uses the canonical runner | Verified | `package.json` -> `node scripts/db-test.mjs` |
+| Adoption verifies before recording | Verified | Ordered: PostGIS -> canonical objects -> SQL suite -> `reconcile_verify.sql` -> platform admin -> `buildAdoptionScript` |
+| Adoption records 0001-0012, runs no migration body | Verified | Test asserts 12 `record_applied` rows with manifest checksums and no DDL |
+| Post-adoption state: 12 applied / 0 pending / 0 conflicts | Verified | `diffMigrations` test |
+| Already-reconciled database recreates nothing | Verified | `db:reconcile-legacy` exits 0 with "Nothing to reconcile" before any unit is applied |
+| Prohibitions documented | Verified | `LOCAL_SETUP.md`: no `down -v`, no manual replay, no reconciliation to populate the ledger |
+| Secrets redacted | Verified | `redact()` in `scripts/db-test.mjs`; no URL/password logging |
+| Live run against the Windows database | **Environment-blocked** | No PostgreSQL/PostGIS/Docker here; operator runs the sequence in `LOCAL_SETUP.md` |
+| TypeScript suite | Verified | 194 passed, 70 skipped (DB-backed), 13 files |

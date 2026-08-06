@@ -2,6 +2,36 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [SQL Test-Harness Fix and Reconciled-State Adoption] 2026-08-06
+
+### Fixed
+- `ERROR: schema "pg_temp" does not exist` during reconciliation/adoption
+  verification. Cause: the runner wrapped session-scoped suite files in an extra
+  `BEGIN; ... ROLLBACK;`, so a file's own intermediate `ROLLBACK` destroyed the
+  temporary assertion helpers. A harness defect only; the AIRS schema, RLS
+  policies, permissions and migrations 0001-0012 are unchanged.
+
+### Added
+- `scripts/lib/sql-suite.mjs`: the ONE canonical SQL verification-suite runner.
+  One file per session, no runner-supplied transaction, stops at the first
+  failing file, and statically rejects files whose temporary helpers cannot
+  survive their own transaction handling.
+- `scripts/db-test.mjs` behind `npm run db:test` (replaces the inline psql list).
+- Adoption now verifies PostGIS, the full canonical object inventory, the SQL
+  suite, `db/repair/reconcile_verify.sql`, role parity (10/56/175) and the
+  platform administrator before recording 0001-0012. Optional `--admin-email`.
+- `npm run db:reconcile-legacy` exits immediately on an already reconciled
+  database and points at `npm run db:migrate:adopt`.
+
+### Removed
+- `buildVerificationScript` from `scripts/lib/migrate-plan.mjs`.
+
+### Documentation
+- `LOCAL_SETUP.md`, `DATABASE.md`, `BUILD_AUDIT.md`: root cause, canonical
+  runner, completion path, and the explicit prohibitions (no
+  `docker compose down -v`, no manual migration replay, no reconciliation run
+  merely to populate the ledger).
+
 ## [Cumulative Legacy-Schema Reconciliation] 2026-08-06
 
 ### Added

@@ -501,3 +501,23 @@ still agency tenants; sensitive disclosure fields exist and never reach the
 `apply_precision` and `observation_precision` exist; and the three closure
 functions exist. The ledger is written only after this file, the full SQL suite,
 role parity (10/56/175) and the platform administrator check all pass.
+
+## SQL verification harness (2026-08-06)
+
+`db/tests/*.sql` are **session-scoped** scripts. Each creates its own temporary
+assertion helpers outside any transaction and manages its own
+`BEGIN`/`COMMIT`/`ROLLBACK`. A runner must never add a transaction around them:
+PostgreSQL drops the lazily created `pg_temp` schema when the transaction that
+created it rolls back, which produced `ERROR: schema "pg_temp" does not exist`.
+
+`scripts/lib/sql-suite.mjs` is the single runner for `npm run db:test`,
+adoption, reconciliation and legacy repair. It runs one file per session with
+no added transaction, stops at the first failing file, and statically rejects a
+file whose temporary helpers cannot survive its own transaction handling.
+
+Adoption (`npm run db:migrate:adopt`) records 0001-0012 with their current
+checksums only after PostGIS, the complete canonical object inventory, the full
+SQL suite, `db/repair/reconcile_verify.sql`, role parity (10/56/175) and the
+platform administrator all verify. It executes no migration body and creates no
+object. Never run `docker compose down -v`, never replay migrations by hand, and
+never rerun reconciliation just to populate the ledger.

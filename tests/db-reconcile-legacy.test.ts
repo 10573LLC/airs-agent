@@ -401,7 +401,9 @@ describe("verification, ledger and adoption ordering", () => {
     const adopt = readFileSync(`${REPO_ROOT}/db/ledger/adopt_verify.sql`, "utf8");
     expect(adopt).not.toContain("'airs.has_permission'");
     expect(adopt).not.toContain("'airs.disclosure_profiles'");
-    expect(adopt).not.toContain("'airs.aircraft'");
+    // airs.aircraft is a live 0001 table (never dropped or superseded); the
+    // 0007 registry adds airs.resource_aircraft alongside it.
+    expect(adopt).toContain("'airs.aircraft'");
     expect(adopt).toContain("'airs.resource_aircraft'");
     expect(adopt).toContain("'airs.current_account_id'");
   });

@@ -26,12 +26,11 @@ import { join } from "node:path";
 import {
   DEFAULT_LOCK_TIMEOUT_MS,
   REPO_ROOT,
-  VERIFICATION_FILES,
-  buildVerificationScript,
   loadMigrations,
   planExecution,
   redact,
 } from "./lib/migrate-plan.mjs";
+import { runSqlSuite } from "./lib/sql-suite.mjs";
 import {
   POSTGIS_MISSING_ERROR,
   REQUIRED_DB_IMAGE,
@@ -127,6 +126,12 @@ if (!flags.confirm) {
 if (!plan.safe) fail(`\n${plan.error}`, 3);
 if (plan.units.length === 0) {
   console.log("Nothing to reconcile: every canonical object already exists.");
+  console.log("");
+  console.log("No object is recreated or replaced merely to reach the adoption step.");
+  console.log("Finish with the verified adoption command instead:");
+  console.log("  npm run db:migrate:adopt");
+  console.log("  npm run db:migrate:status   (expect 12 applied, zero pending, zero conflicts)");
+  process.exit(0);
 }
 
 // --- 3. Re-probe immediately before changing anything ------------------------
@@ -165,11 +170,9 @@ for (const unit of confirmPlan.units) {
 // --- 5. Verification: SQL suite, role parity, security, platform -------------
 console.log("");
 console.log("Running the full SQL assertion suite and role parity before recording anything...");
-for (const file of VERIFICATION_FILES) {
-  const sqlText = readFileSync(join(REPO_ROOT, file), "utf8");
-  const result = run(buildVerificationScript(sqlText));
-  if (!result.ok) fail(`Reconciliation aborted: verification failed (${file}). No ledger was created.\n${result.stderr}`, 4);
-  console.log(`  ok  ${file}`);
+const suite = runSqlSuite({ run, root: REPO_ROOT, onFile: (file) => console.log(`  ok  ${file}`) });
+if (!suite.ok) {
+  fail(`Reconciliation aborted: verification failed (${suite.failedFile}). No ledger was created.\n${suite.stderr}`, 4);
 }
 const security = run(buildReconcileVerifyScript());
 if (!security.ok) fail(`Reconciliation aborted: security verification failed. No ledger was created.\n${security.stderr}`, 4);

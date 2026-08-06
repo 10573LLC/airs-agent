@@ -12,14 +12,15 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/migrations/0001_init.sql -f db/migrations/0002_roles_seed.sql -f db/migrations/0003_auth.sql -f db/migrations/0004_org_context_guard.sql -f db/migrations/0005_incident_rooms.sql -f db/migrations/0006_maintenance.sql -f db/migrations/0007_resource_registry.sql -f db/migrations/0008_disclosure_profiles.sql -f db/migrations/0009_common_operating_picture.sql -f db/migrations/0010_awareness_observations.sql -f db/migrations/0011_platform_administration.sql",
+    "db:migrate": "node scripts/db-migrate.mjs",
     "db:seed": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/seed/demo_orgs.sql",
     "db:test": "psql \"$DATABASE_URL\" -v ON_ERROR_STOP=1 -f db/tests/rls_matrix.sql -f db/tests/role_parity.sql -f db/tests/auth_rls.sql -f db/tests/incident_rls.sql -f db/tests/incident_expiration.sql -f db/tests/resource_registry_rls.sql -f db/tests/disclosure_projection.sql -f db/tests/map_geography_rls.sql -f db/tests/awareness_observations_rls.sql -f db/tests/platform_admin_rls.sql",
     "brand:verify": "node scripts/verify-brand-assets.mjs",
     "typecheck": "tsc --noEmit",
     "maintenance:expire-incidents": "node scripts/expire-incident-state.mjs",
     "bootstrap:platform-admin": "node scripts/bootstrap-platform-admin.mjs",
-    "platform-admin:setup": "node scripts/platform-admin-setup.mjs"
+    "platform-admin:setup": "node scripts/platform-admin-setup.mjs",
+    "check:line-endings": "node scripts/check-line-endings.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -176,17 +176,59 @@ BEGIN
 END $$;
 
 -- 5. A platform administrator sees no agency-owned rows -------------------------------
-SET LOCAL ROLE airs_app;
+-- The fixture identifiers MUST be resolved while still running with setup
+-- privileges. Under airs_app the accounts table is RLS-restricted, so a lookup
+-- performed after the role switch silently yields NULL and the assertions below
+-- would then exercise the account-less, tenant-only branch of
+-- airs.current_org_id() instead of a real platform administrator.
 DO $$
 DECLARE plat uuid; acct uuid;
 BEGIN
   SELECT id INTO plat FROM airs.organizations WHERE org_kind = 'platform';
   SELECT id INTO acct FROM airs.accounts WHERE email = 'platform.probe@example.test';
 
+  PERFORM pg_temp.ok(acct IS NOT NULL,
+    'the platform probe account exists before the restricted-role section begins');
+  PERFORM pg_temp.ok(
+    (SELECT count(*) FROM airs.memberships
+      WHERE account_id = acct AND role_key = 'platform_admin' AND status = 'active') = 1,
+    'the platform probe holds exactly one active platform_admin membership');
+  PERFORM pg_temp.ok(
+    (SELECT count(*) FROM airs.memberships m
+      JOIN airs.organizations o ON o.id = m.org_id
+     WHERE m.account_id = acct AND o.slug = 'anconison-platform') = 1,
+    'that membership belongs to the anconison-platform organization');
+  PERFORM pg_temp.ok(NOT EXISTS (
+      SELECT 1 FROM airs.memberships
+       WHERE account_id = acct AND org_id = '11111111-1111-4111-8111-111111111111'),
+    'the platform probe holds no Albany membership');
+  PERFORM pg_temp.ok(EXISTS (
+      SELECT 1 FROM airs.users
+       WHERE org_id = '11111111-1111-4111-8111-111111111111'
+         AND email_address = 'platform.probe@example.test'),
+    'the Albany users probe record exists and is retained for the invisibility proof');
+
+  -- Carry the resolved account id across the role switch in a transaction-local
+  -- setting. This is test scaffolding only: no schema, policy or grant changes.
+  PERFORM set_config('airs.test_platform_account_id', acct::text, true);
+  PERFORM set_config('airs.test_platform_org_id', plat::text, true);
+END $$;
+
+SET LOCAL ROLE airs_app;
+DO $$
+DECLARE plat uuid; acct uuid;
+BEGIN
+  plat := current_setting('airs.test_platform_org_id', true)::uuid;
+  acct := current_setting('airs.test_platform_account_id', true)::uuid;
+  PERFORM pg_temp.ok(acct IS NOT NULL AND plat IS NOT NULL,
+    'the restricted-role section runs with a real platform-admin account id');
+
   PERFORM set_config('airs.account_id', acct::text, true);
   PERFORM set_config('airs.org_id', '11111111-1111-4111-8111-111111111111', true);
   PERFORM pg_temp.ok(airs.current_org_id() IS NULL,
     'a platform administrator cannot assume an agency organization context');
+  PERFORM pg_temp.ok((SELECT count(*) FROM airs.organizations) = 0,
+    'the Albany users probe row alone establishes no organization context');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.users) = 0,
     'a platform administrator reads no agency user rows');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.incidents) = 0,
@@ -197,6 +239,27 @@ BEGIN
   PERFORM set_config('airs.org_id', plat::text, true);
   PERFORM pg_temp.ok(airs.current_org_id() = plat,
     'a platform administrator may act inside the platform organization');
+  PERFORM pg_temp.ok(
+    (SELECT slug FROM airs.organizations WHERE id = airs.current_org_id()) = 'anconison-platform',
+    'the resolved organization is the Anconison platform tenant');
+END $$;
+RESET ROLE;
+
+-- 5b. Unchanged behaviour that other planes depend on ---------------------------------
+SET LOCAL ROLE airs_app;
+DO $$
+BEGIN
+  -- Account-less, tenant-only context (migrations, background jobs) is unchanged.
+  PERFORM set_config('airs.account_id', '', true);
+  PERFORM set_config('airs.org_id', '11111111-1111-4111-8111-111111111111', true);
+  PERFORM pg_temp.ok(
+    airs.current_org_id() = '11111111-1111-4111-8111-111111111111',
+    'account-less tenant-only context still resolves the requested organization');
+
+  -- Invitation redemption context (an account with no membership yet) is unchanged.
+  PERFORM set_config('airs.account_id', gen_random_uuid()::text, true);
+  PERFORM pg_temp.ok(airs.current_org_id() IS NULL,
+    'an account with no membership resolves no organization context');
 END $$;
 RESET ROLE;
 

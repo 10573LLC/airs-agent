@@ -23,12 +23,11 @@ import { join } from "node:path";
 import {
   DEFAULT_LOCK_TIMEOUT_MS,
   REPO_ROOT,
-  VERIFICATION_FILES,
-  buildVerificationScript,
   loadMigrations,
   planExecution,
   redact,
 } from "./lib/migrate-plan.mjs";
+import { runSqlSuite } from "./lib/sql-suite.mjs";
 import {
   DEFAULT_ADMIN_EMAIL,
   POSTGIS_MISSING_ERROR,
@@ -160,12 +159,9 @@ for (const migration of plan.apply) {
 
 // --- 4. Verification: SQL suite, role parity, platform administrator --------
 console.log("");
-console.log("Running the full SQL assertion suite and role parity before recording anything...");
-for (const file of VERIFICATION_FILES) {
-  const sqlText = readFileSync(join(REPO_ROOT, file), "utf8");
-  const result = run(buildVerificationScript(sqlText));
-  if (!result.ok) fail(`Repair aborted: verification failed (${file}). No ledger was created.\n${result.stderr}`, 4);
-  console.log(`  ok  ${file}`);
+const suite = runSqlSuite({ run, root: REPO_ROOT, onFile: (file) => console.log(`  ok  ${file}`) });
+if (!suite.ok) {
+  fail(`Repair aborted: verification failed (${suite.failedFile}). No ledger was created.\n${suite.stderr}`, 4);
 }
 const platform = run(buildPlatformVerificationScript(adminEmail));
 if (!platform.ok) fail(`Repair aborted: platform verification failed. No ledger was created.\n${platform.stderr}`, 4);

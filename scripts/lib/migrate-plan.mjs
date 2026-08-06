@@ -311,6 +311,7 @@ export const KNOWN_MIGRATE_FLAGS = {
   "dry-run": "Show applied, pending and conflicting migrations. Changes nothing.",
   status: "Print ledger status, including whether adoption or a lock wait applies.",
   "adopt-existing": "Record migrations 0001-0012 for a verified existing database, without running them.",
+  "admin-email": "Platform administrator email verified during adoption (default wflack@anconisonpmg.com).",
   "lock-timeout-ms": "Milliseconds a second runner waits for the advisory lock (default 30000).",
   help: "Show this help.",
 };
@@ -322,10 +323,10 @@ export function parseMigrateArgs(argv) {
     if (!arg.startsWith("--")) return { error: `Unknown argument: ${arg}`, flags };
     const name = arg.slice(2);
     if (!(name in KNOWN_MIGRATE_FLAGS)) return { error: `Unknown flag: ${arg}`, flags };
-    if (name === "lock-timeout-ms") {
+    if (name === "lock-timeout-ms" || name === "admin-email") {
       const value = argv[i + 1];
       if (!value || value.startsWith("--")) return { error: `--${name} requires a value`, flags };
-      flags[name] = Number(value);
+      flags[name] = name === "lock-timeout-ms" ? Number(value) : value;
       i += 1;
     } else {
       flags[name] = true;

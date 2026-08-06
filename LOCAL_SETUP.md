@@ -354,3 +354,83 @@ The recipient opens the link, sets a display name and a password of at least 12 
 signed in as `platform_admin` of the Anconison platform organization. From then on they
 authenticate normally at `/auth`. If an account for that address already exists, the CLI prints an
 `/invite/...` link instead and the recipient signs in first.
+
+---
+
+## 9. Windows (verified sequence) — Windows Bootstrap Hardening
+
+This is the sequence actually used to activate the first real platform administrator
+on Windows with Docker Desktop. It requires **no host-installed `psql`**.
+
+1. **Install Git for Windows.** Keep the default checkout behaviour; the
+   repository ships a `.gitattributes` that forces LF for every `*.sh` file, so
+   the PostgreSQL container init scripts never arrive as CRLF
+   (`/bin/sh^M: bad interpreter`).
+2. **Install Node.js 22+.**
+3. **Install Docker Desktop.**
+4. **Install and initialize WSL 2** (`wsl --install`), then confirm Docker Desktop
+   is using the WSL 2 backend.
+5. **Clone the repository.**
+   ```powershell
+   git clone https://github.com/anconison/airs-agent.git
+   cd airs-agent
+   ```
+6. **Install dependencies.**
+   ```powershell
+   npm install
+   ```
+   Do **not** run `npm audit fix` (especially `--force`) automatically — review each
+   advisory first; it can silently change major versions of build-critical packages.
+7. **Configure the three required local database passwords** in `.env`
+   (copy from `.env.example`): `POSTGRES_PASSWORD`, `APP_DB_PASSWORD`,
+   `MAINTENANCE_DB_PASSWORD`. Never commit `.env`.
+8. **Start the database service only.**
+   ```powershell
+   docker compose up -d db
+   ```
+9. **Run migrations without host `psql`.**
+   ```powershell
+   npm run db:migrate
+   ```
+   The runner uses a local `psql` when one is on `PATH`; otherwise it detects the
+   running Compose `db` service and applies each migration in order through
+   `docker compose exec -T db psql -v ON_ERROR_STOP=1`. If neither is available it
+   prints an actionable error and exits nonzero — it never starts or deletes
+   containers for you.
+10. **Start the application service.**
+    ```powershell
+    docker compose up -d app
+    ```
+11. **Generate (or replace) the platform-admin invitation.**
+    ```powershell
+    $env:AIRS_BOOTSTRAP_DATABASE_URL = "postgres://airs_owner:<POSTGRES_PASSWORD>@localhost:5432/airs"
+    $env:AIRS_PUBLIC_BASE_URL = "http://localhost:3000"
+    npm run platform-admin:setup -- --help
+    npm run platform-admin:setup -- --email wflack@anconisonpmg.com
+    # replace an exposed/unusable link:
+    npm run platform-admin:setup -- --email wflack@anconisonpmg.com --new-link
+    ```
+12. **Activate the account** by opening the one-time URL printed in that terminal
+    and setting a password. The account does not exist until activation completes.
+13. **Sign in** at `http://localhost:3000/auth`.
+14. **Stop containers without deleting data.**
+    ```powershell
+    docker compose stop        # or: docker compose down   (keeps the volume)
+    ```
+
+### Warnings
+
+- `docker compose down -v` **deletes the local database volume** and every local
+  account, membership, incident and audit row with it.
+- Activation URLs must never be screenshotted, pasted into chat, or shared. They
+  are single-use and expiring, but a leaked link is a live credential until used.
+- If an activation URL is exposed, immediately re-run the setup command with
+  `--new-link`; the previous pending invitation is revoked at once.
+- Do not run `npm audit fix` automatically without reviewing the changes.
+
+### Line-ending check
+
+```bash
+npm run check:line-endings   # fails when any tracked *.sh file contains CRLF
+```
+If a CRLF copy ever lands in a working tree: `git add --renormalize .`

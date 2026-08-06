@@ -338,3 +338,29 @@ Controls:
 - **Audit.** `platform.bootstrap_invitation_created` (issuance), `invitation.accepted`
   (activation, membership creation and role assignment) and `auth.sign_in` are recorded in the
   platform organization. No audit record contains token material.
+
+---
+
+## Windows bootstrap hardening (2026-08-06)
+
+Portability fixes only; no change to the security architecture. Platform/agency
+plane separation, the `platform_admin` role and its zero operational permissions,
+forced RLS, tenant isolation, authentication, PBKDF2 password hashing, session
+handling, SHA-256 invitation hashing, invitation expiry and single-use activation
+are all unchanged. No seed administrator credentials exist.
+
+- **Migration runner** (`scripts/db-migrate.mjs`) redacts connection strings and
+  password-like values from every message it prints (`redact()` in
+  `scripts/lib/migrate-plan.mjs`), preserves `ON_ERROR_STOP=1` on both paths, and
+  exits nonzero on the first failure. It never starts or removes containers.
+- **Setup help** (`--help`) documents what the command changes and states
+  explicitly that no token, token hash, password or database URL is ever printed,
+  logged or stored, and that the account is created only when activation completes.
+- **Exposed links.** Any activation URL that has been screenshotted or shared must
+  be replaced with `npm run platform-admin:setup -- --email <address> --new-link`,
+  which revokes the pending invitation immediately.
+- **Line endings.** `.gitattributes` forces LF for tracked shell scripts;
+  `npm run check:line-endings` and `tests/line-endings.test.ts` fail the build if a
+  CRLF shell script is ever committed, closing a container-init failure mode.
+- No passwords, database URLs, activation links, tokens or token hashes are
+  committed to this repository.

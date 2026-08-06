@@ -6,7 +6,7 @@ services:
     # PostgreSQL 16 + PostGIS 3.6, pinned (never `latest`). Migrations 0009 and
     # 0010 require PostGIS; the plain postgres:16-alpine image does not ship it.
     # Same PostgreSQL major version as before, so an existing PostgreSQL 16 data
-    # volume is reused as-is - never run `docker compose down -v`.
+    # volume is reused as-is; never delete the named volume during an upgrade.
     image: postgis/postgis:16-3.6-alpine
     environment:
       POSTGRES_USER: airs_owner

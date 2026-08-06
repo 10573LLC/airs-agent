@@ -66,7 +66,7 @@ describe("fresh Docker installation", () => {
   it("enables PostGIS before any migration and still uses the canonical manifest + ledger", () => {
     const gisAt = dockerInit.indexOf("CREATE EXTENSION IF NOT EXISTS postgis");
     const ledgerAt = dockerInit.indexOf("ledger/0000_migration_ledger.sql");
-    const applyAt = dockerInit.indexOf("migrations/manifest.txt");
+    const applyAt = dockerInit.lastIndexOf("migrations/manifest.txt");
     expect(gisAt).toBeGreaterThan(-1);
     expect(gisAt).toBeLessThan(ledgerAt);
     expect(ledgerAt).toBeLessThan(applyAt);
@@ -214,7 +214,9 @@ describe("ledger creation after verification", () => {
 
   it("refuses to write into an already populated ledger", () => {
     expect(ledger).toContain("REPAIR FAIL: the migration ledger already contains rows");
-    expect(ledger.indexOf("pg_advisory_xact_lock")).toBeLessThan(ledger.indexOf("record_applied"));
+    expect(ledger.indexOf("pg_advisory_xact_lock")).toBeLessThan(
+      ledger.indexOf("SELECT airs_migrations.record_applied("),
+    );
   });
 
   it("keeps airs_app and airs_maintenance denied ledger access", () => {

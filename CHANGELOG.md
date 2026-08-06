@@ -5,6 +5,7 @@ All notable changes. Newest first. Dates are UTC.
 ## [Platform Verification Column Fix] 2026-08-06
 
 ### Fixed
+
 - Migration adoption/reconciliation failed with `ERROR: column u.email does not exist`
   in `buildPlatformVerificationScript()`. The verifier joined `airs.users` and
   filtered on `lower(u.email)`, but the canonical column has always been
@@ -13,6 +14,7 @@ All notable changes. Newest first. Dates are UTC.
   or application change.
 
 ### Added
+
 - `tests/db-repair-legacy.test.ts` regression check: the platform-admin lookup
   uses `u.email_address`, never `u.email`, while preserving the existing
   `m.user_id = u.id` join and the `anconison-platform` / `platform_admin` filters.
@@ -20,8 +22,9 @@ All notable changes. Newest first. Dates are UTC.
 ## [Platform Admin Test-Fixture Fix] 2026-08-06
 
 ### Fixed
+
 - `db/tests/platform_admin_rls.sql` section 5 resolved the platform probe
-  account id *after* `SET LOCAL ROLE airs_app`, where `airs.accounts` is
+  account id _after_ `SET LOCAL ROLE airs_app`, where `airs.accounts` is
   RLS-restricted. The lookup yielded NULL, so the assertion "a platform
   administrator cannot assume an agency organization context" actually
   exercised the documented account-less, tenant-only branch of
@@ -31,6 +34,7 @@ All notable changes. Newest first. Dates are UTC.
   application change.
 
 ### Added
+
 - Fixture preconditions (account exists, exactly one active `platform_admin`
   membership in `anconison-platform`, no Albany membership, Albany users probe
   retained) plus assertions that account-less tenant-only context and
@@ -41,6 +45,7 @@ All notable changes. Newest first. Dates are UTC.
 ## [SQL Test-Harness Fix and Reconciled-State Adoption] 2026-08-06
 
 ### Fixed
+
 - `ERROR: schema "pg_temp" does not exist` during reconciliation/adoption
   verification. Cause: the runner wrapped session-scoped suite files in an extra
   `BEGIN; ... ROLLBACK;`, so a file's own intermediate `ROLLBACK` destroyed the
@@ -48,6 +53,7 @@ All notable changes. Newest first. Dates are UTC.
   policies, permissions and migrations 0001-0012 are unchanged.
 
 ### Added
+
 - `scripts/lib/sql-suite.mjs`: the ONE canonical SQL verification-suite runner.
   One file per session, no runner-supplied transaction, stops at the first
   failing file, and statically rejects files whose temporary helpers cannot
@@ -60,9 +66,11 @@ All notable changes. Newest first. Dates are UTC.
   database and points at `npm run db:migrate:adopt`.
 
 ### Removed
+
 - `buildVerificationScript` from `scripts/lib/migrate-plan.mjs`.
 
 ### Documentation
+
 - `LOCAL_SETUP.md`, `DATABASE.md`, `BUILD_AUDIT.md`: root cause, canonical
   runner, completion path, and the explicit prohibitions (no
   `docker compose down -v`, no manual migration replay, no reconciliation run
@@ -71,6 +79,7 @@ All notable changes. Newest first. Dates are UTC.
 ## [Cumulative Legacy-Schema Reconciliation] 2026-08-06
 
 ### Added
+
 - `npm run db:reconcile-legacy` (`scripts/db-reconcile-legacy.mjs`): operator-only,
   report-first reconciliation of a noncontiguous legacy database. Probes 94
   canonical post-0012 objects individually and creates only those genuinely
@@ -91,6 +100,7 @@ All notable changes. Newest first. Dates are UTC.
   ordering, role parity derivation and ledger-after-verification.
 
 ### Fixed
+
 - **False-positive `PARTIAL` classifications.** The legacy repair probes
   demanded `airs.has_permission` (0003) and `airs.disclosure_profiles` (0008).
   Neither is created by any migration in the manifest: permission evaluation
@@ -111,18 +121,21 @@ All notable changes. Newest first. Dates are UTC.
   instead of leaving a partial database with no supported next step.
 
 ### Unchanged
+
 - No numbered migration, schema, role, permission or application feature was
   added or altered. No Stage 9 work was started.
 
 ## [PostGIS Docker Image Tag Correction] 2026-08-06
 
 ### Fixed
+
 - Corrected the Docker Compose `db` service image from the non-existent
   `postgis/postgis:16-3.6-alpine` to the verified `postgis/postgis:16-3.5-alpine`.
   PostgreSQL major version 16, the existing named volume, ports, health check,
   passwords and service names are unchanged.
 
 ### Changed
+
 - Documentation and tests updated to state PostGIS 3.5 where applicable:
   `docker-compose.yml`, `db/init/00_apply_migrations.sh`,
   `scripts/lib/legacy-repair.mjs`, `DATABASE.md`, `README.md`, `ARCHITECTURE.md`,
@@ -131,11 +144,13 @@ All notable changes. Newest first. Dates are UTC.
 ## [Migration State Tracking and Pending-Only Execution] 2026-08-06
 
 ### Fixed
+
 - `npm run db:migrate` restarted at `0001` on a database whose migrations were already applied
   and failed with `relation "organizations" already exists`. The runner now tracks applied
   migrations persistently and applies only pending ones.
 
 ### Added
+
 - `airs_migrations.applied_migrations` migration ledger (`db/ledger/0000_migration_ledger.sql`):
   version, filename, SHA-256 checksum, applied timestamp, duration, runner version, app release.
   Immutable rows; no access for `airs_app` or `airs_maintenance`.
@@ -148,6 +163,7 @@ All notable changes. Newest first. Dates are UTC.
 - 31 migration-runner assertions in `tests/db-migrate.test.ts`.
 
 ### Changed
+
 - One transaction per migration: advisory lock -> pending guard -> migration SQL -> ledger row ->
   commit. A failed migration rolls back, records nothing and stops the run.
 - Documentation: `README.md`, `LOCAL_SETUP.md` (Windows recovery procedure), `DATABASE.md`,
@@ -156,12 +172,14 @@ All notable changes. Newest first. Dates are UTC.
 ## [Platform Tenant Display Name Fix] 2026-08-06
 
 ### Fixed
+
 - The platform tenant rendered as `Anconison ??? AIRS Agent Platform` on Windows installations.
   Migration 0011 seeded the name with a Unicode em dash; a psql client running with a cp1252
   console encoding cannot represent it, so replacement characters were stored. The canonical
   display name is now plain ASCII: `Anconison - AIRS Agent Platform`.
 
 ### Added
+
 - `db/migrations/0012_fix_platform_org_display_name.sql` — idempotent repair. Updates only the
   organization whose slug is `anconison-platform`, raises if duplicates exist, leaves id, slug,
   `org_kind`, memberships, roles, permissions, invitations, authentication records and the Albany
@@ -171,12 +189,14 @@ All notable changes. Newest first. Dates are UTC.
   Albany tenants, `platform_admin` permission set, scope and idempotency of the repair.
 
 ### Changed
+
 - `db/migrations/0011_platform_administration.sql` seeds the ASCII name so fresh databases are
   correct without the repair; `scripts/lib/migrate-plan.mjs` runs 0012 last.
 
 ## [Platform Administration Bootstrap] 2026-08-05
 
 ### Added
+
 - `db/migrations/0011_platform_administration.sql` — platform administration plane:
   `airs.organizations.org_kind` (`agency` | `platform`, unique partial index allowing exactly one
   platform tenant), the `Anconison - AIRS Agent Platform` organization, the `platform_admin` role
@@ -197,10 +217,12 @@ All notable changes. Newest first. Dates are UTC.
 - `db/tests/platform_admin_rls.sql` — plane-separation assertions.
 
 ### Changed
+
 - `src/lib/rbac/roles.ts`, `db/tests/role_parity.sql`, `tests/role-parity.test.ts`,
   `tests/authorize.test.ts` — role model is now 10 roles / 56 permissions / 175 grants.
 
 ### Security
+
 - No token, token hash, password or recovery value is written to the audit trail, the structured
   log lines, the repository or this changelog.
 - A platform administrator holds no `incident.*`, `resource.*`, `map.*`, `observation.*`,
@@ -210,6 +232,7 @@ All notable changes. Newest first. Dates are UTC.
 ## [Stage 6 closure — Disclosure Hardening] 2026-08-12
 
 ### Added
+
 - `src/lib/resources/disclosure.ts` — portable field-level disclosure model: 60 field keys, 12 of
   them sensitive, five partner-selectable profiles (`summary`, `operational`, `aviation`,
   `incident_command`, `full`) plus `custom`, cumulative widening, and `projectFields()`, which
@@ -224,6 +247,7 @@ All notable changes. Newest first. Dates are UTC.
 - `tests/disclosure.test.ts` — 12 pure tests asserting SQL/TypeScript parity and projection.
 
 ### Changed
+
 - `resources.server.ts` and `assignments.server.ts` resolve disclosure per read instead of applying
   a flat redaction list; `shareResourceFn`, `assignToIncidentFn` and the new `setShareDisclosureFn`
   accept a profile.
@@ -233,6 +257,7 @@ All notable changes. Newest first. Dates are UTC.
 ## [Stage 5B — Incident Expiration Operations] 2026-08-05
 
 ### Added
+
 - `db/migrations/0006_maintenance.sql`: dedicated `airs_maintenance` role (NOSUPERUSER,
   NOBYPASSRLS, no privilege on any tenant table), the append-only non-tenant
   `airs.maintenance_events` table with forced RLS, and three narrow SECURITY DEFINER entry points —
@@ -249,6 +274,7 @@ All notable changes. Newest first. Dates are UTC.
 - `db/init/05_maintenance_role_login.sh` and `MAINTENANCE_DB_PASSWORD` for the container path.
 
 ### Changed
+
 - **`EXECUTE` on `airs.expire_incident_state()` revoked from `airs_app`.** The application role can
   no longer trigger cross-tenant time-based state changes.
 - The compose `expiration-scheduler` now connects as `airs_maintenance` and runs the new CLI runner.
@@ -261,6 +287,7 @@ All notable changes. Newest first. Dates are UTC.
   `db/tests/expiration.sql`.
 
 ### Verified (no incident-room behaviour change)
+
 - `npm run db:test` — 126 assertions ok, exit 0.
 - `npx vitest run` — 53/53 passing against a live PostgreSQL 17.9 cluster.
 - `npx tsgo --noEmit` clean; portable and editor builds both succeed.
@@ -268,12 +295,14 @@ All notable changes. Newest first. Dates are UTC.
   unconfigured (exit 1).
 
 ### Still PARTIALLY VERIFIED
+
 Docker runtime (no daemon available), the pg_cron path (extension not installed), and the Stage 4
 authentication gaps (no MFA, no rate limiting on sign-in, no password-reset delivery).
 
 ## [Stage 5A — Branding Integration and Incident Expiration Operations] 2026-08-05
 
 ### Added
+
 - Approved AIRS Agent brand package installed under `public/brand/airs-agent/` plus root web icons;
   transparent masters verified by `npm run brand:verify`.
 - Anconison design system: OKLCH brand tokens in `src/styles.css` and reusable components in
@@ -288,20 +317,24 @@ authentication gaps (no MFA, no rate limiting on sign-in, no password-reset deli
   no-grant safety and idempotence. Wired into `npm run db:test` (now 104 assertions).
 
 ### Changed
+
 - The scheduler endpoint now answers `GET` with 405 instead of falling through to the app shell.
 
 ### Verified (no behaviour change)
+
 - `npm run db:test` 104/104 ok; `npx vitest run` 39/39 against a live database; `npx tsgo --noEmit`
   clean; portable build boots and serves; editor build produces `dist/server` + `dist/client`.
 - Endpoint security proven end to end: 405 GET / 401 no token / 401 wrong token / 200 correct token
   / 503 when `INCIDENT_EXPIRY_TOKEN` is unset.
 
 ### Still PARTIALLY VERIFIED
+
 Docker runtime, pg_cron path, clean-clone install, and the Stage 4 authentication gaps.
 
 ## [Authentication and Authorization Enforcement — closure verification] 2026-08-02
 
 ### Verified (no code change)
+
 - `npm install` exit 0; `package.json` and `package-lock.json` unchanged.
 - `npx vitest run` exit 0 — 14 passed / 25 skipped without a database; 39 passed / 0 failed with
   `TEST_DATABASE_URL` + `TEST_ADMIN_DATABASE_URL` (14 foundation + 25 authentication integration).
@@ -315,10 +348,12 @@ Docker runtime, pg_cron path, clean-clone install, and the Stage 4 authenticatio
   unauthenticated `/console` renders the deny state.
 
 ### Documentation
+
 - `BUILD_AUDIT.md`: added "Authentication and Authorization Enforcement — closure verification".
 - `LOCAL_SETUP.md`: recorded that `db/tests/auth_rls.sql` must run with the migration/owner DSN.
 
 ### Still PARTIALLY VERIFIED
+
 Interactive signed-in UI (editor preview has no `DATABASE_URL`), MFA, rate limiting, account
 lockout, password-reset delivery, CSRF beyond same-origin + `SameSite=Lax`, Docker runtime,
 clean-clone install.
@@ -326,16 +361,19 @@ clean-clone install.
 ## [Lovable Editor Compatibility Repair] 2026-07-30
 
 ### Fixed
+
 - Editor "Build unsuccessful" status. The hosted build step expects a Cloudflare Worker artifact at
   `dist/server` + `dist/client`, but the portable config produced a Node server at `.output/` for
   every environment, so no deployable artifact existed. Nothing failed to compile.
 
 ### Changed
+
 - `vite.config.ts`: Nitro build target is now environment-aware. Default remains `node-server` →
   `.output/`; only when `LOVABLE_SANDBOX=1` / `DEV_SERVER__PROJECT_PATH` is present does it build
   `cloudflare-module` → `dist/`. `NITRO_PRESET` overrides both.
 
 ### Notes
+
 - No package added, restored or removed; no builder dependency exists in the project.
 - Verified: `npm install` (exit 0), `npm run test` (14/14), `npm run build` (`.output/server/index.mjs`),
   `npm run build:dev` in-sandbox (`dist/client` + `dist/server`), dev preview HTTP 200.
@@ -344,6 +382,7 @@ clean-clone install.
 ## [Stage 1 — Foundation] 2026-07-29
 
 ### Added
+
 - PostgreSQL schema `airs` with 12 tables, tenant `org_id` columns, RLS default-deny policies
   (`db/migrations/0001_init.sql`).
 - Role/permission reference data: 9 roles, 14 permissions, 34 grants (`db/migrations/0002_roles_seed.sql`).
@@ -359,28 +398,35 @@ clean-clone install.
 - Documentation: `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md`, `LOCAL_SETUP.md`, `BUILD_AUDIT.md`, this file.
 
 ### Changed
+
 - `package.json`: added `test`, `test:run`, `db:migrate`, `db:seed` scripts.
 
 ### Dependencies
+
 - Added: `pg`, `@types/pg` (dev), `vitest` (dev).
 - Removed: none.
 
 ### Not included
+
 - Authentication, real-time transport, MapLibre map, audit writes, retention purge, application screens.
+
 ## Foundation Portability Verification — 2026-07-29
 
 ### Removed
+
 - `@lovable.dev/vite-tanstack-config` (package + lockfile entry).
 - `src/lib/lovable-error-reporting.ts` and its use in `src/routes/__root.tsx`.
 - Builder registry mirror URLs in `bun.lock` (now `registry.npmjs.org`).
 - Builder-specific lockfile overrides in `bunfig.toml`.
 
 ### Added
+
 - `db/tests/rls_matrix.sql` — 47-assertion tenant isolation matrix (all tenant tables, full CRUD).
 - `db/tests/role_parity.sql`, `tests/role-parity.test.ts` — role/permission drift detection.
 - `db/init/04_app_role_login.sh`, `.dockerignore`, `db:test` npm script.
 
 ### Changed
+
 - `vite.config.ts` rewritten with standard Vite + TanStack Start + Nitro (`node-server`) plugins.
 - `Dockerfile`: non-root `USER node`, `HEALTHCHECK`, explicit Nitro preset.
 - `docker-compose.yml`: init SQL mounted as individual files (directories were silently ignored),
@@ -392,6 +438,7 @@ clean-clone install.
 ## 2026-07-30 — Authentication and Authorization Enforcement (complete)
 
 ### Added
+
 - `src/routes/invite/$token.tsx` — session-gated, non-enumerating invitation acceptance page.
 - `db/migrations/0004_org_context_guard.sql` — organization-context guard in
   `airs.current_org_id()`; `audit_identity_insert` now requires an ACTIVE membership.
@@ -400,6 +447,7 @@ clean-clone install.
 - `/auth` accepts an optional same-origin `?redirect=` path so an invitation link survives sign-in.
 
 ### Changed
+
 - `previewInvitation()` requires a session, masks the recipient address, returns
   `recipientMatches`, and resolves the organization name through the invitation's own context
   instead of a join that RLS correctly blocked.
@@ -438,6 +486,7 @@ clean-clone install.
   Full suite: 178 assertions green; typecheck clean.
 
 ## Stage 7 closure verification
+
 - Added `tests/map-geography.test.ts` (22 tests): model↔migration parity plus
   live enforcement of precision, withholding, revocation and closure.
 - Removed the silent OpenStreetMap raster fallback from `CopMap`; the operator's
@@ -471,6 +520,7 @@ Closure pass. No new operational features; the map-click coordinate picker
 remains deliberately out of scope.
 
 ### Fixed
+
 - **Test isolation.** Database-backed TypeScript suites left accounts,
   memberships, organizations, observations and audit evidence behind, so
   `db/tests/auth_rls.sql` failed on a second run unless the database was
@@ -484,15 +534,17 @@ remains deliberately out of scope.
   which is a stronger check and immune to unrelated rows.
 
 ### Added
+
 - `vitest.config.ts` with `fileParallelism: false` (correctness, not speed —
   suite files share the demo organizations).
 - `DESIGN_SYSTEM.md`, documenting the token layer, awareness status palette and
   the disclosure-absence convention.
-- Stage 8 sections titled *Manual Airspace Observations and Awareness Layer* in
+- Stage 8 sections titled _Manual Airspace Observations and Awareness Layer_ in
   `BUILD_AUDIT.md`, `ARCHITECTURE.md`, `DATABASE.md`, `SECURITY.md` and
   `LOCAL_SETUP.md`.
 
 ### Verified
+
 - `tsc --noEmit` — exit 0.
 - `npm run db:test` — 408/408 assertions, three consecutive runs.
 - `vitest run` — 7 files, 124 passed / 4 skipped, three consecutive runs.
@@ -503,6 +555,7 @@ remains deliberately out of scope.
 ## Windows Bootstrap Hardening — 2026-08-06
 
 ### Added
+
 - Repository-root `.gitattributes`: `text=auto eol=lf` default, explicit
   `*.sh text eol=lf` (plus `.bash`/`.zsh`, SQL, TS/JS, YAML, JSON, Markdown,
   `Dockerfile`, `docker-compose.yml`), `*.ps1 text eol=crlf`, binary assets excluded.
@@ -521,6 +574,7 @@ remains deliberately out of scope.
   `tests/platform-admin-cli.test.ts` (18 new assertions).
 
 ### Changed
+
 - `npm run db:migrate` now runs the Node runner instead of a bare `psql` invocation.
   The command name is unchanged.
 - `LOCAL_SETUP.md` §9 documents the verified 14-step Windows sequence and its
@@ -528,12 +582,14 @@ remains deliberately out of scope.
   `--new-link` after exposure, do not run `npm audit fix` unreviewed).
 
 ### Unchanged (verified)
+
 - Platform/agency plane separation, `platform_admin` role and its zero operational
   permissions, forced RLS, tenant isolation, authentication, password hashing,
   session handling, invitation hashing/expiry, single-use activation, the
   `anconison-platform` organization and both Albany agency organizations.
 
 ### Verified
+
 - `npm run check:line-endings`, `tsc --noEmit`, `vitest run` (77 passed / 70 skipped),
   `npm run build`, `npm run build:dev`, `platform-admin:setup -- --help` (exit 0).
 - Environment-blocked in this sandbox: `npm run db:test` (no PostgreSQL) and a live
@@ -542,6 +598,7 @@ remains deliberately out of scope.
 ## Docker/PostGIS deployment fix and legacy repair path
 
 ### Fixed
+
 - Compose `db` service pinned to `postgis/postgis:16-3.5-alpine`; migrations
   0009 and 0010 no longer fail with `extension "postgis" is not available` or
   `type public.geometry does not exist`.
@@ -549,6 +606,7 @@ remains deliberately out of scope.
   Stage 7 table) instead of a non-existent `airs.asset_locations`.
 
 ### Added
+
 - Fresh-install PostGIS preflight in `db/init/00_apply_migrations.sh`: rejects a
   non-PostGIS image with an actionable error and enables PostGIS before 0009.
 - `npm run db:migrate:repair-legacy` - operator-only, confirmation-gated repair
@@ -559,6 +617,7 @@ remains deliberately out of scope.
   guarantees, ledger recording and command safety.
 
 ### Documentation
+
 - Windows recovery procedure (preserve the volume, never `docker compose down -v`)
   in LOCAL_SETUP.md, DATABASE.md and README.md; ARCHITECTURE.md, SECURITY.md and
   BUILD_AUDIT.md updated.

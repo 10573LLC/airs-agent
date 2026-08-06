@@ -8,9 +8,7 @@ const { checked, offenders } = checkShellLineEndings(process.cwd());
 if (offenders.length > 0) {
   console.error("CRLF line endings found in tracked shell scripts:");
   for (const file of offenders) console.error(`  - ${file}`);
-  console.error(
-    "\nFix: ensure .gitattributes is present, then run:\n  git add --renormalize .\n",
-  );
+  console.error("\nFix: ensure .gitattributes is present, then run:\n  git add --renormalize .\n");
   process.exit(1);
 }
 

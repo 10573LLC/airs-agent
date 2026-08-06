@@ -771,6 +771,7 @@ work, no operational features.
 | Unauthenticated users denied | VERIFIED | `/console` renders "Session required"; `db/tests/platform_admin_rls.sql` section 6 | — |
 | Platform admin sees no agency records | VERIFIED (SQL) | `db/tests/platform_admin_rls.sql` section 5; `tests/authorize.test.ts` | Assertions authored this pass; execution needs a live database |
 | Albany organizations untouched | COMPLETE | no change to `db/seed/demo_orgs.sql`; assertion in section 1 of the new SQL suite | — |
+| Platform tenant display name is ASCII | COMPLETE | `Anconison - AIRS Agent Platform` in 0011 and 0012; `tests/platform-org-name.test.ts`, `db/tests/platform_org_name.sql` | Existing databases need migration 0012 applied |
 | Typecheck | VERIFIED | `tsc --noEmit` exit 0 | — |
 | Build | VERIFIED | `npm run build` exit 0 | — |
 | TypeScript suite | VERIFIED | `vitest run` — 6 files, 59 passed, database-backed suites skipped without `DATABASE_URL` | Database-backed suites not executed in this environment |

@@ -209,7 +209,7 @@ BEGIN
     'the Albany users probe record exists and is retained for the invisibility proof');
 
   -- Carry the resolved account id across the role switch in a transaction-local
-  -- setting. This is test scaffolding only: no schema, policy or grant changes.
+  -- setting. This is test scaffolding only; it changes no schema, policy or privilege.
   PERFORM set_config('airs.test_platform_account_id', acct::text, true);
   PERFORM set_config('airs.test_platform_org_id', plat::text, true);
 END $$;

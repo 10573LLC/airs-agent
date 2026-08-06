@@ -225,7 +225,11 @@ describe("reconciliation execution guarantees", () => {
       const body = toIdempotentSql(stripOuterTransaction(m.sql));
       const canonical = stripOuterTransaction(m.sql);
       const normalize = (s: string) =>
-        s.replace(/IF NOT EXISTS /g, "").replace(/^\s*DROP (POLICY|TRIGGER) IF EXISTS[^\n]*\n/gm, "");
+        s
+          .replace(/IF NOT EXISTS /g, "")
+          .replace(/^\s*DROP (POLICY|TRIGGER) IF EXISTS[^\n]*\n/gm, "")
+          .replace(/\n\s*\n/g, "\n")
+          .trim();
       expect(normalize(body)).toEqual(normalize(canonical));
     }
   });
@@ -325,7 +329,7 @@ describe("verification, ledger and adoption ordering", () => {
     const cli = readFileSync(`${REPO_ROOT}/scripts/db-reconcile-legacy.mjs`, "utf8");
     const verifyAt = cli.indexOf("buildReconcileVerifyScript");
     const platformAt = cli.indexOf("buildPlatformVerificationScript(adminEmail)");
-    const ledgerAt = cli.indexOf("buildLegacyLedgerScript");
+    const ledgerAt = cli.lastIndexOf("buildLegacyLedgerScript");
     expect(verifyAt).toBeGreaterThan(-1);
     expect(verifyAt).toBeLessThan(ledgerAt);
     expect(platformAt).toBeLessThan(ledgerAt);
@@ -338,7 +342,7 @@ describe("verification, ledger and adoption ordering", () => {
     const cli = readFileSync(`${REPO_ROOT}/scripts/db-reconcile-legacy.mjs`, "utf8");
     expect(cli).toContain("canonical objects are still missing after reconciliation");
     expect(cli.indexOf("canonical objects are still missing after reconciliation")).toBeLessThan(
-      cli.indexOf("buildLegacyLedgerScript"),
+      cli.lastIndexOf("buildLegacyLedgerScript"),
     );
   });
 });

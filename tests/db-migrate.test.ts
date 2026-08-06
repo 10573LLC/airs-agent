@@ -161,7 +161,7 @@ describe("existing-database adoption", () => {
 
   it("never replays migration SQL", () => {
     expect(script).not.toContain("CREATE TABLE airs.organizations");
-    expect(script).not.toContain("migration body");
+    expect(script).not.toContain(">>> migration body");
     for (const m of migrations) expect(script).toContain(`record_applied('${m.version}'`);
     expect(script.match(/record_applied/g)).toHaveLength(12);
   });

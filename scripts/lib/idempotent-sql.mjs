@@ -79,7 +79,22 @@ export function destructiveStatements(sql) {
   return FORBIDDEN_PATTERNS.filter((re) => re.test(String(sql ?? ""))).map((re) => re.source);
 }
 
+/** Collapses a DROP the canonical migration already performs itself. */
+function dedupeDrops(sql) {
+  const lines = sql.split("\n");
+  const out = [];
+  for (const line of lines) {
+    const isDrop = /^\s*DROP (TRIGGER|POLICY) IF EXISTS /.test(line);
+    if (isDrop) {
+      const previous = [...out].reverse().find((l) => l.trim() !== "");
+      if (previous && previous.trim() === line.trim()) continue;
+    }
+    out.push(line);
+  }
+  return out.join("\n");
+}
+
 /** Transforms canonical migration SQL into a re-runnable reconciliation body. */
 export function toIdempotentSql(sql) {
-  return misc(triggers(policies(indexes(types(tables(String(sql ?? ""))))))); 
+  return dedupeDrops(misc(triggers(policies(indexes(types(tables(String(sql ?? "")))))))); 
 }

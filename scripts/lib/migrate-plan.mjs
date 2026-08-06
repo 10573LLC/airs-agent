@@ -21,6 +21,7 @@ export const MIGRATION_FILES = [
   "db/migrations/0009_common_operating_picture.sql",
   "db/migrations/0010_awareness_observations.sql",
   "db/migrations/0011_platform_administration.sql",
+  "db/migrations/0012_fix_platform_org_display_name.sql",
 ];
 
 export const COMPOSE_SERVICE = "db";

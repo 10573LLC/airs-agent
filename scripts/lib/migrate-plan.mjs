@@ -142,13 +142,13 @@ export function diffMigrations(migrations, appliedRows) {
  * psql executes a script in one implicit session; the runner supplies the
  * transaction, so a migration's own outer `BEGIN;` / `COMMIT;` would commit the
  * ledger-less state early. Those two standalone statements are removed; nested
- * `BEGIN`/`END` inside DO blocks (no trailing semicolon at column 0) are left
- * untouched.
+ * `BEGIN`/`END` inside DO blocks (indented, or without a trailing semicolon at
+ * column 0) are left untouched.
  */
 export function stripOuterTransaction(sql) {
   return sql
     .split(/\r?\n/)
-    .filter((line) => !/^\s*(BEGIN|COMMIT|END)\s*;\s*$/i.test(line))
+    .filter((line) => !/^(BEGIN|COMMIT);\s*$/.test(line))
     .join("\n");
 }
 

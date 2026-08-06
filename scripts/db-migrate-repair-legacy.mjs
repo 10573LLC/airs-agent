@@ -17,8 +17,6 @@
 //   7. platform organization + platform administrator verification
 //   8. only then: create the ledger and record 0001-0012 with current checksums
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import {
   DEFAULT_LOCK_TIMEOUT_MS,

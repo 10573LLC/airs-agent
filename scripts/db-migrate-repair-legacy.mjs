@@ -17,18 +17,15 @@
 //   7. platform organization + platform administrator verification
 //   8. only then: create the ledger and record 0001-0012 with current checksums
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 
 import {
   DEFAULT_LOCK_TIMEOUT_MS,
   REPO_ROOT,
-  VERIFICATION_FILES,
-  buildVerificationScript,
   loadMigrations,
   planExecution,
   redact,
 } from "./lib/migrate-plan.mjs";
+import { runSqlSuite } from "./lib/sql-suite.mjs";
 import {
   DEFAULT_ADMIN_EMAIL,
   POSTGIS_MISSING_ERROR,
@@ -67,9 +64,14 @@ function commandExists(command) {
   return !probe.error && probe.status === 0;
 }
 function dockerDbRunning() {
-  const probe = spawnSync("docker", ["compose", "ps", "--status", "running", "--services"], { encoding: "utf8" });
+  const probe = spawnSync("docker", ["compose", "ps", "--status", "running", "--services"], {
+    encoding: "utf8",
+  });
   if (probe.error || probe.status !== 0) return false;
-  return String(probe.stdout).split(/\r?\n/).map((s) => s.trim()).includes("db");
+  return String(probe.stdout)
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .includes("db");
 }
 
 const hasLocalPsql = commandExists("psql");
@@ -85,7 +87,11 @@ function run(sql) {
   const step = execPlan.exec(sql);
   const result = spawnSync(step.command, step.args, { input: step.stdin, encoding: "utf8" });
   if (result.error) return { ok: false, stdout: "", stderr: String(result.error.message) };
-  return { ok: result.status === 0, stdout: String(result.stdout ?? ""), stderr: String(result.stderr ?? "") };
+  return {
+    ok: result.status === 0,
+    stdout: String(result.stdout ?? ""),
+    stderr: String(result.stderr ?? ""),
+  };
 }
 
 console.log("AIRS Agent legacy database repair");
@@ -95,7 +101,10 @@ console.log(`  required image: ${REQUIRED_DB_IMAGE}`);
 // --- 1. PostGIS availability ------------------------------------------------
 const gis = parsePostgisProbe(run(buildPostgisProbeScript()).stdout);
 if (gis.serverMajor && gis.serverMajor !== REQUIRED_PG_MAJOR) {
-  fail(`This database reports PostgreSQL ${gis.serverMajor}; the supported major version is ${REQUIRED_PG_MAJOR}. Nothing was changed.`, 7);
+  fail(
+    `This database reports PostgreSQL ${gis.serverMajor}; the supported major version is ${REQUIRED_PG_MAJOR}. Nothing was changed.`,
+    7,
+  );
 }
 if (!gis.installed && !gis.available) fail(POSTGIS_MISSING_ERROR, 7);
 console.log(`  postgis:        ${gis.installed ? "installed" : "available, not yet created"}`);
@@ -109,7 +118,8 @@ const state = classifyState(parseProbeOutput(probe.stdout));
 console.log("");
 console.log("Detected migration state (concrete schema probes, not a prefix assumption):");
 for (const s of state) {
-  const detail = s.status === "present" ? "already represented by the database" : s.failed.join(", ");
+  const detail =
+    s.status === "present" ? "already represented by the database" : s.failed.join(", ");
   console.log(`  ${s.version}: ${s.status.padEnd(7)} ${detail}`);
 }
 
@@ -142,7 +152,10 @@ for (const migration of plan.apply) {
   const result = run(buildLegacyMigrationScript(migration, { lockTimeoutMs }));
   if (!result.ok) {
     if (/lock_timeout|canceling statement due to lock timeout/i.test(result.stderr)) {
-      fail(`Another migration process holds the advisory lock (waited ${lockTimeoutMs} ms). Nothing was applied.`, 6);
+      fail(
+        `Another migration process holds the advisory lock (waited ${lockTimeoutMs} ms). Nothing was applied.`,
+        6,
+      );
     }
     fail(
       [
@@ -160,15 +173,19 @@ for (const migration of plan.apply) {
 
 // --- 4. Verification: SQL suite, role parity, platform administrator --------
 console.log("");
-console.log("Running the full SQL assertion suite and role parity before recording anything...");
-for (const file of VERIFICATION_FILES) {
-  const sqlText = readFileSync(join(REPO_ROOT, file), "utf8");
-  const result = run(buildVerificationScript(sqlText));
-  if (!result.ok) fail(`Repair aborted: verification failed (${file}). No ledger was created.\n${result.stderr}`, 4);
-  console.log(`  ok  ${file}`);
+const suite = runSqlSuite({ run, root: REPO_ROOT, onFile: (file) => console.log(`  ok  ${file}`) });
+if (!suite.ok) {
+  fail(
+    `Repair aborted: verification failed (${suite.failedFile}). No ledger was created.\n${suite.stderr}`,
+    4,
+  );
 }
 const platform = run(buildPlatformVerificationScript(adminEmail));
-if (!platform.ok) fail(`Repair aborted: platform verification failed. No ledger was created.\n${platform.stderr}`, 4);
+if (!platform.ok)
+  fail(
+    `Repair aborted: platform verification failed. No ledger was created.\n${platform.stderr}`,
+    4,
+  );
 console.log("  ok  platform organization and platform administrator");
 
 // --- 5. Ledger, last ---------------------------------------------------------
@@ -179,9 +196,17 @@ const ledger = run(
     appRelease: process.env.AIRS_APP_RELEASE ?? null,
   }),
 );
-if (!ledger.ok) fail(`Repair aborted while creating the migration ledger. Nothing was recorded.\n${ledger.stderr}`, 4);
+if (!ledger.ok)
+  fail(
+    `Repair aborted while creating the migration ledger. Nothing was recorded.\n${ledger.stderr}`,
+    4,
+  );
 
 console.log("");
-console.log(`Repair complete. Applied: ${appliedVersions.join(", ") || "none"} (only ${REPAIRABLE_VERSIONS.join("/")} are ever applied by repair).`);
-console.log(`Ledger created and ${migrations.length} migrations recorded (0001-${migrations.at(-1).version}).`);
+console.log(
+  `Repair complete. Applied: ${appliedVersions.join(", ") || "none"} (only ${REPAIRABLE_VERSIONS.join("/")} are ever applied by repair).`,
+);
+console.log(
+  `Ledger created and ${migrations.length} migrations recorded (0001-${migrations.at(-1).version}).`,
+);
 console.log("Next: npm run db:migrate:status   (expect zero pending)");

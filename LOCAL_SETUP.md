@@ -730,3 +730,76 @@ Stop. The report names the conflicting object and the migration that owns it.
 Reconciliation only ever creates objects owned by 0008, 0009 and 0010; anything
 else missing means the database is outside the supported legacy state and needs
 an operator decision. Nothing was changed.
+
+## SQL suite harness fix and reconciled-state completion (2026-08-06)
+
+### The failure you saw
+
+```
+ERROR:  schema "pg_temp" does not exist
+SELECT pg_temp.ok(...)
+```
+
+This was a **test-harness defect, not an AIRS schema defect**. The suites in
+`db/tests/*.sql` are session-scoped: each creates its own temporary assertion
+helpers (`pg_temp.ok`, `pg_temp.denied`) and then opens, commits and rolls back
+its own transactions. PostgreSQL creates the per-session temporary schema
+lazily, so a helper created inside a transaction that later rolls back
+disappears with it. The old reconciliation/adoption runners wrapped whole files
+in an extra `BEGIN; ... ROLLBACK;`, so the file's own intermediate `ROLLBACK;`
+(`db/tests/auth_rls.sql`) destroyed the helpers the rest of the file called.
+`npm run db:test` never wrapped the files, which is why the same SQL passed
+there and failed during reconciliation.
+
+### One canonical runner
+
+`scripts/lib/sql-suite.mjs` is now the ONE implementation. It executes each
+suite file byte-for-byte as `psql -v ON_ERROR_STOP=1 -f <file>` would, in its
+own session, with **no runner-supplied transaction**. Files own their
+transactions. It also statically refuses to run a file that would call a
+temporary helper it never defines, or one destroyed by a rollback.
+
+Used by all of:
+
+| Command | Script |
+| --- | --- |
+| `npm run db:test` | `scripts/db-test.mjs` |
+| `npm run db:migrate:adopt` | `scripts/db-migrate.mjs` |
+| `npm run db:reconcile-legacy` | `scripts/db-reconcile-legacy.mjs` |
+| `npm run db:migrate:repair-legacy` | `scripts/db-migrate-repair-legacy.mjs` |
+
+A failing assertion is still a hard failure: the run stops at the first failing
+file, names it, and **no ledger row is written**.
+
+### Completion path for the current live Windows database
+
+The reconciliation has already created every missing Stage 7 and Stage 8
+object. The database is complete; only the ledger is empty. Finish it:
+
+```powershell
+npm run db:test                    # full suite, must pass end to end
+npm run db:reconcile-legacy        # expect: "Nothing to reconcile"
+npm run db:migrate:adopt           # verifies, then records 0001-0012
+npm run db:migrate:status          # expect 12 applied, 0 pending, 0 conflicts
+npm run db:migrate                 # expect: no pending migrations
+```
+
+`npm run db:migrate:adopt` refuses to record anything until, in order:
+PostGIS is installed; every canonical object through 0012 exists; the full SQL
+suite passes; `db/repair/reconcile_verify.sql` passes; role parity is exactly
+10 roles / 56 permissions / 175 grants; the Anconison platform organization and
+`wflack@anconisonpmg.com` verify. Only then are 0001-0012 recorded with their
+current checksums. **No migration body is executed by adoption.**
+
+Use `-- --admin-email you@example.com` to verify a different administrator.
+
+### Prohibited actions
+
+* **DO NOT use `docker compose down -v`.** It destroys the volume and all data.
+* **DO NOT rerun historical migrations manually.** Adoption records them; it
+  never replays them.
+* **DO NOT rerun schema reconciliation merely to populate the ledger.** When
+  nothing is missing, `db:reconcile-legacy` exits immediately and tells you to
+  run `npm run db:migrate:adopt`.
+* **DO NOT recreate objects that already exist.** Nothing in this path drops,
+  replaces or truncates anything.

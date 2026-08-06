@@ -129,7 +129,12 @@ export function diffMigrations(migrations, appliedRows) {
     if (!row) {
       pending.push(m);
     } else if (row.checksum !== m.checksum) {
-      conflicts.push({ version: m.version, filename: m.filename, recorded: row.checksum, current: m.checksum });
+      conflicts.push({
+        version: m.version,
+        filename: m.filename,
+        recorded: row.checksum,
+        current: m.checksum,
+      });
     } else {
       applied.push(m);
     }
@@ -252,10 +257,12 @@ export function buildAdoptionScript(migrations, verifySql, options = {}) {
   ].join("\n");
 }
 
-/** Read-only assertion suite run, wrapped so it can never write. */
-export function buildVerificationScript(sqlText) {
-  return `\\set ON_ERROR_STOP on\nBEGIN;\n${sqlText}\nROLLBACK;\n`;
-}
+// NOTE: the SQL assertion suite is executed by the ONE canonical runner in
+// scripts/lib/sql-suite.mjs (`runSqlSuite`). The former
+// `buildVerificationScript()` wrapped each file in an extra BEGIN/ROLLBACK,
+// which destroyed the session-scoped `pg_temp.ok` / `pg_temp.denied` helpers
+// as soon as a file issued its own intermediate ROLLBACK. It has been removed
+// on purpose so no second, subtly different execution path can come back.
 
 /**
  * Chooses the execution path and returns an `exec(sqlText)` descriptor factory.
@@ -294,8 +301,20 @@ export function planExecution({
       exec: (sql) => ({
         command: "docker",
         args: [
-          "compose", "exec", "-T", COMPOSE_SERVICE,
-          "psql", "-v", "ON_ERROR_STOP=1", "-q", "-U", dbUser, "-d", dbName, "-f", "-",
+          "compose",
+          "exec",
+          "-T",
+          COMPOSE_SERVICE,
+          "psql",
+          "-v",
+          "ON_ERROR_STOP=1",
+          "-q",
+          "-U",
+          dbUser,
+          "-d",
+          dbName,
+          "-f",
+          "-",
         ],
         stdin: sql,
       }),
@@ -308,7 +327,10 @@ export function planExecution({
 export const KNOWN_MIGRATE_FLAGS = {
   "dry-run": "Show applied, pending and conflicting migrations. Changes nothing.",
   status: "Print ledger status, including whether adoption or a lock wait applies.",
-  "adopt-existing": "Record migrations 0001-0012 for a verified existing database, without running them.",
+  "adopt-existing":
+    "Record migrations 0001-0012 for a verified existing database, without running them.",
+  "admin-email":
+    "Platform administrator email verified during adoption (default wflack@anconisonpmg.com).",
   "lock-timeout-ms": "Milliseconds a second runner waits for the advisory lock (default 30000).",
   help: "Show this help.",
 };
@@ -320,10 +342,10 @@ export function parseMigrateArgs(argv) {
     if (!arg.startsWith("--")) return { error: `Unknown argument: ${arg}`, flags };
     const name = arg.slice(2);
     if (!(name in KNOWN_MIGRATE_FLAGS)) return { error: `Unknown flag: ${arg}`, flags };
-    if (name === "lock-timeout-ms") {
+    if (name === "lock-timeout-ms" || name === "admin-email") {
       const value = argv[i + 1];
       if (!value || value.startsWith("--")) return { error: `--${name} requires a value`, flags };
-      flags[name] = Number(value);
+      flags[name] = name === "lock-timeout-ms" ? Number(value) : value;
       i += 1;
     } else {
       flags[name] = true;

@@ -5,6 +5,8 @@ import { join } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { SQL_SUITE_FILES } from "../scripts/lib/sql-suite.mjs";
+
 import { MIGRATION_FILES } from "../scripts/lib/migrate-plan.mjs";
 
 const EXPECTED = "Anconison - AIRS Agent Platform";
@@ -66,9 +68,14 @@ describe("platform organization display name", () => {
     // eslint-disable-next-line no-control-regex
     const nonAscii = /[^\x00-\x7F]/;
     expect(nonAscii.test(repair)).toBe(false);
-    expect(nonAscii.test(seed.split("\n").filter((l) => l.includes(EXPECTED)).join("\n"))).toBe(
-      false,
-    );
+    expect(
+      nonAscii.test(
+        seed
+          .split("\n")
+          .filter((l) => l.includes(EXPECTED))
+          .join("\n"),
+      ),
+    ).toBe(false);
   });
 
   it("ships a SQL proof exercised by npm run db:test", () => {
@@ -76,6 +83,8 @@ describe("platform organization display name", () => {
     expect(sqlTest).toContain(EXPECTED);
     expect(sqlTest).toContain("Albany Police Department");
     expect(sqlTest).toContain("platform_admin");
-    expect(read("package.json")).toContain("db/tests/platform_org_name.sql");
+    // suite membership is declared once, in the canonical runner's file list
+    expect(SQL_SUITE_FILES).toContain("db/tests/platform_org_name.sql");
+    expect(JSON.parse(read("package.json")).scripts["db:test"]).toBe("node scripts/db-test.mjs");
   });
 });

@@ -24,7 +24,12 @@ import {
   parseReconcileArgs,
   planReconciliation,
 } from "../scripts/lib/reconcile-legacy.mjs";
-import { STATE_PROBES, buildLegacyLedgerScript, classifyState, parseProbeOutput } from "../scripts/lib/legacy-repair.mjs";
+import {
+  STATE_PROBES,
+  buildLegacyLedgerScript,
+  classifyState,
+  parseProbeOutput,
+} from "../scripts/lib/legacy-repair.mjs";
 import { ROLE_PERMISSIONS, PERMISSION_KEYS, ROLE_KEYS } from "@/lib/rbac/roles";
 
 const migrations = loadMigrations();
@@ -93,7 +98,18 @@ describe("the exact live Windows state", () => {
 
   it("reports 0001-0008, 0011 and 0012 as fully represented", () => {
     const missingVersions = new Set(plan.missing.map((m) => m.version));
-    for (const v of ["0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0011", "0012"]) {
+    for (const v of [
+      "0001",
+      "0002",
+      "0003",
+      "0004",
+      "0005",
+      "0006",
+      "0007",
+      "0008",
+      "0011",
+      "0012",
+    ]) {
       expect(missingVersions.has(v), `migration ${v}`).toBe(false);
     }
   });
@@ -101,7 +117,9 @@ describe("the exact live Windows state", () => {
   it("0003 is a superseded-object false positive, not a defect", () => {
     const state = classifyState(
       parseProbeOutput(
-        CANONICAL_OBJECTS.map((o) => `${o.version}|${o.label}|${LIVE_MISSING.has(o.id) ? "f" : "t"}`).join("\n"),
+        CANONICAL_OBJECTS.map(
+          (o) => `${o.version}|${o.label}|${LIVE_MISSING.has(o.id) ? "f" : "t"}`,
+        ).join("\n"),
       ),
     );
     expect(state.find((s) => s.version === "0003")!.status).toBe("present");
@@ -113,7 +131,13 @@ describe("the exact live Windows state", () => {
   it("detects PostGIS present but every Stage 7 object absent", () => {
     expect(plan.present).toContain("ext:postgis");
     expect(plan.present).toContain("type:geometry");
-    for (const id of ["airs.map_features", "airs.operating_areas", "airs.resource_locations", "policy:map_features", "rlsforce:resource_locations"]) {
+    for (const id of [
+      "airs.map_features",
+      "airs.operating_areas",
+      "airs.resource_locations",
+      "policy:map_features",
+      "rlsforce:resource_locations",
+    ]) {
       expect(plan.missing.map((m) => m.id)).toContain(id);
     }
   });
@@ -143,7 +167,13 @@ describe("the exact live Windows state", () => {
 
 describe("genuinely partial Stage 6 disclosure state", () => {
   const plan = planReconciliation(
-    parseObjectProbe(liveProbeOutput(["airs.disclosure_allows", "seed:disclosure_profile_fields", "col:resource_shares.disclosure_profile"])),
+    parseObjectProbe(
+      liveProbeOutput([
+        "airs.disclosure_allows",
+        "seed:disclosure_profile_fields",
+        "col:resource_shares.disclosure_profile",
+      ]),
+    ),
   );
 
   it("still refuses to call 0008 represented and reconciles it first", () => {
@@ -168,7 +198,9 @@ describe("unsafe states are refused", () => {
   });
 
   it("refuses when PostGIS itself is unavailable", () => {
-    const plan = planReconciliation(parseObjectProbe(liveProbeOutput(["ext:postgis", "type:geometry"])));
+    const plan = planReconciliation(
+      parseObjectProbe(liveProbeOutput(["ext:postgis", "type:geometry"])),
+    );
     expect(plan.units.map((u) => u.version)).toContain("0009");
     // prerequisites are inside the same plan, so this stays safe to reconcile;
     // the CLI still gates on a real PostGIS availability probe first.
@@ -176,7 +208,9 @@ describe("unsafe states are refused", () => {
   });
 
   it("refuses when the probe set and the canonical inventory disagree", () => {
-    const partialOutput = CANONICAL_OBJECTS.slice(0, 5).map((o) => `${o.id}|t`).join("\n");
+    const partialOutput = CANONICAL_OBJECTS.slice(0, 5)
+      .map((o) => `${o.id}|t`)
+      .join("\n");
     const plan = planReconciliation(parseObjectProbe(partialOutput));
     expect(plan.safe).toBe(false);
     expect(plan.error).toContain("not probed");
@@ -252,21 +286,51 @@ describe("reconciliation execution guarantees", () => {
   it("Stage 8 rolls back entirely when the geometry type is missing", () => {
     const s = buildReconcileScript(units[2]);
     expect(s).toMatch(/public\.geometry/);
-    expect(s.indexOf("CREATE TABLE IF NOT EXISTS airs.observations")).toBeGreaterThan(s.indexOf("BEGIN;"));
-    expect(s.indexOf("CREATE TABLE IF NOT EXISTS airs.observations")).toBeLessThan(s.lastIndexOf("COMMIT;"));
+    expect(s.indexOf("CREATE TABLE IF NOT EXISTS airs.observations")).toBeGreaterThan(
+      s.indexOf("BEGIN;"),
+    );
+    expect(s.indexOf("CREATE TABLE IF NOT EXISTS airs.observations")).toBeLessThan(
+      s.lastIndexOf("COMMIT;"),
+    );
   });
 
   it("completes Stage 6, Stage 7 and Stage 8 object sets", () => {
     const s6 = buildReconcileScript(units[0]);
-    for (const needle of ["airs.disclosure_fields", "airs.disclosure_profile_fields", "airs.disclosure_allows", "airs.effective_disclosure", "disclosure_profile"]) {
+    for (const needle of [
+      "airs.disclosure_fields",
+      "airs.disclosure_profile_fields",
+      "airs.disclosure_allows",
+      "airs.effective_disclosure",
+      "disclosure_profile",
+    ]) {
       expect(s6, needle).toContain(needle);
     }
     const s7 = buildReconcileScript(units[1]);
-    for (const needle of ["airs.map_features", "airs.operating_areas", "airs.resource_locations", "airs.geographic_precisions", "airs.apply_precision", "airs.terminate_incident_geography", "map.", "FORCE ROW LEVEL SECURITY"]) {
+    for (const needle of [
+      "airs.map_features",
+      "airs.operating_areas",
+      "airs.resource_locations",
+      "airs.geographic_precisions",
+      "airs.apply_precision",
+      "airs.terminate_incident_geography",
+      "map.",
+      "FORCE ROW LEVEL SECURITY",
+    ]) {
       expect(s7, needle).toContain(needle);
     }
     const s8 = buildReconcileScript(units[2]);
-    for (const needle of ["airs.observations", "airs.observation_relationships", "airs.observation_information_gaps", "airs.observation_evidence_references", "airs.observation_annotations", "airs.observation_shares", "airs.observation_freshness_thresholds", "airs.terminate_incident_observations", "observation.", "FORCE ROW LEVEL SECURITY"]) {
+    for (const needle of [
+      "airs.observations",
+      "airs.observation_relationships",
+      "airs.observation_information_gaps",
+      "airs.observation_evidence_references",
+      "airs.observation_annotations",
+      "airs.observation_shares",
+      "airs.observation_freshness_thresholds",
+      "airs.terminate_incident_observations",
+      "observation.",
+      "FORCE ROW LEVEL SECURITY",
+    ]) {
       expect(s8, needle).toContain(needle);
     }
   });
@@ -277,7 +341,10 @@ describe("role parity target", () => {
 
   it("is derived from the canonical TypeScript RBAC model", () => {
     const roles = Object.keys(ROLE_PERMISSIONS);
-    const grants = roles.reduce((n, r) => n + ROLE_PERMISSIONS[r as keyof typeof ROLE_PERMISSIONS].length, 0);
+    const grants = roles.reduce(
+      (n, r) => n + ROLE_PERMISSIONS[r as keyof typeof ROLE_PERMISSIONS].length,
+      0,
+    );
     expect(roles.length).toBe(ROLE_KEYS.length);
     expect(roles.length).toBe(10);
     expect(PERMISSION_KEYS.length).toBe(56);
@@ -292,11 +359,22 @@ describe("verification, ledger and adoption ordering", () => {
   it("verifies security, tenancy and closure before anything is recorded", () => {
     const verify = buildReconcileVerifyScript();
     for (const needle of [
-      "rolsuper", "rolbypassrls", "relforcerowsecurity",
-      "anconison-platform", "Anconison - AIRS Agent Platform", "org_kind='platform'",
-      "platform_admin", "albany-pd", "sensitive",
-      "disclosure_precisions", "apply_precision", "observation_precision", "observation_profile",
-      "terminate_incident_geography", "terminate_incident_observations", "expire_incident_state",
+      "rolsuper",
+      "rolbypassrls",
+      "relforcerowsecurity",
+      "anconison-platform",
+      "Anconison - AIRS Agent Platform",
+      "org_kind='platform'",
+      "platform_admin",
+      "albany-pd",
+      "sensitive",
+      "disclosure_precisions",
+      "apply_precision",
+      "observation_precision",
+      "observation_profile",
+      "terminate_incident_geography",
+      "terminate_incident_observations",
+      "expire_incident_state",
     ]) {
       expect(verify, needle).toContain(needle);
     }
@@ -305,7 +383,10 @@ describe("verification, ledger and adoption ordering", () => {
   });
 
   it("records exactly 0001-0012 with current checksums, reconciled units as applied", () => {
-    const ledger = buildLegacyLedgerScript(migrations, { appliedVersions: ["0009", "0010"], runnerVersion: "reconcile-legacy" });
+    const ledger = buildLegacyLedgerScript(migrations, {
+      appliedVersions: ["0009", "0010"],
+      runnerVersion: "reconcile-legacy",
+    });
     const recorded = [...ledger.matchAll(/record_applied\('(\d{4})'/g)].map((m) => m[1]);
     expect(recorded).toEqual(migrations.map((m) => m.version));
     for (const m of migrations) expect(ledger).toContain(m.checksum);
@@ -333,7 +414,8 @@ describe("verification, ledger and adoption ordering", () => {
     expect(verifyAt).toBeGreaterThan(-1);
     expect(verifyAt).toBeLessThan(ledgerAt);
     expect(platformAt).toBeLessThan(ledgerAt);
-    expect(cli.indexOf("VERIFICATION_FILES")).toBeLessThan(ledgerAt);
+    expect(cli.indexOf("runSqlSuite")).toBeGreaterThan(-1);
+    expect(cli.indexOf("runSqlSuite")).toBeLessThan(ledgerAt);
     // a failure anywhere above exits before the ledger is written
     expect(cli).toContain("No ledger was created");
   });
@@ -360,7 +442,11 @@ describe("command safety", () => {
     expect(pkg.scripts["db:migrate"]).not.toContain("reconcile");
     const dockerInit = readFileSync(`${REPO_ROOT}/db/init/00_apply_migrations.sh`, "utf8");
     expect(dockerInit).not.toContain("reconcile");
-    expect(readFileSync(`${REPO_ROOT}/scripts/db-migrate.mjs`, "utf8")).not.toContain("reconcile-legacy");
+    // db-migrate.mjs may POINT AT the reconciliation command, but never runs it
+    const migrate = readFileSync(`${REPO_ROOT}/scripts/db-migrate.mjs`, "utf8");
+    expect(migrate).not.toContain("run(buildReconcileScript(");
+    expect(migrate).not.toContain("toIdempotentSql");
+    expect(migrate).toContain("npm run db:reconcile-legacy");
   });
 
   it("redacts secrets and prints no connection strings", () => {
@@ -372,7 +458,9 @@ describe("command safety", () => {
 
   it("help runs without touching a database", () => {
     const help = spawnSync(process.execPath, ["scripts/db-reconcile-legacy.mjs", "--help"], {
-      encoding: "utf8", cwd: REPO_ROOT, env: { ...process.env, DATABASE_URL: "" },
+      encoding: "utf8",
+      cwd: REPO_ROOT,
+      env: { ...process.env, DATABASE_URL: "" },
     });
     expect(help.status).toBe(0);
     expect(help.stdout).toContain("report only");

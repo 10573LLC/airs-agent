@@ -2,6 +2,20 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [PostGIS Docker Image Tag Correction] 2026-08-06
+
+### Fixed
+- Corrected the Docker Compose `db` service image from the non-existent
+  `postgis/postgis:16-3.6-alpine` to the verified `postgis/postgis:16-3.5-alpine`.
+  PostgreSQL major version 16, the existing named volume, ports, health check,
+  passwords and service names are unchanged.
+
+### Changed
+- Documentation and tests updated to state PostGIS 3.5 where applicable:
+  `docker-compose.yml`, `db/init/00_apply_migrations.sh`,
+  `scripts/lib/legacy-repair.mjs`, `DATABASE.md`, `README.md`, `ARCHITECTURE.md`,
+  `LOCAL_SETUP.md`, `BUILD_AUDIT.md`, `CHANGELOG.md`.
+
 ## [Migration State Tracking and Pending-Only Execution] 2026-08-06
 
 ### Fixed
@@ -416,7 +430,7 @@ remains deliberately out of scope.
 ## Docker/PostGIS deployment fix and legacy repair path
 
 ### Fixed
-- Compose `db` service pinned to `postgis/postgis:16-3.6-alpine`; migrations
+- Compose `db` service pinned to `postgis/postgis:16-3.5-alpine`; migrations
   0009 and 0010 no longer fail with `extension "postgis" is not available` or
   `type public.geometry does not exist`.
 - `db/ledger/adopt_verify.sql` now checks `airs.resource_locations` (the real

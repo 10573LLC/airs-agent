@@ -3,7 +3,7 @@
 --   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f db/tests/role_parity.sql
 SELECT 'roles' AS entity, count(*) AS actual, 10 AS expected FROM airs.roles
 UNION ALL SELECT 'permissions', count(*), 56 FROM airs.permissions
-UNION ALL SELECT 'role_permissions', count(*), 171 FROM airs.role_permissions;
+UNION ALL SELECT 'role_permissions', count(*), 175 FROM airs.role_permissions;
 
 DO $$
 DECLARE r int; p int; g int;

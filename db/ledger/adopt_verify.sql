@@ -28,8 +28,9 @@ BEGIN
   FOREACH missing IN ARRAY ARRAY[
     'airs.organizations','airs.users','airs.memberships','airs.roles','airs.permissions',
     'airs.role_permissions','airs.audit_events','airs.sessions','airs.invitations',
-    'airs.incidents','airs.incident_participants','airs.aircraft','airs.vehicles',
-    'airs.sensors','airs.personnel','airs.incident_assignments','airs.disclosure_profiles',
+    'airs.incidents','airs.incident_participants','airs.resources','airs.resource_aircraft',
+    'airs.resource_vehicles','airs.resource_sensors','airs.personnel_profiles',
+    'airs.incident_assignments','airs.resource_shares',
     'airs.map_features','airs.operating_areas','airs.resource_locations','airs.observations'
   ] LOOP
     IF to_regclass(missing) IS NULL THEN
@@ -46,8 +47,13 @@ BEGIN
   END LOOP;
 
   FOREACH missing IN ARRAY ARRAY[
-    'airs.current_org_id','airs.current_user_id','airs.has_permission',
-    'airs.expire_incident_state','airs.terminate_incident_observations'
+    -- NOTE: airs.has_permission is deliberately absent from this list. Permission
+    -- evaluation lives in the TypeScript RBAC model plus RLS predicates over the
+    -- session GUCs; see SUPERSEDED_OBJECTS in scripts/lib/canonical-schema.mjs.
+    'airs.current_org_id','airs.current_user_id','airs.current_account_id','airs.ctx',
+    'airs.disclosure_allows','airs.effective_disclosure','airs.apply_precision',
+    'airs.expire_incident_state','airs.terminate_incident_geography',
+    'airs.terminate_incident_observations'
   ] LOOP
     IF NOT EXISTS (
       SELECT 1 FROM pg_proc p JOIN pg_namespace ns ON ns.oid = p.pronamespace

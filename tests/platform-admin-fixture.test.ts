@@ -36,7 +36,8 @@ describe("platform_admin_rls.sql section 5 fixture", () => {
   it("asserts the platform-admin authorization outcomes", () => {
     for (const label of [
       "a platform administrator cannot assume an agency organization context",
-      "the Albany users probe row alone establishes no organization context",
+      "a platform administrator cannot see the Albany organization row",
+      "a platform administrator still sees its own platform organization",
       "a platform administrator reads no agency user rows",
       "a platform administrator reads no agency incidents",
       "a platform administrator reads no agency audit rows",

@@ -333,7 +333,8 @@ describe("verification, ledger and adoption ordering", () => {
     expect(verifyAt).toBeGreaterThan(-1);
     expect(verifyAt).toBeLessThan(ledgerAt);
     expect(platformAt).toBeLessThan(ledgerAt);
-    expect(cli.indexOf("VERIFICATION_FILES")).toBeLessThan(ledgerAt);
+    expect(cli.indexOf("runSqlSuite")).toBeGreaterThan(-1);
+    expect(cli.indexOf("runSqlSuite")).toBeLessThan(ledgerAt);
     // a failure anywhere above exits before the ledger is written
     expect(cli).toContain("No ledger was created");
   });

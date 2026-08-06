@@ -234,8 +234,15 @@ BEGIN
   PERFORM pg_temp.ok(
     (SELECT count(*) FROM airs.organizations WHERE id = plat) = 1,
     'a platform administrator still sees its own platform organization');
-  PERFORM pg_temp.ok((SELECT count(*) FROM airs.users) = 0,
-    'a platform administrator reads no agency user rows');
+  PERFORM pg_temp.ok(
+    (SELECT count(*) FROM airs.users
+      WHERE org_id = '11111111-1111-4111-8111-111111111111'
+        AND email_address = 'platform.probe@example.test') = 0,
+    'the Albany probe user row is invisible to a platform administrator');
+  PERFORM pg_temp.ok(
+    (SELECT count(*) FROM airs.users
+      WHERE account_id = acct AND org_id = plat) = 1,
+    'the platform administrator still reads its own self-identity row');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.incidents) = 0,
     'a platform administrator reads no agency incidents');
   PERFORM pg_temp.ok((SELECT count(*) FROM airs.audit_events) = 0,

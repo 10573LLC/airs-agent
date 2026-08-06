@@ -204,6 +204,7 @@ describe("existing-database adoption", () => {
       "airs_maintenance",
       "required table % is missing",
       "row-level security is not enabled on %",
+      "row-level security is not FORCED on %",
       "no RLS policy exists on %",
       "required function % is missing",
       "required database role % is missing",

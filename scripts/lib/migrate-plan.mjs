@@ -252,10 +252,12 @@ export function buildAdoptionScript(migrations, verifySql, options = {}) {
   ].join("\n");
 }
 
-/** Read-only assertion suite run, wrapped so it can never write. */
-export function buildVerificationScript(sqlText) {
-  return `\\set ON_ERROR_STOP on\nBEGIN;\n${sqlText}\nROLLBACK;\n`;
-}
+// NOTE: the SQL assertion suite is executed by the ONE canonical runner in
+// scripts/lib/sql-suite.mjs (`runSqlSuite`). The former
+// `buildVerificationScript()` wrapped each file in an extra BEGIN/ROLLBACK,
+// which destroyed the session-scoped `pg_temp.ok` / `pg_temp.denied` helpers
+// as soon as a file issued its own intermediate ROLLBACK. It has been removed
+// on purpose so no second, subtly different execution path can come back.
 
 /**
  * Chooses the execution path and returns an `exec(sqlText)` descriptor factory.

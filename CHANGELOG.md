@@ -2,6 +2,31 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Migration State Tracking and Pending-Only Execution] 2026-08-06
+
+### Fixed
+- `npm run db:migrate` restarted at `0001` on a database whose migrations were already applied
+  and failed with `relation "organizations" already exists`. The runner now tracks applied
+  migrations persistently and applies only pending ones.
+
+### Added
+- `airs_migrations.applied_migrations` migration ledger (`db/ledger/0000_migration_ledger.sql`):
+  version, filename, SHA-256 checksum, applied timestamp, duration, runner version, app release.
+  Immutable rows; no access for `airs_app` or `airs_maintenance`.
+- `db/migrations/manifest.txt` - single canonical migration order shared by the Node runner and
+  Docker initialization (`db/init/00_apply_migrations.sh`).
+- `npm run db:migrate -- --dry-run`, `npm run db:migrate:status`, `npm run db:migrate:adopt`
+  (explicit, verification-first adoption of an existing pre-ledger database, never automatic,
+  never replaying migration SQL), `--lock-timeout-ms`.
+- `db/ledger/adopt_verify.sql` adoption verification gate.
+- 31 migration-runner assertions in `tests/db-migrate.test.ts`.
+
+### Changed
+- One transaction per migration: advisory lock -> pending guard -> migration SQL -> ledger row ->
+  commit. A failed migration rolls back, records nothing and stops the run.
+- Documentation: `README.md`, `LOCAL_SETUP.md` (Windows recovery procedure), `DATABASE.md`,
+  `ARCHITECTURE.md`, `SECURITY.md`, `BUILD_AUDIT.md`.
+
 ## [Platform Tenant Display Name Fix] 2026-08-06
 
 ### Fixed

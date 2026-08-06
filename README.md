@@ -32,3 +32,14 @@ npm run build && node .output/server/index.mjs
 
 Full instructions: `LOCAL_SETUP.md`. Architecture: `ARCHITECTURE.md`. Schema: `DATABASE.md`.
 Security posture and known gaps: `SECURITY.md`.
+
+## Windows
+
+Windows clones need Git, Node.js 22+, Docker Desktop and WSL 2 — but **not** a
+host-installed `psql`. `npm run db:migrate` uses a local `psql` when present and
+otherwise applies migrations through the running Docker Compose `db` service.
+`.gitattributes` forces LF for all `*.sh` files so the container init scripts do
+not fail with `/bin/sh^M: bad interpreter`; `npm run check:line-endings` enforces it.
+
+Full verified sequence: `LOCAL_SETUP.md` §9. `docker compose down -v` deletes local
+database data — use `docker compose stop` to shut down without data loss.

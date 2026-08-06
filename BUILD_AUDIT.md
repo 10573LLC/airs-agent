@@ -775,3 +775,54 @@ work, no operational features.
 | Build | VERIFIED | `npm run build` exit 0 | — |
 | TypeScript suite | VERIFIED | `vitest run` — 6 files, 59 passed, database-backed suites skipped without `DATABASE_URL` | Database-backed suites not executed in this environment |
 | SQL suite | NOT RUN HERE | `npm run db:test` now includes `db/tests/platform_admin_rls.sql` | No PostgreSQL instance in the build environment; run locally |
+
+---
+
+# Stage 8.2 — Windows Bootstrap Hardening — 2026-08-06 (UTC)
+
+Scope: three portability defects discovered during the verified Windows activation of
+the first real platform administrator, plus documentation. No Stage 9 work, no new
+operational features.
+
+## 1. Requested requirements
+
+| # | Requirement | Status | Evidence |
+| --- | --- | --- | --- |
+| 1 | `.gitattributes` forcing LF for `*.sh` | COMPLETE | `.gitattributes` (`*.sh text eol=lf`, plus `text=auto eol=lf` default, `*.ps1 eol=crlf`, binary assets excluded) |
+| 2 | Existing shell scripts normalized to LF, behaviour unchanged | COMPLETE | `db/init/04_app_role_login.sh`, `db/init/05_maintenance_role_login.sh` already LF; contents untouched |
+| 3 | Repository check failing on CRLF `.sh` | COMPLETE | `scripts/check-line-endings.mjs`, `npm run check:line-endings`, `tests/line-endings.test.ts` |
+| 4 | Portable Node migration runner, same command name | COMPLETE | `scripts/db-migrate.mjs`, `scripts/lib/migrate-plan.mjs`, `package.json` `db:migrate` |
+| 5 | Local `psql` first, else `docker compose exec -T db psql` | COMPLETE | `planMigration()`; unit tests in `tests/db-migrate.test.ts` |
+| 6 | `ON_ERROR_STOP=1`, established order, nonzero exit on failure | COMPLETE | `MIGRATION_FILES` 0001→0011; per-step exit-code check |
+| 7 | Never logs passwords or database URLs | COMPLETE | `redact()`; asserted in `tests/db-migrate.test.ts` |
+| 8 | Works on Windows PowerShell / Linux / macOS, no Lovable dependency | COMPLETE (Windows path exercised by the operator; sandbox has no Docker) | Node-only, no shell composition |
+| 9 | Never silently starts or deletes containers | COMPLETE | `NO_PATH_ERROR` instructs the operator instead |
+| 10 | `platform-admin:setup -- --help` exits 0 without `--email` | COMPLETE | `scripts/lib/platform-admin-cli.mjs`; `tests/platform-admin-cli.test.ts` |
+| 11 | Help documents all flags, env vars, effects, secrecy, PowerShell, `--new-link`, activation-creates-account | COMPLETE | `HELP_TEXT`; assertions in `tests/platform-admin-cli.test.ts` |
+| 12 | Unknown flags fail clearly with nonzero exit | COMPLETE | exit code 2 + supported-flag list |
+| 13 | Security architecture unchanged | COMPLETE | no change to `db/migrations/*`, `src/lib/auth/*`, `src/lib/rbac/*` |
+| 14 | Documentation updated | COMPLETE | `LOCAL_SETUP.md` §9, `README.md`, `SECURITY.md`, `ARCHITECTURE.md`, this file, `CHANGELOG.md` |
+
+## 2. Validation
+
+| Check | Result |
+| --- | --- |
+| `npm run check:line-endings` | PASS — 2 tracked shell scripts, all LF |
+| `tsc --noEmit` | PASS (exit 0) |
+| `vitest run` | PASS — 10 files, 77 passed, 70 skipped (DB-backed suites skip without PostgreSQL) |
+| Role parity (`tests/role-parity.test.ts`) | PASS — 5/5 |
+| Bootstrap/authorization (`tests/authorize.test.ts`) | PASS — 10/10 |
+| Migration-runner unit tests | PASS — 7/7 |
+| Setup-help tests | PASS — 6/6 |
+| `npm run build` (portable) | PASS |
+| `npm run build:dev` (editor) | PASS |
+| `npm run platform-admin:setup -- --help` | PASS — exit 0 |
+| `npm run db:test` (408 SQL assertions) | ENVIRONMENT-BLOCKED — no PostgreSQL in this sandbox |
+| Docker Compose fallback executed end-to-end | ENVIRONMENT-BLOCKED — no Docker daemon in this sandbox (logic unit-tested; operator verified on Windows) |
+
+## 3. Limitations
+
+- The Docker fallback is proven by unit tests over the command plan, not by a live
+  `docker compose exec` run in this environment.
+- Database-backed TypeScript suites and every SQL assertion suite are skipped here;
+  they must be re-run against a live PostgreSQL 16 instance.

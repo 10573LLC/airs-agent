@@ -23,7 +23,22 @@ import { createHash, randomBytes } from "node:crypto";
 
 import pg from "pg";
 
+import { HELP_TEXT, KNOWN_FLAGS, parseArgs } from "./lib/platform-admin-cli.mjs";
+
 const args = process.argv.slice(2);
+const parsed = parseArgs(args);
+
+if (parsed.help) {
+  process.stdout.write(`${HELP_TEXT}\n`);
+  process.exit(0);
+}
+if (parsed.error) {
+  console.error(`\n${parsed.error}\n`);
+  console.error("Run `npm run platform-admin:setup -- --help` for usage.\n");
+  process.exit(2);
+}
+void KNOWN_FLAGS;
+
 const flag = (n) => {
   const i = args.indexOf(`--${n}`);
   return i === -1 ? null : args[i + 1];
@@ -43,7 +58,9 @@ const baseUrl = (process.env.AIRS_PUBLIC_BASE_URL ?? process.env.APP_BASE_URL ??
 
 let step = 0;
 const ok = (message, detail) =>
-  console.log(`[${String(++step).padStart(2, "0")}] OK    ${message}${detail ? ` — ${detail}` : ""}`);
+  console.log(
+    `[${String(++step).padStart(2, "0")}] OK    ${message}${detail ? ` — ${detail}` : ""}`,
+  );
 const info = (message) => console.log(`         ${message}`);
 const fail = (message) => {
   console.error(`\nFAILED: ${message}\n`);
@@ -73,7 +90,8 @@ try {
   if (!baseUrl && !reportOnly) {
     fail("AIRS_PUBLIC_BASE_URL is not set — set it explicitly (e.g. http://localhost:3000)");
   }
-  if (baseUrl && !/^https?:\/\//.test(baseUrl)) fail("AIRS_PUBLIC_BASE_URL must start with http:// or https://");
+  if (baseUrl && !/^https?:\/\//.test(baseUrl))
+    fail("AIRS_PUBLIC_BASE_URL must start with http:// or https://");
   ok("database URL configured", "AIRS_BOOTSTRAP_DATABASE_URL");
 
   // 2. Reachability.

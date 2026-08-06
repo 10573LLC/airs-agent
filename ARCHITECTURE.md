@@ -341,3 +341,30 @@ Bootstrap is operator-driven and offline: `npm run bootstrap:platform-admin` cal
 cannot execute. The one-time token is generated in the CLI and reaches the database only as a
 SHA-256 hash. The recipient completes `/activate/$token` (new account) or `/invite/$token`
 (existing account) and from then on authenticates normally at `/auth`.
+
+---
+
+## Portable migration execution (Windows bootstrap hardening)
+
+`npm run db:migrate` is a Node runner (`scripts/db-migrate.mjs`), not shell command
+composition, so it behaves identically in PowerShell, bash and zsh.
+
+Planning is pure and unit-tested (`scripts/lib/migrate-plan.mjs`,
+`tests/db-migrate.test.ts`); execution is a thin `spawnSync` loop:
+
+1. **Local `psql` on `PATH`** → one invocation with `-v ON_ERROR_STOP=1` and the
+   ordered `-f` list, using `DATABASE_URL`.
+2. **Otherwise, a running Compose `db` service** (detected with
+   `docker compose ps --status running --services`) → one
+   `docker compose exec -T db psql -v ON_ERROR_STOP=1 -U airs_owner -d airs`
+   per migration, in `MIGRATION_FILES` order, each file piped on stdin; the loop
+   stops at the first nonzero exit code.
+3. **Neither** → an actionable error and exit code 1. The runner never starts,
+   stops or deletes containers.
+
+All printed output passes through `redact()`, so connection strings and
+password-like values cannot reach logs or CI output. Nothing here depends on a
+hosted builder service.
+
+Line endings are pinned by the repository-root `.gitattributes` (`*.sh text eol=lf`),
+enforced by `scripts/check-line-endings.mjs` and `tests/line-endings.test.ts`.

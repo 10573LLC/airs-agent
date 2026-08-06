@@ -32,8 +32,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS organizations_single_platform
 
 -- 2. The platform organization --------------------------------------------------
 -- Distinct from, and with no relationship to, the City of Albany tenants.
+-- The display name is deliberately plain ASCII: a non-UTF-8 Windows psql client
+-- (cp1252 console) mangles a Unicode em dash into '???'. See 0012.
 INSERT INTO airs.organizations (id, slug, name, agency_type, org_kind) VALUES
-  ('00000000-0000-4000-8000-00000000a123','anconison-platform','Anconison — AIRS Agent Platform','other','platform')
+  ('00000000-0000-4000-8000-00000000a123','anconison-platform','Anconison - AIRS Agent Platform','other','platform')
 ON CONFLICT (slug) DO UPDATE SET org_kind = 'platform';
 
 INSERT INTO airs.retention_policies (org_id)

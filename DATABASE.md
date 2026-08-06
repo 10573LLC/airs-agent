@@ -270,6 +270,14 @@ developer's database cannot make the suite fail.
 | `airs.platform_identity_report(text)` | aggregate-only pre-flight report for one address (no credentials, no hashes) |
 | `airs.bootstrap_platform_invitation(text, text, int)` | revokes any pending invitation for the address, inserts one `platform_admin` invitation from a supplied SHA-256 hash, audits the event |
 
+## Migration 0012 — platform tenant display name (2026-08-06)
+
+Idempotent repair of one column value. The platform organization's display name is
+`Anconison - AIRS Agent Platform` (plain ASCII; the original em dash was corrupted by
+cp1252 Windows psql clients). The migration matches on `slug = 'anconison-platform'`,
+raises if that slug is duplicated, changes nothing else, and audits the repair as
+`platform.display_name_repaired`.
+
 Both routines are `SECURITY DEFINER` and `REVOKE ALL ... FROM PUBLIC`: they are reachable only
 from the owner/operator connection (`AIRS_BOOTSTRAP_DATABASE_URL`), never from `airs_app`.
 

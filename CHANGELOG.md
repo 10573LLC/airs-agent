@@ -2,12 +2,33 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Platform Tenant Display Name Fix] 2026-08-06
+
+### Fixed
+- The platform tenant rendered as `Anconison ??? AIRS Agent Platform` on Windows installations.
+  Migration 0011 seeded the name with a Unicode em dash; a psql client running with a cp1252
+  console encoding cannot represent it, so replacement characters were stored. The canonical
+  display name is now plain ASCII: `Anconison - AIRS Agent Platform`.
+
+### Added
+- `db/migrations/0012_fix_platform_org_display_name.sql` — idempotent repair. Updates only the
+  organization whose slug is `anconison-platform`, raises if duplicates exist, leaves id, slug,
+  `org_kind`, memberships, roles, permissions, invitations, authentication records and the Albany
+  agency tenants untouched, and writes a `platform.display_name_repaired` audit event.
+- `db/tests/platform_org_name.sql` (wired into `npm run db:test`) and
+  `tests/platform-org-name.test.ts` — 8 assertions covering name, slug, `org_kind`, tenant id,
+  Albany tenants, `platform_admin` permission set, scope and idempotency of the repair.
+
+### Changed
+- `db/migrations/0011_platform_administration.sql` seeds the ASCII name so fresh databases are
+  correct without the repair; `scripts/lib/migrate-plan.mjs` runs 0012 last.
+
 ## [Platform Administration Bootstrap] 2026-08-05
 
 ### Added
 - `db/migrations/0011_platform_administration.sql` — platform administration plane:
   `airs.organizations.org_kind` (`agency` | `platform`, unique partial index allowing exactly one
-  platform tenant), the `Anconison — AIRS Agent Platform` organization, the `platform_admin` role
+  platform tenant), the `Anconison - AIRS Agent Platform` organization, the `platform_admin` role
   with four platform-only permissions (`org.manage`, `user.manage`, `audit.read`,
   `retention.manage`), a `BEFORE INSERT/UPDATE` guard on `memberships`, `user_roles` and
   `invitations` keeping `platform_admin` out of agency tenants (and agency roles out of the

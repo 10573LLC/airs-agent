@@ -33,7 +33,7 @@ describe("migration runner planning", () => {
     const plan = planMigration({ hasLocalPsql: false, dockerDbRunning: true });
     expect(plan.steps.map((s) => s.file)).toEqual(MIGRATION_FILES);
     expect(MIGRATION_FILES[0]).toBe("db/migrations/0001_init.sql");
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0011_platform_administration.sql");
+    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0012_fix_platform_org_display_name.sql");
   });
 
   it("stops on SQL errors: every docker step carries ON_ERROR_STOP and runs separately", () => {

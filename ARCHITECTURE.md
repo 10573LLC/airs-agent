@@ -318,7 +318,7 @@ AIRS Agent now distinguishes two planes of administration.
 platform plane                         agency plane
 ------------------------------------   ------------------------------------
 organizations.org_kind = 'platform'    organizations.org_kind = 'agency'
-Anconison — AIRS Agent Platform        Albany Police Department, Albany County
+Anconison - AIRS Agent Platform        Albany Police Department, Albany County
 role: platform_admin                   the nine agency roles
 permissions: org.manage, user.manage,  incident.*, resource.*, map.*,
              audit.read,               observation.*, airspace.*, ...

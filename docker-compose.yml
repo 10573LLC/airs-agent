@@ -15,14 +15,12 @@ services:
     volumes:
       # Persistent database storage.
       - airs_pgdata:/var/lib/postgresql/data
-      # Applied once, in this order, on first start of an empty data directory.
-      # Mounted as individual files: the entrypoint ignores mounted directories.
-      - ./db/migrations/0001_init.sql:/docker-entrypoint-initdb.d/01_init.sql:ro
-      - ./db/migrations/0002_roles_seed.sql:/docker-entrypoint-initdb.d/02_roles_seed.sql:ro
-      - ./db/migrations/0003_auth.sql:/docker-entrypoint-initdb.d/03_auth.sql:ro
-      - ./db/migrations/0004_org_context_guard.sql:/docker-entrypoint-initdb.d/04_org_context_guard.sql:ro
-      - ./db/migrations/0005_incident_rooms.sql:/docker-entrypoint-initdb.d/05_incident_rooms.sql:ro
-      - ./db/migrations/0006_maintenance.sql:/docker-entrypoint-initdb.d/06_maintenance.sql:ro
+      # Applied once on first start of an empty data directory. A single
+      # initialization script reads the canonical manifest so the Docker path
+      # and `npm run db:migrate` can never drift, and every applied migration
+      # is recorded in the persistent ledger.
+      - ./db:/airs-db:ro
+      - ./db/init/00_apply_migrations.sh:/docker-entrypoint-initdb.d/00_apply_migrations.sh:ro
       - ./db/seed/demo_orgs.sql:/docker-entrypoint-initdb.d/07_demo_orgs.sql:ro
       - ./db/init/04_app_role_login.sh:/docker-entrypoint-initdb.d/08_app_role_login.sh:ro
       - ./db/init/05_maintenance_role_login.sh:/docker-entrypoint-initdb.d/09_maintenance_role_login.sh:ro

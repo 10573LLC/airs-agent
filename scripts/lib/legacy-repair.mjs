@@ -16,6 +16,7 @@
 //   * `relation already exists` is never treated as success - the runner only
 //     executes migrations that the probes classified as MISSING.
 import { DEFAULT_LOCK_TIMEOUT_MS, ADVISORY_LOCK_KEYS, LEDGER_FILE, REPO_ROOT, stripOuterTransaction } from "./migrate-plan.mjs";
+import { CANONICAL_OBJECTS, SUPERSEDED_OBJECTS, deriveStateProbes } from "./canonical-schema.mjs";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
@@ -43,102 +44,22 @@ export const POSTGIS_MISSING_ERROR = [
 ].join("\n");
 
 /**
- * Concrete per-migration state probes. Each entry is a boolean SQL expression;
- * a migration counts as PRESENT only when every one of its probes is true, as
- * MISSING when every probe is false, and as PARTIAL (a hard error) otherwise.
+ * Concrete per-migration state probes, DERIVED from the canonical cumulative
+ * schema inventory (scripts/lib/canonical-schema.mjs) rather than from what a
+ * historical migration once created.
+ *
+ * This distinction matters: a database can be complete and still fail a
+ * historical probe when a later migration superseded an object. Objects listed
+ * in SUPERSEDED_OBJECTS are never probed and never recreated (see
+ * canonical-schema.mjs for airs.has_permission and airs.disclosure_profiles).
+ * Genuinely missing CURRENT objects still cause a refusal.
+ *
+ * A migration counts as PRESENT only when every probe is true, MISSING when
+ * every probe is false, and PARTIAL (a hard error) otherwise.
  */
-export const STATE_PROBES = {
-  "0001": [
-    ["organizations table", "to_regclass('airs.organizations') IS NOT NULL"],
-    ["users table", "to_regclass('airs.users') IS NOT NULL"],
-    ["memberships table", "to_regclass('airs.memberships') IS NOT NULL"],
-    ["permissions table", "to_regclass('airs.permissions') IS NOT NULL"],
-    ["forced RLS on organizations", "(SELECT relrowsecurity FROM pg_class WHERE oid = 'airs.organizations'::regclass)"],
-  ],
-  "0002": [
-    ["10 roles seeded", "(SELECT count(*) FROM airs.roles) >= 10"],
-    ["role_permissions seeded", "(SELECT count(*) FROM airs.role_permissions) > 0"],
-    ["demo role keys", "EXISTS (SELECT 1 FROM airs.roles WHERE key = 'agency_admin')"],
-  ],
-  "0003": [
-    ["sessions table", "to_regclass('airs.sessions') IS NOT NULL"],
-    ["invitations table", "to_regclass('airs.invitations') IS NOT NULL"],
-    ["audit_events table", "to_regclass('airs.audit_events') IS NOT NULL"],
-    ["has_permission function", "to_regprocedure('airs.has_permission(text)') IS NOT NULL OR EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='has_permission')"],
-  ],
-  "0004": [
-    ["current_org_id function", "EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='current_org_id')"],
-    ["current_user_id function", "EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='current_user_id')"],
-    ["airs_app role", "EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'airs_app')"],
-  ],
-  "0005": [
-    ["incidents table", "to_regclass('airs.incidents') IS NOT NULL"],
-    ["incident_participants table", "to_regclass('airs.incident_participants') IS NOT NULL"],
-    ["incident RLS policy", "EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='airs' AND tablename='incidents')"],
-    ["incident permissions", "(SELECT count(*) FROM airs.permissions WHERE key LIKE 'incident.%') > 0"],
-  ],
-  "0006": [
-    ["expire_incident_state function", "EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='expire_incident_state')"],
-    ["airs_maintenance role", "EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'airs_maintenance')"],
-  ],
-  "0007": [
-    ["resources table", "to_regclass('airs.resources') IS NOT NULL"],
-    ["resource_aircraft table", "to_regclass('airs.resource_aircraft') IS NOT NULL"],
-    ["resource_vehicles table", "to_regclass('airs.resource_vehicles') IS NOT NULL"],
-    ["resource_sensors table", "to_regclass('airs.resource_sensors') IS NOT NULL"],
-    ["personnel_profiles table", "to_regclass('airs.personnel_profiles') IS NOT NULL"],
-    ["incident_assignments table", "to_regclass('airs.incident_assignments') IS NOT NULL"],
-    ["resource_shares table", "to_regclass('airs.resource_shares') IS NOT NULL"],
-    ["resource permissions", "(SELECT count(*) FROM airs.permissions WHERE key LIKE 'resource.%') >= 6"],
-    ["resources RLS policy", "EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='airs' AND tablename='resources')"],
-    ["forced RLS on resources", "(SELECT relforcerowsecurity FROM pg_class WHERE oid = 'airs.resources'::regclass)"],
-  ],
-  "0008": [
-    ["disclosure_profiles table", "to_regclass('airs.disclosure_profiles') IS NOT NULL"],
-    ["disclosure_fields table", "to_regclass('airs.disclosure_fields') IS NOT NULL"],
-    ["disclosure_profile_fields table", "to_regclass('airs.disclosure_profile_fields') IS NOT NULL"],
-    ["disclosure profiles seeded", "(SELECT count(*) FROM airs.disclosure_profiles) > 0"],
-    ["disclosure_profiles RLS policy", "EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='airs' AND tablename='disclosure_profiles')"],
-  ],
-  "0009": [
-    ["postgis extension", "EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'postgis')"],
-    ["geometry type", "to_regtype('public.geometry') IS NOT NULL"],
-    ["map_features table", "to_regclass('airs.map_features') IS NOT NULL"],
-    ["operating_areas table", "to_regclass('airs.operating_areas') IS NOT NULL"],
-    ["resource_locations table", "to_regclass('airs.resource_locations') IS NOT NULL"],
-    ["geographic_precisions table", "to_regclass('airs.geographic_precisions') IS NOT NULL"],
-    ["apply_precision function", "EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='apply_precision')"],
-    ["terminate_incident_geography function", "EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='terminate_incident_geography')"],
-    ["map permissions", "(SELECT count(*) FROM airs.permissions WHERE key LIKE 'map.%') >= 6"],
-    ["map_features RLS policy", "EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='airs' AND tablename='map_features')"],
-    ["operating_areas RLS policy", "EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='airs' AND tablename='operating_areas')"],
-    ["forced RLS on resource_locations", "(SELECT relforcerowsecurity FROM pg_class WHERE oid = 'airs.resource_locations'::regclass)"],
-  ],
-  "0010": [
-    ["observations table", "to_regclass('airs.observations') IS NOT NULL"],
-    ["observation_relationships table", "to_regclass('airs.observation_relationships') IS NOT NULL"],
-    ["observation_information_gaps table", "to_regclass('airs.observation_information_gaps') IS NOT NULL"],
-    ["observation_evidence_references table", "to_regclass('airs.observation_evidence_references') IS NOT NULL"],
-    ["observation_annotations table", "to_regclass('airs.observation_annotations') IS NOT NULL"],
-    ["observation_shares table", "to_regclass('airs.observation_shares') IS NOT NULL"],
-    ["observation_freshness_thresholds table", "to_regclass('airs.observation_freshness_thresholds') IS NOT NULL"],
-    ["observation_freshness function", "EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='observation_freshness')"],
-    ["terminate_incident_observations function", "EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='terminate_incident_observations')"],
-    ["observation permissions", "(SELECT count(*) FROM airs.permissions WHERE key LIKE 'observation.%') >= 10"],
-    ["observations RLS policy", "EXISTS (SELECT 1 FROM pg_policies WHERE schemaname='airs' AND tablename='observations')"],
-    ["forced RLS on observations", "(SELECT relforcerowsecurity FROM pg_class WHERE oid = 'airs.observations'::regclass)"],
-  ],
-  "0011": [
-    ["platform organization", "EXISTS (SELECT 1 FROM airs.organizations WHERE slug = 'anconison-platform' AND org_kind = 'platform')"],
-    ["platform_admin role", "EXISTS (SELECT 1 FROM airs.roles WHERE key = 'platform_admin')"],
-    ["platform_admin grants", "(SELECT count(*) FROM airs.role_permissions WHERE role_key = 'platform_admin') = 4"],
-    ["platform_admin has no operational permission", "NOT EXISTS (SELECT 1 FROM airs.role_permissions WHERE role_key='platform_admin' AND (permission_key LIKE 'incident.%' OR permission_key LIKE 'resource.%' OR permission_key LIKE 'map.%' OR permission_key LIKE 'observation.%'))"],
-  ],
-  "0012": [
-    ["ASCII platform display name", "EXISTS (SELECT 1 FROM airs.organizations WHERE slug = 'anconison-platform' AND name = 'Anconison - AIRS Agent Platform')"],
-    ["no legacy em-dash / mojibake name", "NOT EXISTS (SELECT 1 FROM airs.organizations WHERE slug = 'anconison-platform' AND name <> 'Anconison - AIRS Agent Platform')"],
-  ],
-};
+export const STATE_PROBES = deriveStateProbes();
+
+export { SUPERSEDED_OBJECTS };
 
 /** Migrations the repair path is allowed to execute. Everything else is report-only. */
 export const REPAIRABLE_VERSIONS = ["0009", "0010"];
@@ -231,7 +152,14 @@ export function planRepair(state, migrations) {
       ...partial.map((p) => `  ${p.version}: missing ${p.failed.join(", ")}`),
       "",
       "A partially applied migration must be investigated by an operator; the",
-      "repair command will not guess. Nothing was changed.",
+      "repair command will not guess and will not replay a whole migration over",
+      "a half-present schema. Nothing was changed.",
+      "",
+      "For a cumulative legacy database, use the object-level reconciliation",
+      "instead - it creates only the CURRENT objects that are genuinely absent:",
+      "",
+      "  npm run db:reconcile-legacy                       report only",
+      "  npm run db:reconcile-legacy -- --confirm --backup-confirmed",
     ].join("\n");
   } else if (unrepairable.length) {
     error = [

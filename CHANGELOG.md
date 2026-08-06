@@ -412,3 +412,27 @@ remains deliberately out of scope.
   `npm run build`, `npm run build:dev`, `platform-admin:setup -- --help` (exit 0).
 - Environment-blocked in this sandbox: `npm run db:test` (no PostgreSQL) and a live
   Docker Compose migration run (no Docker daemon).
+
+## Docker/PostGIS deployment fix and legacy repair path
+
+### Fixed
+- Compose `db` service pinned to `postgis/postgis:16-3.6-alpine`; migrations
+  0009 and 0010 no longer fail with `extension "postgis" is not available` or
+  `type public.geometry does not exist`.
+- `db/ledger/adopt_verify.sql` now checks `airs.resource_locations` (the real
+  Stage 7 table) instead of a non-existent `airs.asset_locations`.
+
+### Added
+- Fresh-install PostGIS preflight in `db/init/00_apply_migrations.sh`: rejects a
+  non-PostGIS image with an actionable error and enables PostGIS before 0009.
+- `npm run db:migrate:repair-legacy` - operator-only, confirmation-gated repair
+  of pre-ledger databases with concrete per-migration state probes, missing-only
+  application of 0009/0010, full verification, and ledger creation last.
+- `tests/db-repair-legacy.test.ts` (28 assertions) covering image pinning,
+  fresh-install ordering, state probes, noncontiguous detection, transaction
+  guarantees, ledger recording and command safety.
+
+### Documentation
+- Windows recovery procedure (preserve the volume, never `docker compose down -v`)
+  in LOCAL_SETUP.md, DATABASE.md and README.md; ARCHITECTURE.md, SECURITY.md and
+  BUILD_AUDIT.md updated.

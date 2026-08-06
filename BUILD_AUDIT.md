@@ -861,3 +861,43 @@ ledger access model, dry-run and status read-only + credential-free, psql/Docker
 Database-executed checks (fresh migrate, second no-op run, live adoption, concurrency race,
 `npm run db:test`, role parity in-database) are **environment-blocked**: no PostgreSQL or Docker
 daemon is available in the build environment. No Stage 9 or operational feature work was started.
+
+## Docker/PostGIS deployment defect and legacy repair
+
+Root cause: the Compose `db` service used `postgres:16-alpine`, which ships no
+PostGIS. Migration 0009 aborted with `extension "postgis" is not available`;
+0010 then aborted with `type public.geometry does not exist`.
+
+| Item | Before | After |
+| --- | --- | --- |
+| Database image | `postgres:16-alpine` | `postgis/postgis:16-3.6-alpine` |
+| PostgreSQL major | 16 | 16 (volume reused as-is) |
+| PostGIS | absent | 3.6, enabled before migration 0009 |
+
+Verified in this environment (`npx vitest run`, `npm run typecheck`,
+`npm run check:line-endings`, `npm run build`, `npm run build:dev`):
+
+* pinned PostGIS image, no `latest`, volume/db/roles/ports/health check preserved
+* fresh-install path enables PostGIS before 0009 and rejects a plain PostgreSQL
+  image with an actionable error
+* per-migration state probes exist for 0001-0012 with >= 2 concrete checks each
+* the exact known noncontiguous live state is detected (0001-0008 present,
+  0009/0010 missing, 0011/0012 present)
+* repair plans only 0009 and 0010; 0011/0012 are never replayed
+* partial or out-of-scope missing migrations abort the repair
+* 0009/0010 are single advisory-locked transactions, write no ledger row while
+  applying, and retry cleanly once PostGIS exists
+* the ledger records exactly 0001-0012 with current checksums, refuses a
+  populated ledger, and keeps `airs_app`/`airs_maintenance` denied
+* repair requires `--confirm --backup-confirmed`, is not reachable from
+  `npm run db:migrate` or Docker init, and prints no credentials
+
+Environment-blocked (no Docker/PostgreSQL daemon in this build environment;
+these are host procedures documented in LOCAL_SETUP.md):
+
+* live container recreation of an existing PostgreSQL 16 volume under the PostGIS image
+* live `CREATE EXTENSION postgis` / `postgis_full_version()` execution
+* live data-intactness counts after recreation
+* live end-to-end repair run, live SQL suite / role parity execution
+  (10 roles / 56 permissions / 175 grants), live ledger contents and the
+  live "second run reports zero pending" check

@@ -2,6 +2,27 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Platform Admin Test-Fixture Fix] 2026-08-06
+
+### Fixed
+- `db/tests/platform_admin_rls.sql` section 5 resolved the platform probe
+  account id *after* `SET LOCAL ROLE airs_app`, where `airs.accounts` is
+  RLS-restricted. The lookup yielded NULL, so the assertion "a platform
+  administrator cannot assume an agency organization context" actually
+  exercised the documented account-less, tenant-only branch of
+  `airs.current_org_id()` and failed. The account id is now resolved with
+  fixture privileges and carried across the role switch in a transaction-local
+  setting. Test fixture only: no schema, migration, RLS policy, permission or
+  application change.
+
+### Added
+- Fixture preconditions (account exists, exactly one active `platform_admin`
+  membership in `anconison-platform`, no Albany membership, Albany users probe
+  retained) plus assertions that account-less tenant-only context and
+  invitation-redemption context behaviour are unchanged.
+- `tests/platform-admin-fixture.test.ts` (7 checks) guards the ordering so the
+  lookup can never drift back behind the restricted role.
+
 ## [SQL Test-Harness Fix and Reconciled-State Adoption] 2026-08-06
 
 ### Fixed

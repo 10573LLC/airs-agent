@@ -17,7 +17,7 @@ PSQL="psql -v ON_ERROR_STOP=1 -q --username $POSTGRES_USER --dbname $POSTGRES_DB
 # `extension "postgis" is not available` or `type public.geometry does not exist`.
 if ! $PSQL -tAc "SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'" | grep -q 1; then
   echo "airs: FATAL - PostGIS is not available in this PostgreSQL image." >&2
-  echo "airs: use postgis/postgis:16-3.6-alpine (see docker-compose.yml); the plain" >&2
+  echo "airs: use postgis/postgis:16-3.5-alpine (see docker-compose.yml); the plain" >&2
   echo "airs: postgres:16-alpine image cannot run migrations 0009 and 0010." >&2
   exit 1
 fi

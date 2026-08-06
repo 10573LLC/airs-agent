@@ -471,8 +471,8 @@ any future one must be documented here explicitly.
 
 ## Deployment: database image and legacy repair
 
-The database plane is pinned to `postgis/postgis:16-3.6-alpine` (PostgreSQL 16,
-PostGIS 3.6). PostGIS is part of the portable schema contract: migrations 0009
+The database plane is pinned to `postgis/postgis:16-3.5-alpine` (PostgreSQL 16,
+PostGIS 3.5). PostGIS is part of the portable schema contract: migrations 0009
 and 0010 create geometry-typed columns in SRID 4326, so the image - not the host
 - must provide the extension. Fresh Docker initialization enables PostGIS before
 the first migration runs and still drives everything from the single canonical

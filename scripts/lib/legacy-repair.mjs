@@ -20,9 +20,9 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 /** Database image the deployment is pinned to. Documented in DATABASE.md. */
-export const REQUIRED_DB_IMAGE = "postgis/postgis:16-3.6-alpine";
+export const REQUIRED_DB_IMAGE = "postgis/postgis:16-3.5-alpine";
 export const REQUIRED_PG_MAJOR = 16;
-export const REQUIRED_POSTGIS_MINIMUM = "3.6";
+export const REQUIRED_POSTGIS_MINIMUM = "3.5";
 
 export const POSTGIS_MISSING_ERROR = [
   "PostGIS is not available in this PostgreSQL server.",

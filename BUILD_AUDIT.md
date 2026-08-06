@@ -870,9 +870,9 @@ PostGIS. Migration 0009 aborted with `extension "postgis" is not available`;
 
 | Item | Before | After |
 | --- | --- | --- |
-| Database image | `postgres:16-alpine` | `postgis/postgis:16-3.6-alpine` |
+| Database image | `postgres:16-alpine` | `postgis/postgis:16-3.5-alpine` |
 | PostgreSQL major | 16 | 16 (volume reused as-is) |
-| PostGIS | absent | 3.6, enabled before migration 0009 |
+| PostGIS | absent | 3.5, enabled before migration 0009 |
 
 Verified in this environment (`npx vitest run`, `npm run typecheck`,
 `npm run check:line-endings`, `npm run build`, `npm run build:dev`):

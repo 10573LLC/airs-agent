@@ -386,16 +386,16 @@ untouched. No current AIRS Agent migration requires running outside a transactio
 `CREATE INDEX CONCURRENTLY`, `CREATE DATABASE`, or `ALTER TYPE ... ADD VALUE` outside a block);
 any future one must be documented here explicitly.
 
-## Database image: PostgreSQL 16 + PostGIS 3.6
+## Database image: PostgreSQL 16 + PostGIS 3.5
 
-The Docker Compose `db` service is pinned to `postgis/postgis:16-3.6-alpine`
+The Docker Compose `db` service is pinned to `postgis/postgis:16-3.5-alpine`
 (previously `postgres:16-alpine`). Migrations `0009_common_operating_picture.sql`
 and `0010_awareness_observations.sql` require PostGIS; the plain image produced
 `extension "postgis" is not available` (0009) and, once 0009 had failed,
 `type public.geometry does not exist` (0010).
 
 * PostgreSQL major version: **16** (unchanged - the existing data volume is reused)
-* PostGIS: **3.6** (pinned tag, never `latest`)
+* PostGIS: **3.5** (pinned tag, never `latest`)
 * Volume, database name, roles, passwords, ports, health check and the
   manifest/ledger migration architecture are all unchanged.
 
@@ -406,7 +406,7 @@ Preserve the existing Docker volume. **Never run `docker compose down -v`.**
 ```
 docker compose stop app expiration-scheduler   # stop the app first
 docker compose stop db                         # stop only the database
-docker compose pull db                         # postgis/postgis:16-3.6-alpine
+docker compose pull db                         # postgis/postgis:16-3.5-alpine
 docker compose up -d db                        # same named volume, same data
 docker compose exec -T db psql -U airs_owner -d airs -c "CREATE EXTENSION IF NOT EXISTS postgis"
 docker compose exec -T db psql -U airs_owner -d airs -c "SELECT postgis_full_version()"

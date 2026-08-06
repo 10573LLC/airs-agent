@@ -1,10 +1,53 @@
 #!/usr/bin/env node
-// Portable migration runner (Windows PowerShell, Linux, macOS).
-//   npm run db:migrate
+// Portable, ledger-backed migration runner (Windows PowerShell, Linux, macOS).
+//
+//   npm run db:migrate                 apply pending migrations only
+//   npm run db:migrate -- --dry-run    report only, changes nothing
+//   npm run db:migrate:status          ledger / conflict / lock status
+//   npm run db:migrate:adopt           adopt a verified existing database
+//
+// Migration state lives in airs_migrations.applied_migrations. Nothing is ever
+// re-applied, nothing is applied without recording it, and an "already exists"
+// SQL error is never treated as success.
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { performance } from "node:perf_hooks";
 
-import { planMigration, redact } from "./lib/migrate-plan.mjs";
+import {
+  ADOPT_VERIFY_FILE,
+  DEFAULT_LOCK_TIMEOUT_MS,
+  MARKER_ALREADY_APPLIED,
+  MARKER_CHECKSUM_MISMATCH,
+  MIGRATE_HELP_TEXT,
+  REPO_ROOT,
+  RUNNER_VERSION,
+  VERIFICATION_FILES,
+  buildAdoptionScript,
+  buildLedgerBootstrapScript,
+  buildLedgerReadScript,
+  buildLockProbeScript,
+  buildMigrationScript,
+  buildVerificationScript,
+  diffMigrations,
+  loadMigrations,
+  parseMigrateArgs,
+  planExecution,
+  redact,
+} from "./lib/migrate-plan.mjs";
+
+function fail(message, code = 1) {
+  console.error(redact(message));
+  process.exit(code);
+}
+
+const { flags, error: argError } = parseMigrateArgs(process.argv.slice(2));
+if (argError) fail(`${argError}\n\n${MIGRATE_HELP_TEXT}`, 2);
+if (flags.help) {
+  console.log(MIGRATE_HELP_TEXT);
+  process.exit(0);
+}
+const lockTimeoutMs = flags["lock-timeout-ms"] || DEFAULT_LOCK_TIMEOUT_MS;
 
 function commandExists(command) {
   const probe = spawnSync(command, ["--version"], { stdio: "ignore", shell: false });
@@ -16,44 +59,197 @@ function dockerDbRunning() {
     encoding: "utf8",
   });
   if (probe.error || probe.status !== 0) return false;
-  return String(probe.stdout)
-    .split(/\r?\n/)
-    .map((s) => s.trim())
-    .includes("db");
+  return String(probe.stdout).split(/\r?\n/).map((s) => s.trim()).includes("db");
 }
 
 const hasLocalPsql = commandExists("psql");
-const plan = planMigration({
+const execPlan = planExecution({
   hasLocalPsql,
   dockerDbRunning: hasLocalPsql ? false : dockerDbRunning(),
   databaseUrl: process.env.DATABASE_URL,
 });
+if (execPlan.mode === "none") fail(execPlan.error);
 
-if (plan.mode === "none") {
-  console.error(redact(plan.error));
-  process.exit(1);
-}
+const pathLabel = execPlan.mode === "psql" ? "local psql client" : "Docker Compose `db` service";
 
-console.log(
-  plan.mode === "psql"
-    ? "Applying migrations with the local psql client."
-    : "Local psql not found — applying migrations through the running Docker Compose `db` service.",
-);
-
-for (const step of plan.steps) {
-  console.log(`  -> ${step.file}`);
+/** Runs one SQL script through the chosen path. Never echoes credentials. */
+function run(sql, { capture = false } = {}) {
+  const step = execPlan.exec(sql);
   const result = spawnSync(step.command, step.args, {
-    input: step.stdinFile ? readFileSync(step.stdinFile) : undefined,
-    stdio: step.stdinFile ? ["pipe", "inherit", "inherit"] : "inherit",
+    input: step.stdin,
+    encoding: "utf8",
+    stdio: capture ? ["pipe", "pipe", "pipe"] : ["pipe", "inherit", "pipe"],
   });
-  if (result.error) {
-    console.error(redact(`Migration failed to start: ${result.error.message}`));
-    process.exit(1);
+  if (result.error) return { ok: false, status: -1, stdout: "", stderr: String(result.error.message) };
+  const stderr = String(result.stderr ?? "");
+  if (!capture && stderr) process.stderr.write(redact(stderr));
+  return { ok: result.status === 0, status: result.status ?? 1, stdout: String(result.stdout ?? ""), stderr };
+}
+
+function ensureLedger() {
+  const result = run(buildLedgerBootstrapScript(), { capture: true });
+  if (!result.ok) fail(`Could not create or verify the migration ledger.\n${result.stderr}`);
+}
+
+function readLedger() {
+  const result = run(buildLedgerReadScript(), { capture: true });
+  if (!result.ok) fail(`Could not read the migration ledger.\n${result.stderr}`);
+  return result.stdout
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [version, filename, checksum, appliedAt] = line.split("|");
+      return { version, filename, checksum, appliedAt };
+    });
+}
+
+function lockState() {
+  const result = run(buildLockProbeScript(), { capture: true });
+  if (!result.ok) return "unknown";
+  return result.stdout.includes("held") ? "held by another migration process" : "free";
+}
+
+function reportConflicts(conflicts) {
+  console.error("");
+  console.error("Migration checksum conflict - previously applied migrations are immutable.");
+  for (const c of conflicts) {
+    console.error(`  ${c.version}  ${c.filename}: the file no longer matches the recorded checksum.`);
   }
-  if (result.status !== 0) {
-    console.error(redact(`Migration failed (${step.file}) with exit code ${result.status}.`));
-    process.exit(result.status || 1);
+  console.error("");
+  console.error("Nothing was applied. Restore the original migration file, or add a new");
+  console.error("forward migration. Do not edit recorded checksums.");
+  process.exit(3);
+}
+
+const migrations = loadMigrations();
+
+// --- status ---------------------------------------------------------------
+if (flags.status) {
+  const probe = run("\\set ON_ERROR_STOP on\n\\pset tuples_only on\n\\pset format unaligned\nSELECT to_regclass('airs_migrations.applied_migrations') IS NOT NULL;\n", { capture: true });
+  const ledgerPresent = probe.ok && probe.stdout.trim().startsWith("t");
+  const rows = ledgerPresent ? readLedger() : [];
+  const { applied, pending, conflicts } = diffMigrations(migrations, rows);
+  const highest = applied.length ? applied.at(-1).version : "none";
+  console.log("AIRS Agent migration status");
+  console.log(`  execution path:        ${pathLabel}`);
+  console.log(`  migration ledger:      ${ledgerPresent ? "present" : "absent"}`);
+  console.log(`  applied migrations:    ${applied.length}`);
+  console.log(`  highest applied:       ${highest}`);
+  console.log(`  pending migrations:    ${pending.length}${pending.length ? ` (${pending.map((m) => m.version).join(", ")})` : ""}`);
+  console.log(`  checksum conflicts:    ${conflicts.length}${conflicts.length ? ` (${conflicts.map((c) => c.version).join(", ")})` : ""}`);
+  console.log(`  adoption required:     ${!ledgerPresent || rows.length === 0 ? "yes, if this is an existing AIRS Agent database (npm run db:migrate:adopt)" : "no"}`);
+  console.log(`  advisory lock:         ${ledgerPresent ? lockState() : "not probed"}`);
+  process.exit(conflicts.length ? 3 : 0);
+}
+
+// --- adoption -------------------------------------------------------------
+if (flags["adopt-existing"]) {
+  console.log(`Adoption requested. Execution path: ${pathLabel}.`);
+  ensureLedger();
+  const rows = readLedger();
+  if (rows.length > 0) {
+    fail(`The migration ledger already contains ${rows.length} row(s); adoption is not required.`, 4);
+  }
+  console.log("Running the SQL assertion suite and role parity before recording anything...");
+  for (const file of VERIFICATION_FILES) {
+    const sqlText = readFileSync(join(REPO_ROOT, file), "utf8");
+    const result = run(buildVerificationScript(sqlText), { capture: true });
+    if (!result.ok) fail(`Adoption aborted: verification suite failed (${file}).\n${result.stderr}`, 4);
+    console.log(`  ok  ${file}`);
+  }
+  const verifySql = readFileSync(join(REPO_ROOT, ADOPT_VERIFY_FILE), "utf8");
+  const script = buildAdoptionScript(migrations, verifySql, {
+    lockTimeoutMs,
+    runnerVersion: RUNNER_VERSION,
+    appRelease: process.env.AIRS_APP_RELEASE ?? null,
+  });
+  const result = run(script, { capture: true });
+  if (!result.ok) fail(`Adoption aborted: schema verification failed. Nothing was recorded.\n${result.stderr}`, 4);
+  console.log("");
+  console.log("Adopted the existing database. Migrations recorded WITHOUT being executed:");
+  for (const m of migrations) console.log(`  ${m.version}  ${m.filename}  sha256:${m.checksum.slice(0, 12)}...`);
+  console.log(`Total: ${migrations.length} migrations. Run \`npm run db:migrate\` to confirm zero pending.`);
+  process.exit(0);
+}
+
+// --- dry run and apply ------------------------------------------------------
+ensureLedger();
+const rows = readLedger();
+const { applied, pending, conflicts } = diffMigrations(migrations, rows);
+
+if (flags["dry-run"]) {
+  console.log("Dry run - no database changes will be made.");
+  console.log(`  execution path: ${pathLabel}`);
+  console.log(`  applied (${applied.length}): ${applied.map((m) => m.version).join(", ") || "none"}`);
+  console.log(`  pending (${pending.length}): ${pending.map((m) => m.version).join(", ") || "none"}`);
+  console.log(`  checksum conflicts (${conflicts.length}): ${conflicts.map((c) => c.version).join(", ") || "none"}`);
+  process.exit(conflicts.length ? 3 : 0);
+}
+
+if (conflicts.length) reportConflicts(conflicts);
+
+if (rows.length === 0 && applied.length === 0) {
+  const probe = run("\\set ON_ERROR_STOP on\n\\pset tuples_only on\n\\pset format unaligned\nSELECT to_regclass('airs.organizations') IS NOT NULL;\n", { capture: true });
+  if (probe.ok && probe.stdout.trim().startsWith("t")) {
+    fail(
+      [
+        "This database already contains AIRS Agent objects but has no migration ledger.",
+        "Refusing to replay migrations 0001+ (that is exactly the failure this runner exists to prevent).",
+        "",
+        "Run the explicit, verified adoption command once:",
+        "  npm run db:migrate:adopt",
+        "",
+        "Nothing was started, changed or removed.",
+      ].join("\n"),
+      5,
+    );
   }
 }
 
-console.log("All migrations applied.");
+if (pending.length === 0) {
+  console.log(`Zero pending migrations. ${applied.length} already applied (execution path: ${pathLabel}).`);
+  process.exit(0);
+}
+
+console.log(`Applying ${pending.length} pending migration(s) via the ${pathLabel}.`);
+for (const migration of pending) {
+  const started = performance.now();
+  const result = run(
+    buildMigrationScript(migration, {
+      lockTimeoutMs,
+      runnerVersion: RUNNER_VERSION,
+      appRelease: process.env.AIRS_APP_RELEASE ?? null,
+    }),
+    { capture: true },
+  );
+  const durationMs = Math.round(performance.now() - started);
+  if (result.ok) {
+    console.log(`  -> ${migration.version}  ${migration.filename}  (${durationMs} ms, recorded)`);
+    continue;
+  }
+  if (result.stderr.includes(MARKER_ALREADY_APPLIED)) {
+    console.log(`  -- ${migration.version} was applied by a concurrent runner; skipped, nothing changed.`);
+    continue;
+  }
+  if (result.stderr.includes(MARKER_CHECKSUM_MISMATCH)) {
+    reportConflicts([{ version: migration.version, filename: migration.filename }]);
+  }
+  if (/lock_timeout|canceling statement due to lock timeout/i.test(result.stderr)) {
+    fail(
+      `Migration already in progress: another runner holds the advisory lock (waited ${lockTimeoutMs} ms). Nothing was applied.`,
+      6,
+    );
+  }
+  fail(
+    [
+      `Migration ${migration.version} (${migration.filename}) failed and was rolled back.`,
+      "No ledger entry was created and no later migration was executed.",
+      "",
+      result.stderr.trim(),
+    ].join("\n"),
+    1,
+  );
+}
+
+console.log("All pending migrations applied and recorded.");

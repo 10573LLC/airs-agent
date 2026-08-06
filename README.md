@@ -43,3 +43,11 @@ not fail with `/bin/sh^M: bad interpreter`; `npm run check:line-endings` enforce
 
 Full verified sequence: `LOCAL_SETUP.md` §9. `docker compose down -v` deletes local
 database data — use `docker compose stop` to shut down without data loss.
+
+## Migrations
+
+`npm run db:migrate` applies only pending migrations, tracked in the persistent ledger
+`airs_migrations.applied_migrations` (SHA-256 checksummed, advisory-locked, one transaction per
+migration). Use `-- --dry-run` to preview, `npm run db:migrate:status` for state, and
+`npm run db:migrate:adopt` once on a pre-ledger existing database. See `DATABASE.md` and
+`LOCAL_SETUP.md` (Windows recovery procedure).

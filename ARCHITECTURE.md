@@ -368,3 +368,103 @@ hosted builder service.
 
 Line endings are pinned by the repository-root `.gitattributes` (`*.sh text eol=lf`),
 enforced by `scripts/check-line-endings.mjs` and `tests/line-endings.test.ts`.
+
+# Migration runner architecture
+
+## Migration state: the persistent ledger
+
+Migration state lives in its own schema, created by `db/ledger/0000_migration_ledger.sql`
+before anything is inspected or applied:
+
+| Column | Meaning |
+| --- | --- |
+| `version` | Four-digit migration version, primary key (`0001` … `0012`) |
+| `filename` | Migration filename, unique |
+| `checksum` | SHA-256 over the raw migration file bytes |
+| `applied_at` | Timestamp of the successful transaction |
+| `duration_ms` | Execution duration |
+| `runner_version` | Migration-runner version (optional) |
+| `app_release` | Application release / Git commit, from `AIRS_APP_RELEASE` (optional) |
+| `adopted` | True when the row was recorded by the explicit adoption command |
+
+Access model: `airs_app` has no read, write or execute access (schema USAGE revoked);
+`airs_maintenance` has none either, so it can never modify migration state; the schema is
+owned by the migration/database owner and sits outside the `airs` tenant schema. Applied rows
+are immutable — a `BEFORE UPDATE OR DELETE` trigger raises `AIRS_LEDGER_IMMUTABLE`. No
+application code references `airs_migrations`, so normal traffic never depends on it.
+
+## Pending-only execution
+
+`npm run db:migrate`:
+
+1. ensures the ledger objects exist;
+2. reads the ledger;
+3. SHA-256 checksums every file in the one canonical manifest `db/migrations/manifest.txt`;
+4. sorts by numeric version;
+5. skips versions already recorded with a matching checksum;
+6. applies only pending migrations, each in its own transaction that first takes the
+   advisory lock `pg_advisory_xact_lock(4718152, 12)` and calls
+   `airs_migrations.assert_pending(...)`;
+7. records the ledger row inside that same transaction;
+8. stops on the first SQL or ledger failure — a rolled-back migration leaves no ledger row and
+   no later migration runs;
+9. releases the lock with the transaction and exits cleanly.
+
+A second run reports `Zero pending migrations` and exits 0. `relation already exists` is never
+treated as evidence of a successful migration, and no migration file was made broadly
+idempotent to hide missing state.
+
+## Checksum immutability
+
+If a recorded migration's file checksum changes, the runner stops immediately, prints the
+version and filename, applies nothing further, and never rewrites the stored checksum. Restore
+the original file or add a new forward migration.
+
+## Concurrency
+
+Every apply and the adoption transaction take the same transaction-scoped advisory lock with
+`SET LOCAL lock_timeout` (default 30 s, `--lock-timeout-ms`). A second runner waits, then either
+observes the migration already recorded and skips it, or exits with
+`Migration already in progress` (exit 6). Partial application is impossible: the lock, the
+migration body and the ledger insert share one transaction.
+
+## Commands
+
+```bash
+npm run db:migrate                 # apply pending migrations only
+npm run db:migrate -- --dry-run    # applied / pending / conflicts / execution path; changes nothing
+npm run db:migrate:status          # ledger present, counts, highest version, conflicts,
+                                   # adoption required, advisory-lock state
+npm run db:migrate:adopt           # explicit, verified adoption of an existing database
+```
+
+No command prints a database URL or credential; all output passes through `redact()`.
+
+## Existing-database adoption
+
+Databases created before the ledger existed have migrations applied but no state. Adoption is
+never automatic — `npm run db:migrate` refuses to replay and tells the operator to run
+`npm run db:migrate:adopt` (exit 5). Adoption then: confirms the ledger is empty or absent;
+confirms this is an existing AIRS Agent database; runs the full SQL assertion suite plus role
+parity; verifies schemas, tables, RLS enablement and policies, functions, roles, the exact
+platform organization (`anconison-platform` / `Anconison - AIRS Agent Platform` / `platform`),
+`platform_admin` separation from operational permissions, and the Albany agency tenants; and
+only then records `0001`–`0012` with their current checksums in one locked transaction. It never
+executes migration SQL, prints a safe summary, and exits nonzero on any failure.
+
+## Docker initialization
+
+A fresh `docker compose up -d db` runs `db/init/00_apply_migrations.sh`, which reads the same
+`db/migrations/manifest.txt`, applies each migration in order and records it in the same ledger
+with the same SHA-256 rule. There is exactly one migration-order list. Starting the application
+afterwards reports zero pending migrations. All shell files are LF-only and enforced by
+`npm run check:line-endings`.
+
+## Transactions
+
+One transaction per migration: `BEGIN` → advisory lock → pending guard → migration SQL with
+`ON_ERROR_STOP=1` → ledger row → `COMMIT`. The runner strips each migration's own top-level
+`BEGIN;`/`COMMIT;` so it cannot commit early; nested `BEGIN`/`END` inside plpgsql blocks are
+untouched. No current AIRS Agent migration requires running outside a transaction (none uses
+`CREATE INDEX CONCURRENTLY`, `CREATE DATABASE`, or `ALTER TYPE ... ADD VALUE` outside a block);
+any future one must be documented here explicitly.

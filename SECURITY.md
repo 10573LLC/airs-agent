@@ -364,3 +364,21 @@ are all unchanged. No seed administrator credentials exist.
   CRLF shell script is ever committed, closing a container-init failure mode.
 - No passwords, database URLs, activation links, tokens or token hashes are
   committed to this repository.
+
+# Migration ledger security
+
+- `airs_migrations` is a separate schema owned by the migration/database owner, outside the
+  `airs` tenant schema. Migration ownership never mixes with tenant data ownership.
+- `airs_app` (the application connection) has no USAGE on the schema and no privilege on
+  `airs_migrations.applied_migrations`: migration state cannot be read, written or replayed
+  through the application, and no application code references it.
+- `airs_maintenance` likewise holds no privilege, so the maintenance plane can never modify
+  migration state.
+- Applied rows are immutable: a `BEFORE UPDATE OR DELETE` trigger raises `AIRS_LEDGER_IMMUTABLE`.
+  Recorded checksums are never rewritten by the runner; a modified applied migration stops the
+  run instead.
+- Concurrency is serialised with the transaction-scoped advisory lock
+  `pg_advisory_xact_lock(4718152, 12)`; a losing runner exits without partially applying.
+- Every runner code path (apply, dry-run, status, adoption, error handling) passes printable text
+  through `redact()`, so database URLs and passwords are never emitted.
+- Adoption is operator-explicit, verification-first and never executes migration SQL.

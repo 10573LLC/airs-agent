@@ -827,3 +827,37 @@ operational features.
   `docker compose exec` run in this environment.
 - Database-backed TypeScript suites and every SQL assertion suite are skipped here;
   they must be re-run against a live PostgreSQL 16 instance.
+
+## Stage: Migration State Tracking and Pending-Only Execution (2026-08-06)
+
+**Root cause.** The runner had no persistent state. `scripts/lib/migrate-plan.mjs` planned a
+full replay of a hard-coded file list on every invocation, so a Windows installation with
+`0001`–`0011` already applied and `0012` pending restarted at `0001` and failed with
+`relation "organizations" already exists`; `0012` had to be applied by hand.
+
+**Fix.**
+- `db/migrations/manifest.txt` - one canonical, ordered migration list read by both the Node
+  runner and the Docker initialization script (no second list that can drift).
+- `db/ledger/0000_migration_ledger.sql` - `airs_migrations.applied_migrations` (version,
+  filename, SHA-256 checksum, applied_at, duration_ms, runner_version, app_release, adopted),
+  immutability trigger, `assert_pending()` and `record_applied()`; all privileges revoked from
+  `airs_app` and `airs_maintenance`.
+- `db/ledger/adopt_verify.sql` - verification-only adoption gate (schemas, tables, RLS + policies,
+  functions, roles, platform organization values, `platform_admin` separation, Albany tenants,
+  role parity 10/56/175).
+- `scripts/lib/migrate-plan.mjs` - checksums, version sort, applied/pending/conflict diff,
+  transaction + advisory-lock script composition, adoption script, read-only status scripts,
+  identical stdin for the psql and Docker paths.
+- `scripts/db-migrate.mjs` - pending-only apply, `--dry-run`, `--status`, `--adopt-existing`,
+  `--lock-timeout-ms`, refusal to replay a pre-ledger existing database (exit 5), checksum
+  conflict stop (exit 3), lock contention exit (6), redaction everywhere.
+- `docker-compose.yml` + `db/init/00_apply_migrations.sh` - fresh databases apply the manifest in
+  order and record every migration in the same ledger.
+
+**Validation.** `tests/db-migrate.test.ts` - 31 assertions (manifest/order/checksums,
+pending-only diffs, one ledger row per migration, transaction + lock ordering, failure leaves no
+ledger row, checksum-conflict stop, adoption verification/record-without-execute/failure modes,
+ledger access model, dry-run and status read-only + credential-free, psql/Docker parity).
+Database-executed checks (fresh migrate, second no-op run, live adoption, concurrency race,
+`npm run db:test`, role parity in-database) are **environment-blocked**: no PostgreSQL or Docker
+daemon is available in the build environment. No Stage 9 or operational feature work was started.

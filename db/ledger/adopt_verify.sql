@@ -24,14 +24,57 @@ BEGIN
     RAISE EXCEPTION 'ADOPT FAIL: airs.organizations is absent; this is not an existing AIRS Agent database';
   END IF;
 
-  -- 3/4. Core schemas, tables, functions, roles and RLS through 0012 -------
+  -- 3. Required tables ------------------------------------------------------
+  -- Existence and RLS are SEPARATE invariants. This list is existence only.
+  -- airs.roles, airs.permissions and airs.role_permissions are intentionally
+  -- GLOBAL RBAC catalog tables: migration 0001 creates them outside its
+  -- ENABLE/FORCE ROW LEVEL SECURITY loop and grants
+  --   GRANT SELECT ON airs.roles, airs.permissions, airs.role_permissions TO airs_app;
+  -- so they are globally readable reference data and MUST NOT be required to
+  -- carry RLS or a policy. Other canonical reference tables
+  -- (disclosure_fields, disclosure_precisions, disclosure_profile_fields,
+  -- geographic_precisions, observation_freshness_thresholds,
+  -- resource_category_statuses) are likewise non-RLS; their existence is
+  -- covered by the canonical-object verification that runs before this file.
   FOREACH missing IN ARRAY ARRAY[
-    'airs.organizations','airs.users','airs.memberships','airs.roles','airs.permissions',
-    'airs.role_permissions','airs.audit_events','airs.sessions','airs.invitations',
-    'airs.incidents','airs.incident_participants','airs.resources','airs.resource_aircraft',
-    'airs.resource_vehicles','airs.resource_sensors','airs.personnel_profiles',
-    'airs.incident_assignments','airs.resource_shares',
-    'airs.map_features','airs.operating_areas','airs.resource_locations','airs.observations'
+    -- tenant/identity tables (also RLS-verified in section 4)
+    'airs.organizations','airs.users','airs.user_roles','airs.accounts','airs.memberships',
+    'airs.sessions','airs.invitations','airs.audit_events','airs.retention_policies',
+    'airs.incidents','airs.incident_shares','airs.aircraft','airs.airspace_operations',
+    'airs.maintenance_events','airs.trusted_agencies','airs.incident_rooms',
+    'airs.incident_participants','airs.resources','airs.resource_aircraft',
+    'airs.resource_vehicles','airs.resource_docks','airs.resource_launch_sites',
+    'airs.resource_sensors','airs.personnel_profiles','airs.qualifications','airs.shifts',
+    'airs.resource_shares','airs.incident_assignments',
+    'airs.map_features','airs.operating_areas','airs.resource_locations',
+    'airs.observations','airs.observation_annotations','airs.observation_relationships',
+    'airs.observation_information_gaps','airs.observation_evidence_references',
+    'airs.observation_shares',
+    -- global RBAC catalogs: existence required, RLS deliberately NOT required
+    'airs.roles','airs.permissions','airs.role_permissions'
+  ] LOOP
+    IF to_regclass(missing) IS NULL THEN
+      RAISE EXCEPTION 'ADOPT FAIL: required table % is missing', missing;
+    END IF;
+  END LOOP;
+
+  -- 4. Tenant/identity tables that MUST carry forced RLS with a policy -------
+  -- Exactly the tables migrations 0001-0010 pass through their
+  -- ENABLE + FORCE ROW LEVEL SECURITY loops. No blanket "every airs.* table
+  -- needs RLS" rule may be introduced here.
+  FOREACH missing IN ARRAY ARRAY[
+    'airs.organizations','airs.users','airs.user_roles','airs.accounts','airs.memberships',
+    'airs.sessions','airs.invitations','airs.audit_events','airs.retention_policies',
+    'airs.incidents','airs.incident_shares','airs.aircraft','airs.airspace_operations',
+    'airs.maintenance_events','airs.trusted_agencies','airs.incident_rooms',
+    'airs.incident_participants','airs.resources','airs.resource_aircraft',
+    'airs.resource_vehicles','airs.resource_docks','airs.resource_launch_sites',
+    'airs.resource_sensors','airs.personnel_profiles','airs.qualifications','airs.shifts',
+    'airs.resource_shares','airs.incident_assignments',
+    'airs.map_features','airs.operating_areas','airs.resource_locations',
+    'airs.observations','airs.observation_annotations','airs.observation_relationships',
+    'airs.observation_information_gaps','airs.observation_evidence_references',
+    'airs.observation_shares'
   ] LOOP
     IF to_regclass(missing) IS NULL THEN
       RAISE EXCEPTION 'ADOPT FAIL: required table % is missing', missing;
@@ -40,6 +83,11 @@ BEGIN
       SELECT 1 FROM pg_class c WHERE c.oid = missing::regclass AND c.relrowsecurity
     ) THEN
       RAISE EXCEPTION 'ADOPT FAIL: row-level security is not enabled on %', missing;
+    END IF;
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_class c WHERE c.oid = missing::regclass AND c.relforcerowsecurity
+    ) THEN
+      RAISE EXCEPTION 'ADOPT FAIL: row-level security is not FORCED on %', missing;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE (schemaname || '.' || tablename) = missing) THEN
       RAISE EXCEPTION 'ADOPT FAIL: no RLS policy exists on %', missing;
@@ -93,13 +141,16 @@ BEGIN
     RAISE EXCEPTION 'ADOPT FAIL: platform_admin holds operational permissions';
   END IF;
 
-  -- 7. Albany demo organizations remain agency tenants ----------------------
-  IF NOT EXISTS (SELECT 1 FROM airs.organizations
-                  WHERE name = 'Albany Police Department' AND org_kind = 'agency') THEN
+  -- 7. Albany demo organizations, when present, remain agency tenants -------
+  -- They come from db/seed/demo_orgs.sql, NOT from migrations 0001-0012, so a
+  -- legitimately migrated database may not contain them. Their absence is not
+  -- a defect; being anything other than an agency tenant is.
+  IF EXISTS (SELECT 1 FROM airs.organizations
+              WHERE name = 'Albany Police Department' AND org_kind <> 'agency') THEN
     RAISE EXCEPTION 'ADOPT FAIL: Albany Police Department is not an agency tenant';
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM airs.organizations
-                  WHERE name = 'Albany County' AND org_kind = 'agency') THEN
+  IF EXISTS (SELECT 1 FROM airs.organizations
+              WHERE name = 'Albany County' AND org_kind <> 'agency') THEN
     RAISE EXCEPTION 'ADOPT FAIL: Albany County is not an agency tenant';
   END IF;
 

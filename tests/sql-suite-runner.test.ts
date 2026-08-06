@@ -40,7 +40,6 @@ describe("the exact pg_temp failure", () => {
 
   it("the corrected runner adds no transaction, so the helpers stay session-scoped", () => {
     const script = buildSqlSuiteScript(authSql);
-    expect(script).not.toMatch(/^BEGIN;$/m.test(buildLegacyWrappedScript("")) ? /never/ : /^\\set ON_ERROR_STOP on$/m);
     expect(script.startsWith("\\set ON_ERROR_STOP on\n\\timing off\n")).toBe(true);
     // the ONLY transaction control comes from the file itself
     const runnerLines = script.replace(authSql, "");

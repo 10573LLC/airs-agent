@@ -11,6 +11,7 @@ import {
   REPAIRABLE_VERSIONS,
   REQUIRED_DB_IMAGE,
   STATE_PROBES,
+  SUPERSEDED_OBJECTS,
   buildLegacyLedgerScript,
   buildLegacyMigrationScript,
   buildPlatformVerificationScript,
@@ -94,7 +95,7 @@ describe("migration-specific state probes", () => {
     const text = JSON.stringify(STATE_PROBES);
     for (const needle of [
       "airs.resources", "resource.%",
-      "airs.disclosure_profiles",
+      "airs.disclosure_fields", "airs.disclosure_profile_fields",
       "pg_extension WHERE extname = 'postgis'", "public.geometry",
       "airs.map_features", "airs.operating_areas", "airs.resource_locations", "map.%",
       "airs.observations", "airs.observation_relationships",
@@ -104,6 +105,24 @@ describe("migration-specific state probes", () => {
     ]) {
       expect(text, needle).toContain(needle);
     }
+  });
+
+  it("never probes an object later migrations superseded", () => {
+    const text = JSON.stringify(STATE_PROBES);
+    expect(text).not.toContain("has_permission");
+    expect(text).not.toContain("airs.disclosure_profiles'");
+    for (const s of SUPERSEDED_OBJECTS) {
+      expect(text, s.id).not.toContain(`proname='${s.id.split(".")[1]}'`);
+      expect(s.equivalent.length).toBeGreaterThan(0);
+      expect(s.reason.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("still probes the genuinely required current equivalents", () => {
+    const text = JSON.stringify(STATE_PROBES);
+    expect(text).toContain("proname='ctx'");
+    expect(text).toContain("proname='current_account_id'");
+    expect(text).toContain("proname='disclosure_allows'");
   });
 
   it("probe SQL cannot abort on a database missing those objects", () => {

@@ -449,3 +449,55 @@ Finally, sign in as the platform administrator to confirm the account still work
 A fresh Docker installation starts from the PostGIS image, enables PostGIS
 before migration 0009, applies the canonical manifest and records every
 migration in the ledger - with no host-installed PostGIS anywhere.
+
+## Cumulative reconciliation of a legacy database (2026-08-06)
+
+`npm run db:migrate:repair-legacy` reasons in whole migrations and refuses any
+partial state. `npm run db:reconcile-legacy` reasons in **objects of the
+cumulative post-0012 schema** and repairs only what is genuinely absent.
+
+Source of truth: `scripts/lib/canonical-schema.mjs`.
+
+* `CANONICAL_OBJECTS` - 94 probeable objects the current schema must have, each
+  with its owning migration, a boolean SQL probe and its prerequisites.
+* `SUPERSEDED_OBJECTS` - objects that must **not** be required and are never
+  recreated, each with its current equivalent and the reason:
+  * `airs.has_permission` - permission evaluation lives in the TypeScript RBAC
+    model plus RLS predicates over the session GUCs. A SQL `has_permission()`
+    would be a second, divergent authorization source of truth and is
+    deliberately absent from every migration.
+  * `airs.disclosure_profiles` - Stage 6 models disclosure as
+    `airs.disclosure_fields` plus `airs.disclosure_profile_fields`, with the
+    profile vocabulary enforced by CHECK constraints on
+    `airs.resource_shares.disclosure_profile` and
+    `airs.incident_assignments.disclosure_profile`. No profiles table ever
+    existed.
+
+`deriveStateProbes()` feeds the same inventory into the legacy repair
+`STATE_PROBES`, so the two paths can never drift and a superseded object can
+never re-enter the probe set. Genuinely missing current objects still cause a
+refusal.
+
+### Reconciliation body
+
+Not hand-written. `scripts/lib/idempotent-sql.mjs` transforms the canonical
+migration text: `CREATE TABLE`/`CREATE INDEX`/`CREATE SCHEMA`/`CREATE SEQUENCE`/
+`CREATE EXTENSION` gain `IF NOT EXISTS`, `CREATE TYPE` is wrapped in a guard,
+and policies and triggers gain a matching `DROP ... IF EXISTS` immediately
+before their re-creation inside the same transaction. `already exists` is never
+swallowed - re-creation is made a no-op up front. `destructiveStatements()`
+rejects any body containing `DROP TABLE`, `DROP SCHEMA`, `DROP COLUMN`,
+`DROP ROLE`, `TRUNCATE` or `DELETE FROM`.
+
+### Verification before adoption
+
+`db/repair/reconcile_verify.sql` asserts: `airs_app` is not a superuser and has
+no `BYPASSRLS`; `airs_maintenance` is not over-privileged; forced RLS plus a
+policy on every tenant-scoped table; the Anconison platform tenant
+(`anconison-platform` / `Anconison - AIRS Agent Platform` / `org_kind=platform`);
+no operational permission on `platform_admin`; the Albany demo organizations are
+still agency tenants; sensitive disclosure fields exist and never reach the
+`summary` profile; partner-narrowed profiles cannot carry exact geometry;
+`apply_precision` and `observation_precision` exist; and the three closure
+functions exist. The ledger is written only after this file, the full SQL suite,
+role parity (10/56/175) and the platform administrator check all pass.

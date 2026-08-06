@@ -115,3 +115,18 @@ Finally, sign in as the platform administrator to confirm the account still work
 A fresh Docker installation starts from the PostGIS image, enables PostGIS
 before migration 0009, applies the canonical manifest and records every
 migration in the ledger - with no host-installed PostGIS anywhere.
+
+## Repairing an existing (pre-ledger) database
+
+| Situation | Command |
+| --- | --- |
+| Whole migrations missing, nothing partial | `npm run db:migrate:repair-legacy` |
+| Mixed state: some migrations only partially represented | `npm run db:reconcile-legacy` |
+
+Both are operator-only, report by default and require
+`--confirm --backup-confirmed` to change anything. The reconciliation command
+probes the 94 canonical objects of the post-0012 schema and creates only those
+genuinely absent, using the current canonical definitions. It never drops a
+table, column, role or row.
+
+**Never run `docker compose down -v`.** Full Windows runbook: `LOCAL_SETUP.md`.

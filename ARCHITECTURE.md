@@ -483,3 +483,23 @@ state probes, classification, plan) and `scripts/db-migrate-repair-legacy.mjs`
 the operator-only CLI. Repair applies only the migrations that concrete schema
 probes prove missing, verifies the database, and creates the ledger last. It is
 never invoked by the application, by `npm run db:migrate`, or by Docker.
+
+## Cumulative schema reconciliation (operator plane, 2026-08-06)
+
+```
+scripts/lib/canonical-schema.mjs   canonical post-0012 object inventory
+        |                          + SUPERSEDED_OBJECTS (never required)
+        +--> deriveStateProbes() --> scripts/lib/legacy-repair.mjs (whole-migration repair)
+        +--> scripts/lib/reconcile-legacy.mjs (object-level reconciliation)
+                     |  probe -> plan -> report
+                     +--> scripts/lib/idempotent-sql.mjs (canonical migration -> idempotent body)
+                     +--> db/repair/reconcile_verify.sql (security + tenancy gate)
+                     +--> scripts/db-reconcile-legacy.mjs (CLI, report-first)
+```
+
+The inventory is the single source of truth for "what the schema must look
+like after 0012". Both operator paths read it, so a historical object that a
+later migration superseded can never re-enter either probe set, and a genuinely
+missing current object can never be silently accepted. The reconciliation body
+is derived from the canonical migrations rather than hand-copied, so a
+reconciled database and a freshly migrated one are definitionally identical.

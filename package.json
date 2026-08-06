@@ -23,7 +23,8 @@
     "maintenance:expire-incidents": "node scripts/expire-incident-state.mjs",
     "bootstrap:platform-admin": "node scripts/bootstrap-platform-admin.mjs",
     "platform-admin:setup": "node scripts/platform-admin-setup.mjs",
-    "check:line-endings": "node scripts/check-line-endings.mjs"
+    "check:line-endings": "node scripts/check-line-endings.mjs",
+    "db:reconcile-legacy": "node scripts/db-reconcile-legacy.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -901,3 +901,23 @@ these are host procedures documented in LOCAL_SETUP.md):
 * live end-to-end repair run, live SQL suite / role parity execution
   (10 roles / 56 permissions / 175 grants), live ledger contents and the
   live "second run reports zero pending" check
+
+## Cumulative legacy-schema reconciliation (2026-08-06)
+
+| Requirement | Status | Evidence | Limitation |
+| --- | --- | --- | --- |
+| Do not replay historical migrations blindly | Verified | `planReconciliation()` creates only objects proven absent; `tests/db-reconcile-legacy.test.ts` "creates only current objects" / "never treats `already exists` as success" | — |
+| Cumulative expected schema audited | Verified | `scripts/lib/canonical-schema.mjs`, 94 objects, derived probes equal `STATE_PROBES` | Inventory is object-level, not column-by-column for every table |
+| `0003` `has_permission` investigated | Verified | Superseded/never canonical: no migration creates it (test "proves the superseded objects are created by no migration in the manifest") | — |
+| `0008` `disclosure_profiles` investigated | Verified | Same test; Stage 6 uses `disclosure_fields` + `disclosure_profile_fields` | — |
+| Targeted reconciliation mechanism | Verified | `scripts/db-reconcile-legacy.mjs`, `scripts/lib/reconcile-legacy.mjs`, `db/repair/` | — |
+| Stage 6 / 7 / 8 reconciled from canonical definitions | Verified | Test "completes Stage 6, Stage 7 and Stage 8 object sets" | Live application environment-blocked |
+| Role parity 10 / 56 / 175 derived, not hard-coded | Verified | Test "is derived from the canonical TypeScript RBAC model" reads `ROLE_PERMISSIONS`; `db/tests/role_parity.sql` corrected from 171 to 175 | — |
+| Security verification before adoption | Verified | `db/repair/reconcile_verify.sql`, 18 assertions; CLI ordering test | Assertions execute only against a live database |
+| Report-only default, two-flag execute | Verified | `parseReconcileArgs` tests; CLI exits before any change without `--confirm` | — |
+| Ledger written only after all verification | Verified | CLI ordering tests + final re-probe gate | — |
+| Legacy repair probes understand supersession | Verified | Tests "never probes an object later migrations superseded" and "still probes the genuinely required current equivalents" | — |
+| Secrets redacted | Verified | `redact()` in the CLI; report contains no URL/password patterns | — |
+| Live reconciliation against the Windows database | **Environment-blocked** | No PostgreSQL, PostGIS or Docker in this environment | Must be run by the operator per `LOCAL_SETUP.md` |
+| Live `npm run db:test`, `db:migrate:status`, second-run no-op | **Environment-blocked** | Same | Proven in logic tests only |
+| Stage 9 | Not started | No operational feature files added | — |

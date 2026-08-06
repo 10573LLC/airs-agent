@@ -2,6 +2,52 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Cumulative Legacy-Schema Reconciliation] 2026-08-06
+
+### Added
+- `npm run db:reconcile-legacy` (`scripts/db-reconcile-legacy.mjs`): operator-only,
+  report-first reconciliation of a noncontiguous legacy database. Probes 94
+  canonical post-0012 objects individually and creates only those genuinely
+  absent, idempotently, in advisory-locked transactions. Execution requires
+  `--confirm --backup-confirmed`.
+- `scripts/lib/canonical-schema.mjs`: the canonical cumulative object inventory
+  plus `SUPERSEDED_OBJECTS`, which records objects that must never be required
+  or recreated, with their current equivalents and reasons.
+- `scripts/lib/idempotent-sql.mjs`: deterministic transform of a canonical
+  migration into a re-runnable reconciliation body, with a destructive-statement
+  guard (`DROP TABLE`/`DROP COLUMN`/`DROP ROLE`/`TRUNCATE`/`DELETE FROM`).
+- `scripts/lib/reconcile-legacy.mjs`: object probes, planning, conflict
+  detection and the operator report.
+- `db/repair/reconcile_verify.sql` and `db/repair/README.md`: security, tenancy,
+  disclosure, precision and closure assertions that gate ledger adoption.
+- `tests/db-reconcile-legacy.test.ts`: 34 assertions reproducing the exact live
+  Windows state and proving report accuracy, idempotency, non-destructiveness,
+  ordering, role parity derivation and ledger-after-verification.
+
+### Fixed
+- **False-positive `PARTIAL` classifications.** The legacy repair probes
+  demanded `airs.has_permission` (0003) and `airs.disclosure_profiles` (0008).
+  Neither is created by any migration in the manifest: permission evaluation
+  lives in the TypeScript RBAC model plus RLS predicates over the session GUCs,
+  and Stage 6 disclosure is modelled as `airs.disclosure_fields` +
+  `airs.disclosure_profile_fields`. A complete database was therefore reported
+  as partial. `STATE_PROBES` is now derived from the canonical inventory.
+- `db/ledger/adopt_verify.sql` demanded `airs.has_permission`,
+  `airs.disclosure_profiles` and the never-created `airs.aircraft`,
+  `airs.vehicles`, `airs.sensors` and `airs.personnel`. Replaced with the
+  canonical `airs.resource_aircraft`, `airs.resource_vehicles`,
+  `airs.resource_sensors`, `airs.personnel_profiles`, `airs.resource_shares` and
+  the current function set.
+- `db/tests/role_parity.sql` printed an expected grant count of 171 while
+  asserting 175. Both now state 175, matching the TypeScript RBAC model
+  (10 roles / 56 permissions / 175 grants).
+- The legacy repair refusal now points operators at the reconciliation command
+  instead of leaving a partial database with no supported next step.
+
+### Unchanged
+- No numbered migration, schema, role, permission or application feature was
+  added or altered. No Stage 9 work was started.
+
 ## [PostGIS Docker Image Tag Correction] 2026-08-06
 
 ### Fixed

@@ -3,6 +3,7 @@ export { BrandMark, BrandLockup, BrandHorizontal } from "./brand-mark";
 export {
   AppHeader,
   AppFooter,
+  AppChrome,
   PageShell,
   PageHeading,
   SectionCard,

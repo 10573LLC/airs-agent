@@ -24,17 +24,20 @@ export function AppHeader({
 }) {
   return (
     <header className={cn("brand-command-surface relative", className)}>
-      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-6 py-4">
-        <div className="flex min-w-0 items-center gap-6">
-          <Link to="/" className="shrink-0 rounded-sm focus-visible:brand-focus-ring">
-            <BrandLockup />
-          </Link>
-          {variant === "app" ? (
-            <nav aria-label="AIRS modules" className="hidden min-w-0 lg:block">
-              <PrimaryNavLinks />
-            </nav>
-          ) : null}
-        </div>
+      <div
+        className={cn(
+          "mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6",
+          variant === "app" ? "justify-between" : "justify-between",
+        )}
+      >
+        <Link to="/" className="shrink-0 rounded-sm focus-visible:brand-focus-ring">
+          <BrandLockup size={variant === "app" ? 34 : 44} showTagline={variant !== "app"} />
+        </Link>
+        {variant === "app" ? (
+          <nav aria-label="AIRS modules" className="hidden min-w-0 flex-1 justify-center lg:flex">
+            <PrimaryNavLinks />
+          </nav>
+        ) : null}
         <div className="flex shrink-0 items-center gap-3 text-sm">
           {right ? right : variant === "app" ? <div className="hidden lg:flex"><AccountArea /></div> : null}
           {variant === "app" ? <MobileNav /> : null}

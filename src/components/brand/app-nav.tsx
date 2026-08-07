@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { getMe, getOrganization, selectOrganization, signOut } from "@/lib/api/auth.functions";
 import { ROLE_LABELS } from "@/lib/rbac/roles";
 import { cn } from "@/lib/utils";
+import { displayOrgName, displayPersonName } from "./display";
 
 /**
  * Shared authenticated navigation. Presentation only: it reads the existing
@@ -27,7 +28,7 @@ function isSectionActive(pathname: string, to: string) {
 }
 
 const linkBase =
-  "rounded-sm px-2.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] whitespace-nowrap transition-colors focus-visible:brand-focus-ring";
+  "relative block rounded-sm px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] leading-tight transition-colors focus-visible:brand-focus-ring xl:px-2.5 xl:text-[12px]";
 
 export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: "horizontal" | "vertical" }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -35,10 +36,10 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
   return (
     <ul
       className={cn(
-        "flex gap-1",
+        "flex gap-0.5 xl:gap-1",
         orientation === "vertical"
           ? "flex-col items-stretch"
-          : "flex-row items-center overflow-x-auto",
+          : "flex-row items-center",
       )}
     >
       {PRIMARY_NAV.map((item) => {
@@ -50,9 +51,9 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
               aria-current={active ? "page" : undefined}
               className={cn(
                 linkBase,
-                "block",
+                orientation === "vertical" ? "whitespace-nowrap" : "text-center",
                 active
-                  ? "bg-white/12 text-[color:var(--brand-gold)] shadow-[inset_0_-2px_0_0_var(--brand-gold)]"
+                  ? "text-[color:var(--brand-gold)] after:absolute after:inset-x-2 after:-bottom-px after:h-0.5 after:rounded-full after:bg-[color:var(--brand-gold)]"
                   : "text-current/85 hover:bg-white/10 hover:text-current",
               )}
             >
@@ -91,16 +92,20 @@ export function AccountArea({ compact = false }: { compact?: boolean }) {
   const { account, memberships, activeOrgId } = meResult.data;
   const orgResult = orgQuery.data;
   const activeMemberships = memberships.filter((m) => m.status === "active");
+  const isPlatformAdmin = orgResult?.ok && orgResult.data.roleKey === "platform_admin";
+  const contextLine = orgResult?.ok
+    ? isPlatformAdmin
+      ? ROLE_LABELS[orgResult.data.roleKey]
+      : `${displayOrgName(orgResult.data.name)} · ${ROLE_LABELS[orgResult.data.roleKey]}`
+    : "No active organization";
 
   return (
-    <div className={cn("flex items-center gap-3", compact && "w-full flex-wrap")}>
-      <div className={cn("min-w-0 text-right leading-tight", compact && "text-left")}>
-        <p className="truncate text-xs font-semibold">{account.displayName}</p>
-        <p className="truncate text-[11px] opacity-75">
-          {orgResult?.ok
-            ? `${orgResult.data.name} · ${ROLE_LABELS[orgResult.data.roleKey]}`
-            : "No active organization"}
+    <div className={cn("flex items-center gap-2.5", compact && "w-full flex-wrap")}>
+      <div className={cn("min-w-0 max-w-[11rem] text-right leading-tight", compact && "max-w-none text-left")}>
+        <p className="truncate text-xs font-semibold">
+          {displayPersonName(account.displayName)}
         </p>
+        <p className="truncate text-[11px] opacity-75">{contextLine}</p>
       </div>
 
       {activeMemberships.length > 1 ? (
@@ -116,7 +121,7 @@ export function AccountArea({ compact = false }: { compact?: boolean }) {
             await selectOrg({ data: { orgId: event.target.value } });
             await qc.invalidateQueries();
           }}
-          className="max-w-[12rem] rounded-md border border-white/25 bg-transparent px-2 py-1.5 text-xs"
+          className="max-w-[9rem] rounded-md border border-white/25 bg-transparent px-2 py-1 text-xs"
         >
           {activeOrgId ? null : <option value="">Select organization…</option>}
           {activeMemberships.map((m) => (
@@ -134,7 +139,7 @@ export function AccountArea({ compact = false }: { compact?: boolean }) {
           qc.clear();
           await navigate({ to: "/auth" });
         }}
-        className="rounded-md border border-white/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors hover:bg-white/10"
+        className="shrink-0 rounded-md border border-white/25 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors hover:bg-white/10"
       >
         Sign out
       </button>

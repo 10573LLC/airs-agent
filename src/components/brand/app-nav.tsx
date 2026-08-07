@@ -36,7 +36,9 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
     <ul
       className={cn(
         "flex gap-1",
-        orientation === "vertical" ? "flex-col items-stretch" : "flex-row items-center",
+        orientation === "vertical"
+          ? "flex-col items-stretch"
+          : "flex-row items-center overflow-x-auto",
       )}
     >
       {PRIMARY_NAV.map((item) => {

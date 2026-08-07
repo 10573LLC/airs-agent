@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { getMe, getOrganization, selectOrganization, signOut } from "@/lib/api/auth.functions";
 import { ROLE_LABELS } from "@/lib/rbac/roles";
@@ -144,11 +144,9 @@ export function AccountArea({ compact = false }: { compact?: boolean }) {
 export function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const [lastPath, setLastPath] = useState(pathname);
-  if (pathname !== lastPath) {
-    setLastPath(pathname);
-    if (open) setOpen(false);
-  }
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
 
   return (
     <div className="lg:hidden">

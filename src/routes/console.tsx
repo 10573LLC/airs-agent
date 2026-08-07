@@ -19,7 +19,6 @@ import {
   revokeMembershipFn,
   revokeSessionFn,
   selectOrganization,
-  signOut,
   suspendMembershipFn,
 } from "@/lib/api/auth.functions";
 import { AppChrome } from "@/components/brand";
@@ -103,7 +102,6 @@ function ConsolePage() {
   const reinstate = useServerFn(reinstateMembershipFn);
   const revokeSession = useServerFn(revokeSessionFn);
   const revokeAll = useServerFn(revokeAllSessionsFn);
-  const doSignOut = useServerFn(signOut);
 
   const meQuery = useQuery({ queryKey: ["me"], queryFn: () => me() });
   const orgQuery = useQuery({ queryKey: ["org"], queryFn: () => org({ data: {} }) });
@@ -182,16 +180,6 @@ function ConsolePage() {
             ) : null}
           </p>
         </div>
-        <button
-          onClick={async () => {
-            await doSignOut();
-            qc.clear();
-            await navigate({ to: "/auth" });
-          }}
-          className="rounded-md border border-input px-3 py-2 text-sm"
-        >
-          Sign out
-        </button>
       </div>
 
       {notice ? (

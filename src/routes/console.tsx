@@ -181,20 +181,6 @@ function ConsolePage() {
               </span>
             ) : null}
           </p>
-          <nav className="mt-3 flex gap-4 text-sm">
-            <Link to="/incidents" className="underline">
-              Incident rooms
-            </Link>
-            <Link to="/resources" className="underline">
-              Readiness board
-            </Link>
-            <Link to="/map" className="underline">
-              Common operating picture
-            </Link>
-            <Link to="/awareness" className="underline">
-              Awareness board
-            </Link>
-          </nav>
         </div>
         <button
           onClick={async () => {

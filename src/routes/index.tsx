@@ -55,6 +55,7 @@ const STAGES = [
 function FoundationStatus() {
   return (
     <PageShell
+      variant="public"
       headerRight={
         <Link
           to="/auth"

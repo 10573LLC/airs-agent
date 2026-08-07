@@ -15,11 +15,11 @@ import { cn } from "@/lib/utils";
  */
 
 export const PRIMARY_NAV = [
-  { to: "/console", label: "Overview" },
-  { to: "/incidents", label: "Incident rooms" },
-  { to: "/resources", label: "Resources" },
-  { to: "/map", label: "Map" },
-  { to: "/awareness", label: "Awareness" },
+  { to: "/console", label: "Agency Dashboard" },
+  { to: "/incidents", label: "Incident Rooms" },
+  { to: "/resources", label: "Readiness Board" },
+  { to: "/map", label: "Common Operating Picture" },
+  { to: "/awareness", label: "Awareness Board" },
 ] as const;
 
 function isSectionActive(pathname: string, to: string) {
@@ -27,7 +27,7 @@ function isSectionActive(pathname: string, to: string) {
 }
 
 const linkBase =
-  "rounded-sm px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] transition-colors focus-visible:brand-focus-ring";
+  "rounded-sm px-2.5 py-2 text-[11px] font-semibold uppercase tracking-[0.08em] whitespace-nowrap transition-colors focus-visible:brand-focus-ring";
 
 export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: "horizontal" | "vertical" }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -36,7 +36,9 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
     <ul
       className={cn(
         "flex gap-1",
-        orientation === "vertical" ? "flex-col items-stretch" : "flex-row items-center",
+        orientation === "vertical"
+          ? "flex-col items-stretch"
+          : "flex-row items-center overflow-x-auto",
       )}
     >
       {PRIMARY_NAV.map((item) => {

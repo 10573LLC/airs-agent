@@ -480,6 +480,7 @@ function ConsolePage() {
           </p>
         )}
       </Panel>
-    </main>
+      </main>
+    </AppChrome>
   );
 }

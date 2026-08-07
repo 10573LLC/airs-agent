@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { BRAND } from "./assets";
 import { BrandLockup, BrandMark } from "./brand-mark";
+import { AccountArea, MobileNav, PrimaryNavLinks } from "./app-nav";
 
 /**
  * Anconison design-system chrome. Every screen composes these primitives so
@@ -11,17 +12,47 @@ import { BrandLockup, BrandMark } from "./brand-mark";
  * hardcoding a color value.
  */
 
-export function AppHeader({ right, className }: { right?: ReactNode; className?: string }) {
+export function AppHeader({
+  right,
+  className,
+  variant = "app",
+}: {
+  right?: ReactNode;
+  className?: string;
+  /** "public" renders the marketing header without the authenticated module nav. */
+  variant?: "app" | "public";
+}) {
   return (
     <header className={cn("brand-command-surface relative", className)}>
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-6 py-4">
-        <Link to="/" className="rounded-sm focus-visible:brand-focus-ring">
-          <BrandLockup />
-        </Link>
-        {right ? <div className="flex items-center gap-3 text-sm">{right}</div> : null}
+      <div className="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_auto] items-center gap-4 px-6 py-4">
+        <div className="flex min-w-0 items-center gap-6">
+          <Link to="/" className="shrink-0 rounded-sm focus-visible:brand-focus-ring">
+            <BrandLockup />
+          </Link>
+          {variant === "app" ? (
+            <nav aria-label="AIRS modules" className="hidden min-w-0 lg:block">
+              <PrimaryNavLinks />
+            </nav>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-3 text-sm">
+          {right ? right : variant === "app" ? <div className="hidden lg:flex"><AccountArea /></div> : null}
+          {variant === "app" ? <MobileNav /> : null}
+        </div>
       </div>
       <div className="brand-gold-rule h-px w-full" aria-hidden="true" />
     </header>
+  );
+}
+
+/** Authenticated chrome for routes that manage their own content width. */
+export function AppChrome({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-screen flex-col bg-background">
+      <AppHeader />
+      <div className="flex-1">{children}</div>
+      <AppFooter />
+    </div>
   );
 }
 
@@ -45,14 +76,16 @@ export function PageShell({
   children,
   headerRight,
   width = "wide",
+  variant = "app",
 }: {
   children: ReactNode;
   headerRight?: ReactNode;
   width?: "wide" | "narrow";
+  variant?: "app" | "public";
 }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <AppHeader right={headerRight} />
+      <AppHeader right={headerRight} variant={variant} />
       <main
         className={cn(
           "mx-auto w-full flex-1 px-6 py-10",

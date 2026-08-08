@@ -2,6 +2,27 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Common Operating Picture Usability] 2026-08-08
+
+### Added
+
+- Map controls: "Reset view" (returns to the AIRS default Albany camera without a
+  page reload) and "Fit visible data" (frames only geometry already drawn from
+  enabled layers; with nothing visible it leaves the camera untouched and shows a
+  subtle status line).
+- Collapsible legend using the existing overlay tones, plus a transient
+  working-point marker and a click-through info panel that shows only the label,
+  detail and layer already released to the reader.
+
+### Changed
+
+- Default zoom 11.4 → 11.2 for regional orientation; layer checkboxes regrouped
+  as a responsive "Operational layers" grid; compact map status line (incident
+  scope, drawn authorized item count, working-point state, clear action).
+
+UI/presentation only: no database, migration, PostGIS, RLS, role, permission,
+auth, API, disclosure or Docker change; `VITE_MAP_STYLE_URL` behaviour untouched.
+
 ## [Platform Verification Column Fix] 2026-08-06
 
 ### Fixed

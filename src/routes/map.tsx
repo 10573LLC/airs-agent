@@ -268,6 +268,9 @@ function MapPage() {
     showObservations,
   ]);
 
+  /** Count of authorized items actually drawn on the enabled layers. */
+  const drawn = layers.filter((i) => i.geometry).length;
+
   const withheld =
     featureRows.filter((f) => !f.geometry).length +
     areaRows.filter((a) => !a.geometry).length +
@@ -380,8 +383,10 @@ function MapPage() {
               ))}
             </select>
           </Field>
-          <fieldset className="flex flex-wrap items-center gap-3 rounded-md border border-border px-3 py-2">
-            <legend className="px-1 text-xs font-medium text-muted-foreground">Layers</legend>
+          <fieldset className="grid w-full min-w-0 grid-cols-1 gap-x-4 gap-y-2 rounded-md border border-border px-3 py-2 sm:grid-cols-2 lg:w-auto lg:grid-cols-4">
+            <legend className="px-1 text-xs font-medium text-muted-foreground">
+              Operational layers
+            </legend>
             {[
               ["Operating areas", showAreas, setShowAreas] as const,
               ["Map features", showFeatures, setShowFeatures] as const,
@@ -399,11 +404,34 @@ function MapPage() {
               </label>
             ))}
           </fieldset>
-          <p className="text-xs text-muted-foreground">
+        </div>
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+          <span>
+            Scope:{" "}
+            {incidentId
+              ? (incidentRows.find((i: { id: string; name: string }) => i.id === incidentId)
+                  ?.name ?? "Selected incident room")
+              : "All geography I can see"}
+          </span>
+          <span>
+            {drawn} authorized item{drawn === 1 ? "" : "s"} drawn
+          </span>
+          <span>
             {picked
               ? `Working point ${picked[1].toFixed(5)}, ${picked[0].toFixed(5)}`
               : "No working point selected"}
-          </p>
+          </span>
+          {picked ? (
+            <button
+              type="button"
+              className={smallButton}
+              title="Clear working point"
+              aria-label="Clear the selected working point"
+              onClick={() => setPicked(null)}
+            >
+              Clear working point
+            </button>
+          ) : null}
         </div>
         <CopMap
           items={layers}
@@ -411,7 +439,8 @@ function MapPage() {
           attribution={mapAttribution}
           picking
           onPickPoint={setPicked}
-          className="h-[420px] w-full overflow-hidden rounded-lg border border-border"
+          workingPoint={picked}
+          className="flex h-[460px] w-full flex-col overflow-hidden rounded-lg border border-border"
         />
       </SectionCard>
 

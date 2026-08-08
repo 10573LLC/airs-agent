@@ -117,14 +117,30 @@ function squareAround([lng, lat]: [number, number], radiusDeg: number) {
   };
 }
 
-// Operator-supplied basemap. Absent by design in environments with no approved
-// tile service: the renderer then explains itself instead of loading one.
-const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
+// Operator-supplied basemap. When no operator style is configured we fall back
+// to OpenFreeMap "Liberty" — an open, MapLibre-native OpenStreetMap style that
+// carries municipality, county, highway, street, place, water, park and
+// landmark labels, i.e. the reference context an operational map needs.
+// No proprietary SDK is involved and the vector tiles are free to use.
+const OPEN_REFERENCE_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+const OPEN_REFERENCE_ATTRIBUTION =
+  "Basemap © OpenFreeMap · Data © OpenStreetMap contributors · Rendered with MapLibre GL JS";
+
+// The MapLibre demo style is a country-outline demo with almost no reference
+// detail; it is unusable for orientation, so it resolves to the open reference
+// style instead of leaving operators with an empty frame.
+const NON_OPERATIONAL_STYLES = ["demotiles.maplibre.org"];
+
+const configuredStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
+const usesConfiguredStyle =
+  !!configuredStyleUrl && !NON_OPERATIONAL_STYLES.some((s) => configuredStyleUrl.includes(s));
+
+const mapStyleUrl = usesConfiguredStyle ? configuredStyleUrl : OPEN_REFERENCE_STYLE;
 const mapAttribution =
   (import.meta.env.VITE_MAP_ATTRIBUTION as string | undefined) ||
-  (mapStyleUrl
+  (usesConfiguredStyle
     ? "Basemap © the configured tile provider · Rendered with MapLibre GL JS"
-    : undefined);
+    : OPEN_REFERENCE_ATTRIBUTION);
 
 function MapPage() {
   const qc = useQueryClient();

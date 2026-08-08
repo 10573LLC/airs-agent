@@ -82,7 +82,10 @@ export function CopMap({
         container: holder.current,
         style: styleUrl,
         center: [-73.7562, 42.6526], // Albany, NY — the demo agencies' area
-        zoom: 11,
+        // Shows the City of Albany, the surrounding arterial/highway network and
+        // neighbouring municipalities without any panning on first load.
+        zoom: 11.4,
+        minZoom: 3,
         attributionControl: { compact: true },
       });
       const m = map;
@@ -90,6 +93,17 @@ export function CopMap({
       m.addControl(new maplibre.ScaleControl({ unit: "imperial" }), "bottom-left");
       m.on("load", () => {
         if (!map) return;
+        // Operational reference map: keep basemap labels legible but let the
+        // AIRS overlays stay visually dominant. Presentation only — nothing
+        // here changes which geography the server released.
+        for (const layer of map.getStyle().layers ?? []) {
+          if (layer.type !== "symbol") continue;
+          try {
+            map.setPaintProperty(layer.id, "text-halo-width", 1.3);
+          } catch {
+            /* style without that property */
+          }
+        }
         map.addSource("cop", { type: "geojson", data: collection as never });
         map.addLayer({
           id: "cop-fill",

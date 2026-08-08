@@ -162,6 +162,16 @@ export function CopMap({
     (async () => {
       const maplibre = await import("maplibre-gl");
       await import("maplibre-gl/dist/maplibre-gl.css");
+      // MapLibre derives its tile-parsing worker URL from its own
+      // `import.meta.url`. Once the library is bundled that URL no longer
+      // points at an emitted asset, the worker request 404s and — because the
+      // worker is what schedules and parses vector tiles — the style, TileJSON
+      // and sprites all load while no `.pbf` tile is ever requested. Handing
+      // MapLibre a bundler-resolved worker URL fixes tile scheduling.
+      const { default: workerUrl } = await import(
+        "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"
+      );
+      maplibre.setWorkerUrl(workerUrl);
       if (disposed || !holder.current) return;
       map = new maplibre.Map({
         container: holder.current,

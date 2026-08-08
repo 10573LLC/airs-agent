@@ -122,6 +122,9 @@ export function CopMap({
     [workingPoint],
   );
 
+  collectionRef.current = collection;
+  workingCollectionRef.current = workingCollection;
+
   const resetView = useCallback(() => {
     const map = mapRef.current as import("maplibre-gl").Map | null;
     if (!map) return;

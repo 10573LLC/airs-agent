@@ -34,12 +34,17 @@ export function AppHeader({
           <BrandLockup size={variant === "app" ? 34 : 44} showTagline={variant !== "app"} />
         </Link>
         {variant === "app" ? (
-          <nav aria-label="AIRS modules" className="hidden min-w-0 flex-1 justify-center lg:flex">
+          // Intermediate widths keep all five boards visible by giving the nav
+          // its own full-width row; at large widths it sits centered inline.
+          <nav
+            aria-label="AIRS modules"
+            className="order-last hidden w-full min-w-0 basis-full justify-center md:flex xl:order-none xl:w-auto xl:flex-1 xl:basis-auto"
+          >
             <PrimaryNavLinks />
           </nav>
         ) : null}
         <div className="flex shrink-0 items-center gap-3 text-sm">
-          {right ? right : variant === "app" ? <div className="hidden lg:flex"><AccountArea /></div> : null}
+          {right ? right : variant === "app" ? <div className="hidden md:flex"><AccountArea /></div> : null}
           {variant === "app" ? <MobileNav /> : null}
         </div>
       </div>

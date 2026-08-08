@@ -268,6 +268,9 @@ function MapPage() {
     showObservations,
   ]);
 
+  /** Count of authorized items actually drawn on the enabled layers. */
+  const drawn = layers.filter((i) => i.geometry).length;
+
   const withheld =
     featureRows.filter((f) => !f.geometry).length +
     areaRows.filter((a) => !a.geometry).length +

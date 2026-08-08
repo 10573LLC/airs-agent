@@ -74,6 +74,10 @@ export function CopMap({
 }: CopMapProps) {
   const holder = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<unknown>(null);
+  // Latest data, read by the (re)install path so a style reload never draws stale
+  // or missing released geography.
+  const collectionRef = useRef<unknown>(null);
+  const workingCollectionRef = useRef<unknown>(null);
   const pickRef = useRef(onPickPoint);
   pickRef.current = onPickPoint;
   const pickingRef = useRef(picking);

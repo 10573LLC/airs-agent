@@ -117,30 +117,11 @@ function squareAround([lng, lat]: [number, number], radiusDeg: number) {
   };
 }
 
-// Operator-supplied basemap. When no operator style is configured we fall back
-// to OpenFreeMap "Liberty" — an open, MapLibre-native OpenStreetMap style that
-// carries municipality, county, highway, street, place, water, park and
-// landmark labels, i.e. the reference context an operational map needs.
-// No proprietary SDK is involved and the vector tiles are free to use.
-const OPEN_REFERENCE_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const OPEN_REFERENCE_ATTRIBUTION =
-  "Basemap © OpenFreeMap · Data © OpenStreetMap contributors · Rendered with MapLibre GL JS";
-
-// The MapLibre demo style is a country-outline demo with almost no reference
-// detail; it is unusable for orientation, so it resolves to the open reference
-// style instead of leaving operators with an empty frame.
-const NON_OPERATIONAL_STYLES = ["demotiles.maplibre.org"];
-
-const configuredStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
-const usesConfiguredStyle =
-  !!configuredStyleUrl && !NON_OPERATIONAL_STYLES.some((s) => configuredStyleUrl.includes(s));
-
-const mapStyleUrl = usesConfiguredStyle ? configuredStyleUrl : OPEN_REFERENCE_STYLE;
-const mapAttribution =
-  (import.meta.env.VITE_MAP_ATTRIBUTION as string | undefined) ||
-  (usesConfiguredStyle
-    ? "Basemap © the configured tile provider · Rendered with MapLibre GL JS"
-    : OPEN_REFERENCE_ATTRIBUTION);
+// Operator-supplied basemap only. Application code never selects a tile
+// provider: when VITE_MAP_STYLE_URL is absent the map renders the explicit
+// "Basemap not configured" state instead of silently contacting a third party.
+const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
+const mapAttribution = (import.meta.env.VITE_MAP_ATTRIBUTION as string | undefined) || undefined;
 
 function MapPage() {
   const qc = useQueryClient();

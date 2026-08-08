@@ -297,11 +297,6 @@ function ResourcesPage() {
         eyebrow="Operational readiness"
         title="Resource registry and readiness board"
         description="Every record here belongs to your agency. Partner agencies see only what you share into an incident, and only while that sharing lasts."
-        actions={
-          <Link to="/incidents" className="text-sm underline">
-            Incident rooms
-          </Link>
-        }
       />
 
       {notice ? (

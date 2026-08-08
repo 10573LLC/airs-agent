@@ -111,10 +111,6 @@ function IncidentsPage() {
         Every room is owned by the organization that created it. Partner access is temporary and
         ends when the room closes.
       </p>
-      <Link to="/console" className="mt-3 inline-block text-sm underline">
-        Agency console
-      </Link>
-
       {notice && (
         <p className="mt-4 rounded-md bg-muted px-3 py-2 text-sm text-foreground">{notice}</p>
       )}

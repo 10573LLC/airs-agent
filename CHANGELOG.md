@@ -2,6 +2,24 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Common Operating Picture Layer-Query Race Fix] 2026-08-08
+
+### Fixed
+
+- Pointer movement no longer floods the console with "The layer 'cop-fill' does
+  not exist in the map's style and cannot be queried for features." Hover and
+  click now derive the queryable layer list from layers that actually exist and
+  return no hit when the overlay has not been installed yet.
+- AIRS overlay installation ("cop" source, `cop-fill`, `cop-outline`,
+  `cop-point`, `cop-label`, `working-point` source, `working-point-halo`,
+  `working-point-dot`) is idempotent and runs on style readiness, so repeated
+  style events never duplicate sources or layers.
+
+### Added
+
+- `src/components/map/layer-install.ts` (DOM-free helpers) and
+  `tests/map-layer-install.test.ts` regression coverage.
+
 ## [Common Operating Picture Usability] 2026-08-08
 
 ### Added

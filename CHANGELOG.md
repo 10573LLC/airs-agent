@@ -2,6 +2,23 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [Common Operating Picture Basemap Tile Loading Fix] 2026-08-08
+
+### Fixed
+
+- Vector basemap tiles are requested again. MapLibre derives its tile-parsing
+  worker URL from its own `import.meta.url`; after bundling that URL no longer
+  pointed at an emitted asset, so the worker request 404'd. The style, the
+  `planet` TileJSON and the sprites all loaded on the main thread while the
+  worker — the component that schedules and parses vector tiles — never
+  started, so no `{z}/{x}/{y}.pbf` request was ever made and the map stayed
+  blank. `src/components/map/cop-map.tsx` now passes MapLibre a
+  bundler-resolved worker URL via `setWorkerUrl` before creating the map.
+- Verified in Chrome: `planet/.../11/{x}/{y}.pbf` requests return 200, glyph
+  and sprite requests succeed, and no `cop-fill` or style/source errors appear.
+  The AIRS overlay `styledata` installer was investigated and cleared: it is
+  idempotent and does not interfere with basemap source tile scheduling.
+
 ## [Common Operating Picture Layer-Query Race Fix] 2026-08-08
 
 ### Fixed

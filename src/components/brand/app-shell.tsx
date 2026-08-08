@@ -26,7 +26,7 @@ export function AppHeader({
     <header className={cn("brand-command-surface relative", className)}>
       <div
         className={cn(
-          "mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6",
+          "mx-auto flex max-w-7xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 sm:px-6 xl:flex-nowrap",
           variant === "app" ? "justify-between" : "justify-between",
         )}
       >

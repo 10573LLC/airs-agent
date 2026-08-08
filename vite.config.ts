@@ -65,12 +65,6 @@ export default defineConfig(async ({ command }) => {
       alias: { "@": srcDir },
       dedupe: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
     },
-    // MapLibre spawns its tile-parsing worker with
-    // `new Worker(new URL("./maplibre-gl-worker.mjs", import.meta.url))`.
-    // Dependency pre-bundling rewrites that URL to a path Vite never emits, so
-    // the worker 404s, no tile requests are ever scheduled and the basemap
-    // stays blank. Excluding the package keeps the worker URL resolvable.
-    optimizeDeps: { exclude: ["maplibre-gl"] },
     plugins,
   };
 });

@@ -22,6 +22,7 @@ import {
   suspendMembershipFn,
 } from "@/lib/api/auth.functions";
 import { AppChrome } from "@/components/brand";
+import { displayOrgName } from "@/components/brand/display";
 import { ROLE_KEYS, ROLE_LABELS } from "@/lib/rbac/roles";
 
 export const Route = createFileRoute("/console")({

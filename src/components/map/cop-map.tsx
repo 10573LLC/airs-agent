@@ -11,6 +11,12 @@
 // anything the server withheld simply has no geometry and is not drawn.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bounds, type Geometry } from "@/lib/map/model";
+import {
+  COP_INTERACTIVE_LAYER_IDS,
+  installCopLayers,
+  safeQuery,
+  type MinimalMap,
+} from "./layer-install";
 
 export interface MapLayerItem {
   id: string;
@@ -68,6 +74,10 @@ export function CopMap({
 }: CopMapProps) {
   const holder = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<unknown>(null);
+  // Latest data, read by the (re)install path so a style reload never draws stale
+  // or missing released geography.
+  const collectionRef = useRef<unknown>(null);
+  const workingCollectionRef = useRef<unknown>(null);
   const pickRef = useRef(onPickPoint);
   pickRef.current = onPickPoint;
   const pickingRef = useRef(picking);
@@ -111,6 +121,9 @@ export function CopMap({
     }),
     [workingPoint],
   );
+
+  collectionRef.current = collection;
+  workingCollectionRef.current = workingCollection;
 
   const resetView = useCallback(() => {
     const map = mapRef.current as import("maplibre-gl").Map | null;
@@ -164,80 +177,35 @@ export function CopMap({
       const m = map;
       m.addControl(new maplibre.NavigationControl({ visualizePitch: false }), "top-right");
       m.addControl(new maplibre.ScaleControl({ unit: "imperial" }), "bottom-left");
-      m.on("load", () => {
-        if (!map) return;
-        map.addSource("cop", { type: "geojson", data: collection as never });
-        map.addLayer({
-          id: "cop-fill",
-          type: "fill",
-          source: "cop",
-          filter: ["==", ["geometry-type"], "Polygon"],
-          paint: { "fill-color": ["get", "color"], "fill-opacity": 0.18 },
-        });
-        map.addLayer({
-          id: "cop-outline",
-          type: "line",
-          source: "cop",
-          filter: ["!=", ["geometry-type"], "Point"],
-          paint: { "line-color": ["get", "color"], "line-width": 2 },
-        });
-        map.addLayer({
-          id: "cop-point",
-          type: "circle",
-          source: "cop",
-          filter: ["==", ["geometry-type"], "Point"],
-          paint: {
-            "circle-radius": 6,
-            "circle-color": ["get", "color"],
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#0b1220",
-          },
-        });
-        map.addLayer({
-          id: "cop-label",
-          type: "symbol",
-          source: "cop",
-          layout: {
-            "text-field": ["get", "label"],
-            "text-size": 11,
-            "text-offset": [0, 1.2],
-            "text-anchor": "top",
-          },
-          paint: { "text-color": "#e2e8f0", "text-halo-color": "#0b1220", "text-halo-width": 1.4 },
-        });
-
-        // Transient working point. It exists only in the browser and is never
-        // persisted unless a form below the map creates a real record.
-        map.addSource("working-point", { type: "geojson", data: workingCollection as never });
-        map.addLayer({
-          id: "working-point-halo",
-          type: "circle",
-          source: "working-point",
-          paint: {
-            "circle-radius": 13,
-            "circle-color": WORKING_POINT_COLOR,
-            "circle-opacity": 0.2,
-          },
-        });
-        map.addLayer({
-          id: "working-point-dot",
-          type: "circle",
-          source: "working-point",
-          paint: {
-            "circle-radius": 6,
-            "circle-color": WORKING_POINT_COLOR,
-            "circle-stroke-width": 2,
-            "circle-stroke-color": "#f8fafc",
-          },
-        });
-      });
-      const hoverLayers = ["cop-fill", "cop-outline", "cop-point"];
+      // Install (or re-install) the AIRS overlay once the style is ready. The
+      // helper is idempotent, so repeated load/styledata events never duplicate
+      // sources or layers. The transient working point exists only in the browser
+      // and is never persisted unless a form below the map creates a record.
+      const install = () => {
+        if (!map || !map.isStyleLoaded()) return;
+        installCopLayers(
+          map as unknown as MinimalMap,
+          collectionRef.current,
+          workingCollectionRef.current,
+          WORKING_POINT_COLOR,
+        );
+      };
+      m.on("load", install);
+      m.on("styledata", install);
       m.on("mousemove", (event) => {
-        const hit = m.queryRenderedFeatures(event.point, { layers: hoverLayers });
+        const hit = safeQuery(
+          m as unknown as MinimalMap,
+          event.point,
+          COP_INTERACTIVE_LAYER_IDS,
+        );
         m.getCanvas().style.cursor = hit.length ? "pointer" : pickingRef.current ? "crosshair" : "";
       });
       m.on("click", (event) => {
-        const hit = m.queryRenderedFeatures(event.point, { layers: hoverLayers })[0];
+        const hit = safeQuery(
+          m as unknown as MinimalMap,
+          event.point,
+          COP_INTERACTIVE_LAYER_IDS,
+        )[0];
         if (hit) {
           const props = (hit.properties ?? {}) as Record<string, string>;
           setInfo({

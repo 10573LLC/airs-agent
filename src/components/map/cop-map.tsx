@@ -11,6 +11,12 @@
 // anything the server withheld simply has no geometry and is not drawn.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bounds, type Geometry } from "@/lib/map/model";
+import {
+  COP_INTERACTIVE_LAYER_IDS,
+  installCopLayers,
+  safeQuery,
+  type MinimalMap,
+} from "./layer-install";
 
 export interface MapLayerItem {
   id: string;

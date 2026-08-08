@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as MapcheckRouteImport } from './routes/mapcheck'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as IncidentsRouteImport } from './routes/incidents'
 import { Route as ConsoleRouteImport } from './routes/console'
@@ -28,6 +29,11 @@ import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/
 const ResourcesRoute = ResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MapcheckRoute = MapcheckRouteImport.update({
+  id: '/mapcheck',
+  path: '/mapcheck',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MapRoute = MapRouteImport.update({
@@ -109,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
+  '/mapcheck': typeof MapcheckRoute
   '/resources': typeof ResourcesRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
@@ -124,6 +131,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/console': typeof ConsoleRoute
   '/map': typeof MapRoute
+  '/mapcheck': typeof MapcheckRoute
   '/resources': typeof ResourcesRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
@@ -142,6 +150,7 @@ export interface FileRoutesById {
   '/console': typeof ConsoleRoute
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
+  '/mapcheck': typeof MapcheckRoute
   '/resources': typeof ResourcesRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/incidents'
     | '/map'
+    | '/mapcheck'
     | '/resources'
     | '/activate/$token'
     | '/awareness/$observationId'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/console'
     | '/map'
+    | '/mapcheck'
     | '/resources'
     | '/activate/$token'
     | '/awareness/$observationId'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/incidents'
     | '/map'
+    | '/mapcheck'
     | '/resources'
     | '/activate/$token'
     | '/awareness/$observationId'
@@ -211,6 +223,7 @@ export interface RootRouteChildren {
   ConsoleRoute: typeof ConsoleRoute
   IncidentsRoute: typeof IncidentsRouteWithChildren
   MapRoute: typeof MapRoute
+  MapcheckRoute: typeof MapcheckRoute
   ResourcesRoute: typeof ResourcesRoute
   ActivateTokenRoute: typeof ActivateTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
@@ -225,6 +238,13 @@ declare module '@tanstack/react-router' {
       path: '/resources'
       fullPath: '/resources'
       preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mapcheck': {
+      id: '/mapcheck'
+      path: '/mapcheck'
+      fullPath: '/mapcheck'
+      preLoaderRoute: typeof MapcheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/map': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConsoleRoute: ConsoleRoute,
   IncidentsRoute: IncidentsRouteWithChildren,
   MapRoute: MapRoute,
+  MapcheckRoute: MapcheckRoute,
   ResourcesRoute: ResourcesRoute,
   ActivateTokenRoute: ActivateTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
@@ -372,3 +393,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

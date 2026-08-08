@@ -4,6 +4,13 @@ WORKDIR /app
 COPY package.json package-lock.json* bun.lock* ./
 RUN npm install --legacy-peer-deps
 COPY . .
+# Vite inlines VITE_* variables at build time, so the operator's map style must
+# be present during `npm run build`. Passed explicitly as build args — .env is
+# never copied into the image and no secret is exposed here.
+ARG VITE_MAP_STYLE_URL=""
+ARG VITE_MAP_ATTRIBUTION=""
+ENV VITE_MAP_STYLE_URL=$VITE_MAP_STYLE_URL \
+    VITE_MAP_ATTRIBUTION=$VITE_MAP_ATTRIBUTION
 ENV NITRO_PRESET=node-server
 RUN npm run build
 

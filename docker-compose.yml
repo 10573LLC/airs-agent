@@ -35,7 +35,13 @@ services:
       retries: 20
 
   app:
-    build: .
+    build:
+      context: .
+      # Build-time only. Vite inlines VITE_* values into the client bundle
+      # during `npm run build`; nothing secret may be added here.
+      args:
+        VITE_MAP_STYLE_URL: ${VITE_MAP_STYLE_URL:-}
+        VITE_MAP_ATTRIBUTION: ${VITE_MAP_ATTRIBUTION:-}
     depends_on:
       db:
         condition: service_healthy

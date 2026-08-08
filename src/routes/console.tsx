@@ -171,7 +171,9 @@ function ConsolePage() {
           <p className="text-sm text-muted-foreground">{account.email}</p>
           <p className="mt-2 text-sm text-foreground">
             Active organization:{" "}
-            <strong>{orgResult?.ok ? orgResult.data.name : "none selected"}</strong>
+            <strong>
+              {orgResult?.ok ? displayOrgName(orgResult.data.name) : "none selected"}
+            </strong>
             {orgResult?.ok ? (
               <span className="text-muted-foreground">
                 {" "}
@@ -196,7 +198,7 @@ function ConsolePage() {
           {memberships.map((m) => (
             <li key={m.membershipId} className="flex items-center justify-between gap-3 text-sm">
               <span>
-                {m.orgName}{" "}
+                {displayOrgName(m.orgName)}{" "}
                 <span className="text-muted-foreground">
                   · {ROLE_LABELS[m.roleKey]} · {m.status}
                 </span>

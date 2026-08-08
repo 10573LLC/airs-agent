@@ -70,6 +70,8 @@ export function CopMap({
   const mapRef = useRef<unknown>(null);
   const pickRef = useRef(onPickPoint);
   pickRef.current = onPickPoint;
+  const pickingRef = useRef(picking);
+  pickingRef.current = picking;
   const [status, setStatus] = useState<string | null>(null);
   const [info, setInfo] = useState<{ label: string; detail: string; layer: string } | null>(null);
 
@@ -232,7 +234,7 @@ export function CopMap({
       const hoverLayers = ["cop-fill", "cop-outline", "cop-point"];
       m.on("mousemove", (event) => {
         const hit = m.queryRenderedFeatures(event.point, { layers: hoverLayers });
-        m.getCanvas().style.cursor = hit.length ? "pointer" : picking ? "crosshair" : "";
+        m.getCanvas().style.cursor = hit.length ? "pointer" : pickingRef.current ? "crosshair" : "";
       });
       m.on("click", (event) => {
         const hit = m.queryRenderedFeatures(event.point, { layers: hoverLayers })[0];
@@ -309,7 +311,7 @@ export function CopMap({
 
   return (
     <div className={className}>
-      <div className="relative h-full w-full">
+      <div className="relative h-full min-h-0 w-full flex-1">
         <div
           ref={holder}
           className="h-full w-full"

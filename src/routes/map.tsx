@@ -405,7 +405,7 @@ function MapPage() {
             ))}
           </fieldset>
         </div>
-        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+        <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] leading-relaxed text-muted-foreground/90">
           <span>
             Scope:{" "}
             {incidentId
@@ -424,7 +424,7 @@ function MapPage() {
           {picked ? (
             <button
               type="button"
-              className={smallButton}
+              className="rounded-md border border-border/70 px-2 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title="Clear working point"
               aria-label="Clear the selected working point"
               onClick={() => setPicked(null)}

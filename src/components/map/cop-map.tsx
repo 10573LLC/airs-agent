@@ -289,6 +289,53 @@ export function CopMap({
 
   return (
     <div className={className}>
+      {/* AIRS toolbar sits above the canvas so it never competes with
+          MapLibre's native navigation controls (top-right) or scale (bottom-left). */}
+      <div className="flex flex-wrap items-center gap-1.5 border-b border-border bg-card/80 px-2 py-1.5">
+        <button
+          type="button"
+          onClick={resetView}
+          title="Reset view"
+          aria-label="Reset view to the default Albany camera"
+          className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Reset view
+        </button>
+        <button
+          type="button"
+          onClick={fitVisible}
+          title="Fit visible data"
+          aria-label="Fit the camera to the currently visible AIRS geography"
+          className="rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          Fit visible data
+        </button>
+        <details className="relative">
+          <summary className="cursor-pointer list-none rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            Legend
+          </summary>
+          <ul className="absolute left-0 top-full z-10 mt-1 w-56 max-w-[80vw] space-y-1 rounded-md border border-border bg-background p-2 text-xs shadow-md">
+            {TONE_LEGEND.map((entry) => (
+              <li key={entry.tone} className="flex items-center gap-2 text-muted-foreground">
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                  style={{ backgroundColor: TONE[entry.tone] }}
+                />
+                {entry.label}
+              </li>
+            ))}
+            <li className="flex items-center gap-2 text-muted-foreground">
+              <span
+                aria-hidden="true"
+                className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: WORKING_POINT_COLOR }}
+              />
+              Selected working point
+            </li>
+          </ul>
+        </details>
+      </div>
       <div className="relative h-full min-h-0 w-full flex-1">
         <div
           ref={holder}
@@ -297,51 +344,6 @@ export function CopMap({
           role="application"
           aria-label="Common operating picture map"
         />
-        <div className="pointer-events-none absolute inset-x-2 top-2 flex flex-wrap items-start justify-between gap-2">
-          <div className="pointer-events-auto flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={resetView}
-              title="Reset view"
-              aria-label="Reset view to the default Albany camera"
-              className="rounded-md border border-border bg-background/95 px-2 py-1 text-xs font-medium text-foreground shadow-sm hover:bg-muted"
-            >
-              Reset view
-            </button>
-            <button
-              type="button"
-              onClick={fitVisible}
-              title="Fit visible data"
-              aria-label="Fit the camera to the currently visible AIRS geography"
-              className="rounded-md border border-border bg-background/95 px-2 py-1 text-xs font-medium text-foreground shadow-sm hover:bg-muted"
-            >
-              Fit visible data
-            </button>
-          </div>
-          <details className="pointer-events-auto max-w-[14rem] rounded-md border border-border bg-background/95 px-2 py-1 text-xs shadow-sm">
-            <summary className="cursor-pointer font-medium text-foreground">Legend</summary>
-            <ul className="mt-1 space-y-1">
-              {TONE_LEGEND.map((entry) => (
-                <li key={entry.tone} className="flex items-center gap-2 text-muted-foreground">
-                  <span
-                    aria-hidden="true"
-                    className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={{ backgroundColor: TONE[entry.tone] }}
-                  />
-                  {entry.label}
-                </li>
-              ))}
-              <li className="flex items-center gap-2 text-muted-foreground">
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: WORKING_POINT_COLOR }}
-                />
-                Selected working point
-              </li>
-            </ul>
-          </details>
-        </div>
         {info ? (
           <div className="absolute bottom-2 left-2 max-w-[18rem] rounded-md border border-border bg-background/95 p-2 text-xs shadow-sm">
             <div className="flex items-start justify-between gap-2">

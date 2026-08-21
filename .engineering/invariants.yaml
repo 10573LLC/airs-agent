@@ -1,0 +1,135 @@
+invariants:
+  platform_admin_non_operational:
+    node: platform-admin
+    severity: critical
+    description: Platform administrator remains limited to org.manage, user.manage, audit.read, and retention.manage and must not gain agency operational permissions.
+    check:
+      type: project-specific
+
+  tenant_isolation:
+    node: rls
+    severity: critical
+    description: Agency and organization isolation must remain enforced. Cross-tenant operational data access is forbidden.
+    check:
+      type: project-specific
+
+  forced_rls_preserved:
+    node: rls
+    severity: critical
+    description: Existing forced RLS posture must not be weakened, bypassed, or replaced by application-only filtering.
+    check:
+      type: project-specific
+
+  migrations_human_controlled:
+    node: database-migrations
+    severity: critical
+    description: Database migrations are protected from automated mutation in this adapter and require an explicit future migration process.
+    check:
+      type: policy
+
+  no_destructive_database_shortcuts:
+    node: database-runtime
+    severity: critical
+    description: No reset, drop, truncate, destructive reconciliation, or migration ledger rewrite may be introduced as a shortcut.
+    check:
+      type: project-specific
+
+  product_branding:
+    node: branding
+    severity: high
+    description: Product UI displays AIRS Agent branding. Anconison must not render in product UI except naturally inside email or domain values.
+    check:
+      type: project-specific
+
+  primary_navigation:
+    node: ui-shell
+    severity: high
+    description: Agency Dashboard, Incident Rooms, Readiness Board, Common Operating Picture, and Awareness Board remain directly accessible.
+    check:
+      type: project-specific
+      expected_count: 5
+
+  maplibre_worker_protected:
+    node: maplibre-worker
+    severity: critical
+    description: The bundler-resolved maplibre-gl worker URL and setWorkerUrl call in cop-map.tsx are protected from automated edits.
+    check:
+      type: project-specific
+
+  no_silent_basemap_provider:
+    node: basemap-provider
+    severity: critical
+    description: AIRS must not silently select or fall back to an external basemap provider. Provider selection remains operator configured.
+    check:
+      type: project-specific
+      silent_fallback: false
+
+  openfreemap_is_reference_configuration:
+    node: basemap-provider
+    severity: high
+    description: OpenFreeMap Liberty remains an explicit development/reference configuration rather than a hidden production default.
+    check:
+      type: project-specific
+
+  generated_route_tree_protected:
+    node: generated-route-tree
+    severity: high
+    description: src/routeTree.gen.ts is generated output and must not be edited directly by the Engineering Engine.
+    check:
+      type: policy
+
+  builder_dependencies_existing_but_frozen:
+    node: builder-integration
+    severity: high
+    description: Existing Lovable builder dependencies are known technical debt. They may not be expanded, reintroduced elsewhere, or changed unless builder-integration is the explicit target.
+    check:
+      type: project-specific
+
+  no_builder_dependency_spread:
+    node: builder-integration
+    severity: high
+    description: Builder-specific packages and imports must not spread into AIRS application runtime code.
+    check:
+      type: project-specific
+
+  portable_application_runtime:
+    node: builder-integration
+    severity: high
+    description: AIRS application behavior must remain portable outside the builder environment.
+    check:
+      type: project-specific
+
+  incident_expiration_preserved:
+    node: maintenance
+    severity: high
+    description: Incident expiration behavior and maintenance authorization must remain bounded and auditable.
+    check:
+      type: project-specific
+
+  disclosure_boundaries_preserved:
+    node: resources
+    severity: critical
+    description: Resource disclosure profiles must not expose fields beyond the authorized disclosure projection.
+    check:
+      type: project-specific
+
+  awareness_tenant_boundary:
+    node: awareness
+    severity: critical
+    description: Awareness observations remain tenant scoped and subject to existing RLS and authorization rules.
+    check:
+      type: project-specific
+
+  cop_geography_boundary:
+    node: postgis
+    severity: critical
+    description: COP geography access must remain tenant scoped and compatible with existing PostGIS and RLS tests.
+    check:
+      type: project-specific
+
+  docker_not_database_authority:
+    node: docker
+    severity: high
+    description: Container configuration must not silently reset, replace, or become authoritative over persisted database state.
+    check:
+      type: project-specific

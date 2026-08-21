@@ -1,0 +1,12 @@
+project:
+  name: AIRS Agent
+
+engineering:
+  max_repair_attempts: 2
+
+protected_paths:
+  - .git/**
+  - .env
+  - .env.*
+  - db/migrations/**
+  - src/routeTree.gen.ts

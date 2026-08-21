@@ -1,0 +1,106 @@
+nodes:
+  ui-shell:
+    type: frontend
+    protection: guarded
+    triggers: [navigation, app shell, dashboard, console, root route, primary navigation]
+
+  branding:
+    type: frontend
+    protection: guarded
+    triggers: [brand, branding, logo, assets, airs agent display]
+
+  auth:
+    type: security
+    protection: high
+    triggers: [auth, authentication, login, password, session, activation, invitation]
+
+  tenancy:
+    type: security
+    protection: critical
+    triggers: [organization, membership, tenant, agency, organization context]
+
+  rls:
+    type: security
+    protection: critical
+    triggers: [rls, row level security, tenant isolation, disclosure boundary]
+
+  platform-admin:
+    type: security
+    protection: critical
+    triggers: [platform admin, platform administrator, platform organization, bootstrap admin]
+
+  incidents:
+    type: domain
+    protection: high
+    triggers: [incident, incident room, participation, trust, assignment]
+
+  maintenance:
+    type: operations
+    protection: high
+    triggers: [maintenance, expiration, expire incidents, scheduler]
+
+  resources:
+    type: domain
+    protection: high
+    triggers: [resource, readiness, personnel, assignment, disclosure]
+
+  awareness:
+    type: domain
+    protection: high
+    triggers: [awareness, observation, evidence, awareness board]
+
+  cop:
+    type: domain
+    protection: high
+    triggers: [cop, common operating picture, map, geography, geospatial]
+
+  cop-ui:
+    type: frontend
+    parent: cop
+    protection: high
+    triggers: [map route, map controls, cop controls, toolbar, legend, map layout]
+
+  maplibre-worker:
+    type: infrastructure
+    parent: cop
+    protection: locked
+    mutable: false
+    triggers: [maplibre worker, worker url, setworkerurl, maplibre-gl-worker]
+
+  basemap-provider:
+    type: infrastructure
+    parent: cop
+    protection: high
+    triggers: [basemap, openfreemap, liberty, map style, tile provider]
+
+  postgis:
+    type: infrastructure
+    protection: critical
+    triggers: [postgis, geography, geometry, spatial query, geospatial database]
+
+  database-runtime:
+    type: infrastructure
+    protection: critical
+    triggers: [database runtime, db migrate, db test, migration runner, reconcile legacy]
+
+  database-migrations:
+    type: infrastructure
+    protection: locked
+    mutable: false
+    triggers: [migration, schema migration, database schema]
+
+  docker:
+    type: infrastructure
+    protection: high
+    triggers: [docker, compose, container, dockerfile]
+
+  builder-integration:
+    type: tooling
+    protection: high
+    triggers: [lovable, builder, vite plugin, dev server bridge, hmr gate, lovable tagger]
+
+  generated-route-tree:
+    type: generated
+    protection: locked
+    mutable: false
+    triggers: [route tree, generated route tree, routetree]

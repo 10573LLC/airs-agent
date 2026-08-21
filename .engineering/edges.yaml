@@ -1,0 +1,29 @@
+edges:
+  - {from: auth, to: tenancy, relation: establishes_identity_for, regression: true}
+  - {from: tenancy, to: rls, relation: constrained_by, regression: true}
+  - {from: platform-admin, to: auth, relation: uses, regression: true}
+  - {from: platform-admin, to: tenancy, relation: administers_without_operational_access, regression: true}
+
+  - {from: incidents, to: resources, relation: assigns, regression: true}
+  - {from: incidents, to: maintenance, relation: expires_through, regression: true}
+  - {from: incidents, to: cop, relation: scopes, regression: true}
+
+  - {from: resources, to: rls, relation: protected_by, regression: true}
+  - {from: awareness, to: rls, relation: protected_by, regression: true}
+  - {from: incidents, to: rls, relation: protected_by, regression: true}
+
+  - {from: awareness, to: cop, relation: renders_into, regression: true}
+  - {from: cop, to: postgis, relation: reads_geometry_from, regression: true}
+  - {from: cop-ui, to: maplibre-worker, relation: renders_with, regression: true}
+  - {from: cop-ui, to: basemap-provider, relation: renders_over, regression: true}
+  - {from: cop, to: basemap-provider, relation: uses_operator_configured, regression: true}
+
+  - {from: postgis, to: database-runtime, relation: depends_on, regression: true}
+  - {from: rls, to: database-migrations, relation: implemented_by, regression: true}
+  - {from: database-runtime, to: database-migrations, relation: applies, regression: true}
+
+  - {from: ui-shell, to: branding, relation: displays, regression: true}
+  - {from: ui-shell, to: generated-route-tree, relation: routed_by, regression: true}
+  - {from: ui-shell, to: builder-integration, relation: built_with, regression: true}
+
+  - {from: docker, to: database-runtime, relation: hosts, regression: true}

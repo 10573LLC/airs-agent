@@ -185,6 +185,7 @@ nodes:
       - scripts/db-migrate-repair-legacy.mjs
       - scripts/db-reconcile-legacy.mjs
       - scripts/db-test.mjs
+      - tests/db-migrate.test.ts
       - scripts/lib/canonical-schema.mjs
       - scripts/lib/idempotent-sql.mjs
       - scripts/lib/legacy-repair.mjs

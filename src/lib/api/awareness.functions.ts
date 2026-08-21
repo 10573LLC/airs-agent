@@ -98,7 +98,7 @@ const observationBody = z.object({
 // --- reads --------------------------------------------------------------------
 
 export const listObservationsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -125,7 +125,7 @@ export const listObservationsFn = createServerFn({ method: "GET" })
   );
 
 export const getObservationFn = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ orgId: orgIdField, observationId: uuid }).parse(d ?? {}),
   )
   .handler(async ({ data }) =>
@@ -137,7 +137,7 @@ export const getObservationFn = createServerFn({ method: "GET" })
   );
 
 export const awarenessSummaryFn = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ orgId: orgIdField, incidentId: uuid.nullish() }).parse(d ?? {}),
   )
   .handler(async ({ data }) =>
@@ -156,7 +156,7 @@ export const awarenessSummaryFn = createServerFn({ method: "GET" })
 // --- writes -------------------------------------------------------------------
 
 export const createObservationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => observationBody.extend({ orgId: orgIdField }).parse(d))
+  .validator((d: unknown) => observationBody.extend({ orgId: orgIdField }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { createObservation } = await svc();
@@ -167,7 +167,7 @@ export const createObservationFn = createServerFn({ method: "POST" })
   );
 
 export const updateObservationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     observationBody
       .extend({
         orgId: orgIdField,
@@ -187,7 +187,7 @@ export const updateObservationFn = createServerFn({ method: "POST" })
   );
 
 export const setVerificationStatusFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -209,7 +209,7 @@ export const setVerificationStatusFn = createServerFn({ method: "POST" })
   );
 
 export const setObservationLifecycleFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -230,7 +230,7 @@ export const setObservationLifecycleFn = createServerFn({ method: "POST" })
   );
 
 export const addObservationAnnotationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -251,7 +251,7 @@ export const addObservationAnnotationFn = createServerFn({ method: "POST" })
   );
 
 export const relateObservationsFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -272,7 +272,7 @@ export const relateObservationsFn = createServerFn({ method: "POST" })
   );
 
 export const invalidateRelationshipFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, relationshipId: uuid }).parse(d))
+  .validator((d: unknown) => z.object({ orgId: orgIdField, relationshipId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { invalidateRelationship } = await svc();
@@ -282,7 +282,7 @@ export const invalidateRelationshipFn = createServerFn({ method: "POST" })
   );
 
 export const addInformationGapFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -302,7 +302,7 @@ export const addInformationGapFn = createServerFn({ method: "POST" })
   );
 
 export const closeInformationGapFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -322,7 +322,7 @@ export const closeInformationGapFn = createServerFn({ method: "POST" })
   );
 
 export const addEvidenceReferenceFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -345,7 +345,7 @@ export const addEvidenceReferenceFn = createServerFn({ method: "POST" })
   );
 
 export const removeEvidenceReferenceFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, evidenceId: uuid }).parse(d))
+  .validator((d: unknown) => z.object({ orgId: orgIdField, evidenceId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { removeEvidenceReference } = await svc();
@@ -355,7 +355,7 @@ export const removeEvidenceReferenceFn = createServerFn({ method: "POST" })
   );
 
 export const shareObservationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -378,7 +378,7 @@ export const shareObservationFn = createServerFn({ method: "POST" })
   );
 
 export const revokeObservationShareFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, shareId: uuid }).parse(d))
+  .validator((d: unknown) => z.object({ orgId: orgIdField, shareId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { revokeObservationShare } = await svc();

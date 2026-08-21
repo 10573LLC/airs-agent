@@ -2,7 +2,8 @@
 // checksum immutability, adoption, dry-run/status safety, concurrency and
 // path parity. Pure-logic proofs: no PostgreSQL or Docker required.
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -38,6 +39,13 @@ const runCli = (args: string[]) =>
     encoding: "utf8",
     cwd: REPO_ROOT,
     env: { ...process.env, DATABASE_URL: "" },
+  });
+
+const filesUnder = (root: string): string[] =>
+  readdirSync(root, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(root, entry.name);
+    if (entry.isDirectory()) return filesUnder(path);
+    return entry.isFile() ? [path] : [];
   });
 
 const rowsFor = (versions: string[]) =>
@@ -329,11 +337,10 @@ describe("ledger access model", () => {
 
   it("keeps migration state outside the tenant schema and out of application traffic", () => {
     expect(LEDGER_TABLE).toBe("airs_migrations.applied_migrations");
-    const appSources = spawnSync("grep", ["-r", "airs_migrations", "src"], {
-      cwd: REPO_ROOT,
-      encoding: "utf8",
-    });
-    expect(appSources.stdout.trim()).toBe("");
+    const appSources = filesUnder(join(REPO_ROOT, "src")).filter((path) =>
+      readFileSync(path, "utf8").includes("airs_migrations"),
+    );
+    expect(appSources).toEqual([]);
   });
 });
 

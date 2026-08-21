@@ -39,7 +39,7 @@ async function serverCtx() {
 // --- authentication ---------------------------------------------------------
 
 export const signIn = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; password: string }) =>
+  .validator((d: { email: string; password: string }) =>
     z.object({ email: emailSchema, password: z.string().min(1).max(512) }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -88,7 +88,7 @@ export const getMe = createServerFn({ method: "GET" }).handler(async () =>
 );
 
 export const selectOrganization = createServerFn({ method: "POST" })
-  .inputValidator((d: { orgId: string }) => z.object({ orgId: uuid }).parse(d))
+  .validator((d: { orgId: string }) => z.object({ orgId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { selectActiveOrganization } = await import("@/lib/auth/memberships.server");
@@ -98,7 +98,7 @@ export const selectOrganization = createServerFn({ method: "POST" })
   );
 
 export const getOrganization = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) =>
+  .validator((d: { orgId?: string | null }) =>
     z.object({ orgId: uuid.nullish() }).parse(d ?? {}),
   )
   .handler(async ({ data }) =>
@@ -112,7 +112,7 @@ export const getOrganization = createServerFn({ method: "GET" })
 // --- membership administration ----------------------------------------------
 
 export const listOrganizationMembers = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) =>
+  .validator((d: { orgId?: string | null }) =>
     z.object({ orgId: uuid.nullish() }).parse(d ?? {}),
   )
   .handler(async ({ data }) =>
@@ -124,7 +124,7 @@ export const listOrganizationMembers = createServerFn({ method: "GET" })
   );
 
 export const changeMemberRoleFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { membershipId: string; roleKey: string; orgId?: string | null }) =>
+  .validator((d: { membershipId: string; roleKey: string; orgId?: string | null }) =>
     z.object({ membershipId: uuid, roleKey: roleSchema, orgId: uuid.nullish() }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -136,7 +136,7 @@ export const changeMemberRoleFn = createServerFn({ method: "POST" })
   );
 
 export const suspendMembershipFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { membershipId: string; orgId?: string | null }) =>
+  .validator((d: { membershipId: string; orgId?: string | null }) =>
     z.object({ membershipId: uuid, orgId: uuid.nullish() }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -148,7 +148,7 @@ export const suspendMembershipFn = createServerFn({ method: "POST" })
   );
 
 export const revokeMembershipFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { membershipId: string; orgId?: string | null }) =>
+  .validator((d: { membershipId: string; orgId?: string | null }) =>
     z.object({ membershipId: uuid, orgId: uuid.nullish() }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -160,7 +160,7 @@ export const revokeMembershipFn = createServerFn({ method: "POST" })
   );
 
 export const reinstateMembershipFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { membershipId: string; orgId?: string | null }) =>
+  .validator((d: { membershipId: string; orgId?: string | null }) =>
     z.object({ membershipId: uuid, orgId: uuid.nullish() }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -174,7 +174,7 @@ export const reinstateMembershipFn = createServerFn({ method: "POST" })
 // --- invitations -------------------------------------------------------------
 
 export const listInvitationsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) =>
+  .validator((d: { orgId?: string | null }) =>
     z.object({ orgId: uuid.nullish() }).parse(d ?? {}),
   )
   .handler(async ({ data }) =>
@@ -186,7 +186,7 @@ export const listInvitationsFn = createServerFn({ method: "GET" })
   );
 
 export const inviteMember = createServerFn({ method: "POST" })
-  .inputValidator((d: { email: string; roleKey: string; orgId?: string | null }) =>
+  .validator((d: { email: string; roleKey: string; orgId?: string | null }) =>
     z.object({ email: emailSchema, roleKey: roleSchema, orgId: uuid.nullish() }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -203,7 +203,7 @@ export const inviteMember = createServerFn({ method: "POST" })
   );
 
 export const revokeInvitationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { invitationId: string; orgId?: string | null }) =>
+  .validator((d: { invitationId: string; orgId?: string | null }) =>
     z.object({ invitationId: uuid, orgId: uuid.nullish() }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -215,7 +215,7 @@ export const revokeInvitationFn = createServerFn({ method: "POST" })
   );
 
 export const regenerateInvitationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { invitationId: string; orgId?: string | null }) =>
+  .validator((d: { invitationId: string; orgId?: string | null }) =>
     z.object({ invitationId: uuid, orgId: uuid.nullish() }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -227,7 +227,7 @@ export const regenerateInvitationFn = createServerFn({ method: "POST" })
   );
 
 export const previewInvitationFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { token: string }) =>
+  .validator((d: { token: string }) =>
     z.object({ token: z.string().min(16).max(256) }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -239,7 +239,7 @@ export const previewInvitationFn = createServerFn({ method: "GET" })
   );
 
 export const acceptInvitationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string }) =>
+  .validator((d: { token: string }) =>
     z.object({ token: z.string().min(16).max(256) }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -253,7 +253,7 @@ export const acceptInvitationFn = createServerFn({ method: "POST" })
 // --- audit + sessions --------------------------------------------------------
 
 export const listAuditEventsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null; limit?: number }) =>
+  .validator((d: { orgId?: string | null; limit?: number }) =>
     z
       .object({ orgId: uuid.nullish(), limit: z.number().int().min(1).max(200).optional() })
       .parse(d ?? {}),
@@ -279,7 +279,7 @@ export const listSessionsFn = createServerFn({ method: "GET" }).handler(async ()
 );
 
 export const revokeSessionFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { sessionId: string }) => z.object({ sessionId: uuid }).parse(d))
+  .validator((d: { sessionId: string }) => z.object({ sessionId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const [{ requireSession }, { getAuthAdapter }] = await Promise.all([
@@ -319,7 +319,7 @@ export const revokeAllSessionsFn = createServerFn({ method: "POST" }).handler(as
 // result is a normal authenticated session — access itself is never bypassed.
 
 export const previewActivationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string }) =>
+  .validator((d: { token: string }) =>
     z.object({ token: z.string().min(16).max(512) }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -330,7 +330,7 @@ export const previewActivationFn = createServerFn({ method: "POST" })
   );
 
 export const activateAccountFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string; displayName: string; password: string }) =>
+  .validator((d: { token: string; displayName: string; password: string }) =>
     z
       .object({
         token: z.string().min(16).max(512),

@@ -67,7 +67,7 @@ const map = () => import("@/lib/map/map.server");
 // --- reads --------------------------------------------------------------------
 
 export const listMapFeaturesFn = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -90,7 +90,7 @@ export const listMapFeaturesFn = createServerFn({ method: "GET" })
   );
 
 export const listOperatingAreasFn = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -113,7 +113,7 @@ export const listOperatingAreasFn = createServerFn({ method: "GET" })
   );
 
 export const listResourceLocationsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -138,7 +138,7 @@ export const listResourceLocationsFn = createServerFn({ method: "GET" })
 // --- map features -------------------------------------------------------------
 
 export const createMapFeatureFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -163,7 +163,7 @@ export const createMapFeatureFn = createServerFn({ method: "POST" })
   );
 
 export const updateMapFeatureFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -184,7 +184,7 @@ export const updateMapFeatureFn = createServerFn({ method: "POST" })
   );
 
 export const setFeaturePrecisionFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -208,7 +208,7 @@ export const setFeaturePrecisionFn = createServerFn({ method: "POST" })
   );
 
 export const archiveMapFeatureFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, featureId: uuid }).parse(d))
+  .validator((d: unknown) => z.object({ orgId: orgIdField, featureId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { archiveMapFeature } = await map();
@@ -220,7 +220,7 @@ export const archiveMapFeatureFn = createServerFn({ method: "POST" })
 // --- operating areas ----------------------------------------------------------
 
 export const createOperatingAreaFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -246,7 +246,7 @@ export const createOperatingAreaFn = createServerFn({ method: "POST" })
   );
 
 export const setOperatingAreaStatusFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -272,7 +272,7 @@ export const setOperatingAreaStatusFn = createServerFn({ method: "POST" })
   );
 
 export const setOperatingAreaPrecisionFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -298,7 +298,7 @@ export const setOperatingAreaPrecisionFn = createServerFn({ method: "POST" })
 // --- positions ----------------------------------------------------------------
 
 export const reportResourceLocationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -324,7 +324,7 @@ export const reportResourceLocationFn = createServerFn({ method: "POST" })
   );
 
 export const clearResourceLocationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, locationId: uuid }).parse(d))
+  .validator((d: unknown) => z.object({ orgId: orgIdField, locationId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { clearResourceLocation } = await map();

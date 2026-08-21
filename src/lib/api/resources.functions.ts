@@ -56,7 +56,7 @@ const assign = () => import("@/lib/resources/assignments.server");
 // --- registry reads -----------------------------------------------------------
 
 export const listResourcesFn = createServerFn({ method: "GET" })
-  .inputValidator(
+  .validator(
     (d: { orgId?: string | null; category?: string | null; includeRetired?: boolean }) =>
       z
         .object({
@@ -80,7 +80,7 @@ export const listResourcesFn = createServerFn({ method: "GET" })
   );
 
 export const listSharedResourcesFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null; incidentId?: string | null }) =>
+  .validator((d: { orgId?: string | null; incidentId?: string | null }) =>
     z.object({ orgId: orgIdField, incidentId: uuid.nullish() }).parse(d ?? {}),
   )
   .handler(async ({ data }) =>
@@ -92,7 +92,7 @@ export const listSharedResourcesFn = createServerFn({ method: "GET" })
   );
 
 export const readResourceFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { resourceId: string; orgId?: string | null }) =>
+  .validator((d: { resourceId: string; orgId?: string | null }) =>
     z.object({ resourceId: uuid, orgId: orgIdField }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -104,7 +104,7 @@ export const readResourceFn = createServerFn({ method: "GET" })
   );
 
 export const readinessSummaryFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { readinessSummary } = await res();
@@ -128,7 +128,7 @@ const createResourceSchema = z.object({
 });
 
 export const createResourceFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => createResourceSchema.parse(d))
+  .validator((d: unknown) => createResourceSchema.parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { createResource } = await res();
@@ -138,7 +138,7 @@ export const createResourceFn = createServerFn({ method: "POST" })
   );
 
 export const updateResourceFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -162,7 +162,7 @@ export const updateResourceFn = createServerFn({ method: "POST" })
   );
 
 export const setResourceStatusFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({ orgId: orgIdField, resourceId: uuid, readinessStatus: z.string().min(2).max(40) })
       .parse(d),
@@ -176,7 +176,7 @@ export const setResourceStatusFn = createServerFn({ method: "POST" })
   );
 
 export const retireResourceFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({ orgId: orgIdField, resourceId: uuid, reason: z.string().max(500).nullish() })
       .parse(d),
@@ -190,7 +190,7 @@ export const retireResourceFn = createServerFn({ method: "POST" })
   );
 
 export const restoreResourceFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -208,7 +208,7 @@ export const restoreResourceFn = createServerFn({ method: "POST" })
   );
 
 export const saveResourceDetailFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -231,7 +231,7 @@ export const saveResourceDetailFn = createServerFn({ method: "POST" })
 // --- sharing ------------------------------------------------------------------
 
 export const shareResourceFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -254,7 +254,7 @@ export const shareResourceFn = createServerFn({ method: "POST" })
   );
 
 export const setShareDisclosureFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -281,7 +281,7 @@ export const setShareDisclosureFn = createServerFn({ method: "POST" })
   );
 
 export const revokeResourceShareFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -300,7 +300,7 @@ export const revokeResourceShareFn = createServerFn({ method: "POST" })
   );
 
 export const listResourceSharesFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { resourceId: string; orgId?: string | null }) =>
+  .validator((d: { resourceId: string; orgId?: string | null }) =>
     z.object({ resourceId: uuid, orgId: orgIdField }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -314,7 +314,7 @@ export const listResourceSharesFn = createServerFn({ method: "GET" })
 // --- personnel ----------------------------------------------------------------
 
 export const listPersonnelFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listPersonnel } = await people();
@@ -324,7 +324,7 @@ export const listPersonnelFn = createServerFn({ method: "GET" })
   );
 
 export const listWorkingPersonnelFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listWorkingPersonnel } = await people();
@@ -334,7 +334,7 @@ export const listWorkingPersonnelFn = createServerFn({ method: "GET" })
   );
 
 export const upsertPersonnelFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -360,7 +360,7 @@ export const upsertPersonnelFn = createServerFn({ method: "POST" })
   );
 
 export const setPersonnelAvailabilityFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({ orgId: orgIdField, personId: uuid, availabilityStatus: z.string().min(2).max(40) })
       .parse(d),
@@ -376,7 +376,7 @@ export const setPersonnelAvailabilityFn = createServerFn({ method: "POST" })
 // --- qualifications -----------------------------------------------------------
 
 export const listQualificationsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null; personId?: string | null }) =>
+  .validator((d: { orgId?: string | null; personId?: string | null }) =>
     z.object({ orgId: orgIdField, personId: uuid.nullish() }).parse(d ?? {}),
   )
   .handler(async ({ data }) =>
@@ -388,7 +388,7 @@ export const listQualificationsFn = createServerFn({ method: "GET" })
   );
 
 export const addQualificationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -411,7 +411,7 @@ export const addQualificationFn = createServerFn({ method: "POST" })
   );
 
 export const verifyQualificationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orgId: orgIdField, qualificationId: uuid }).parse(d))
+  .validator((d: unknown) => z.object({ orgId: orgIdField, qualificationId: uuid }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { verifyQualification } = await people();
@@ -421,7 +421,7 @@ export const verifyQualificationFn = createServerFn({ method: "POST" })
   );
 
 export const revokeQualificationFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({ orgId: orgIdField, qualificationId: uuid, reason: z.string().max(500).nullish() })
       .parse(d),
@@ -435,7 +435,7 @@ export const revokeQualificationFn = createServerFn({ method: "POST" })
   );
 
 export const processQualificationExpiryFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: unknown) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { processQualificationExpiry } = await people();
@@ -447,7 +447,7 @@ export const processQualificationExpiryFn = createServerFn({ method: "POST" })
 // --- shifts -------------------------------------------------------------------
 
 export const listShiftsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listShifts } = await people();
@@ -457,7 +457,7 @@ export const listShiftsFn = createServerFn({ method: "GET" })
   );
 
 export const createShiftFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -480,7 +480,7 @@ export const createShiftFn = createServerFn({ method: "POST" })
   );
 
 export const updateShiftFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -503,7 +503,7 @@ export const updateShiftFn = createServerFn({ method: "POST" })
 // --- incident assignments -----------------------------------------------------
 
 export const listIncidentAssignmentsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { incidentId: string; orgId?: string | null }) =>
+  .validator((d: { incidentId: string; orgId?: string | null }) =>
     z.object({ incidentId: uuid, orgId: orgIdField }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -515,7 +515,7 @@ export const listIncidentAssignmentsFn = createServerFn({ method: "GET" })
   );
 
 export const assignToIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,
@@ -541,7 +541,7 @@ export const assignToIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const setAssignmentStatusFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z.object({ orgId: orgIdField, assignmentId: uuid, status: z.string().min(2).max(40) }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -553,7 +553,7 @@ export const setAssignmentStatusFn = createServerFn({ method: "POST" })
   );
 
 export const endAssignmentFn = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) =>
+  .validator((d: unknown) =>
     z
       .object({
         orgId: orgIdField,

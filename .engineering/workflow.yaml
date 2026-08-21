@@ -1,0 +1,22 @@
+workflow:
+  name: airs-engineering-flow
+  nodes: [intake, scope, plan, build, review, validate, diagnose, repair, complete]
+  edges:
+    - {from: intake, to: scope}
+    - {from: scope, to: plan}
+    - {from: plan, to: build}
+    - {from: build, to: review}
+    - {from: review, to: validate}
+    - {from: validate, to: complete, when: pass}
+    - {from: validate, to: diagnose, when: fail}
+    - {from: diagnose, to: repair}
+    - {from: repair, to: validate}
+  controls:
+    build_mode: bounded-proposal-executor-available
+    validation_mode: objective-workspace-runner-available
+    repair_mode: bounded-diagnose-repair-revalidate
+    agent_mode: provider-neutral-structured-proposal-gateway
+    orchestration_mode: provider-build-validate-repair
+    promotion_mode: explicit-human-candidate-commit-and-push
+    human_promotion_required: true
+    max_repair_attempts: 2

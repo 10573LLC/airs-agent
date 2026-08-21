@@ -1,0 +1,239 @@
+nodes:
+  ui-shell:
+    writable:
+      - src/components/brand/app-nav.tsx
+      - src/components/brand/app-shell.tsx
+      - src/routes/__root.tsx
+      - src/routes/index.tsx
+      - src/routes/console.tsx
+      - src/styles.css
+    readonly:
+      - src/router.tsx
+      - src/start.ts
+      - src/server.ts
+      - src/routeTree.gen.ts
+    tests: [typecheck, unit, build, line-endings]
+
+  branding:
+    writable:
+      - public/brand/**
+      - src/components/brand/**
+      - scripts/verify-brand-assets.mjs
+    readonly:
+      - DESIGN_SYSTEM.md
+      - README.md
+    tests: [brand-verify, typecheck, build, line-endings]
+
+  auth:
+    writable:
+      - src/lib/auth/**
+      - src/lib/api/auth.functions.ts
+      - src/lib/api/session-cookie.server.ts
+      - src/routes/auth.tsx
+      - src/routes/activate/**
+      - src/routes/invite/**
+    readonly:
+      - db/migrations/0003_auth.sql
+      - db/migrations/0004_org_context_guard.sql
+      - db/tests/auth_rls.sql
+      - tests/auth-integration.test.ts
+      - tests/authorize.test.ts
+      - tests/role-parity.test.ts
+    tests: [auth-tests, typecheck, build, line-endings]
+
+  tenancy:
+    writable:
+      - src/lib/auth/memberships.server.ts
+      - src/lib/auth/authorize.server.ts
+      - src/lib/rbac/**
+    readonly:
+      - db/migrations/0002_roles_seed.sql
+      - db/migrations/0004_org_context_guard.sql
+      - db/tests/rls_isolation.sql
+      - db/tests/rls_matrix.sql
+      - db/tests/role_parity.sql
+    tests: [auth-tests, role-tests, typecheck, build]
+
+  rls:
+    writable:
+      - db/tests/**
+      - tests/support/fixtures.ts
+    readonly:
+      - db/migrations/**
+      - src/lib/auth/**
+      - src/lib/rbac/**
+    tests: [rls-js-tests, role-tests, typecheck]
+
+  platform-admin:
+    writable:
+      - scripts/bootstrap-platform-admin.mjs
+      - scripts/platform-admin-setup.mjs
+      - scripts/platform-admin-setup.ps1
+      - scripts/lib/platform-admin-cli.mjs
+    readonly:
+      - db/migrations/0011_platform_administration.sql
+      - db/migrations/0012_fix_platform_org_display_name.sql
+      - db/tests/platform_admin_rls.sql
+      - db/tests/platform_org_name.sql
+      - src/lib/auth/**
+      - src/lib/rbac/**
+    tests: [platform-admin-tests, role-tests, typecheck, line-endings]
+
+  incidents:
+    writable:
+      - src/components/incident-assignments.tsx
+      - src/components/incident-ui.tsx
+      - src/lib/api/incidents.functions.ts
+      - src/lib/incidents/**
+      - src/routes/incidents.tsx
+      - src/routes/incidents.index.tsx
+      - src/routes/incidents.$incidentId.tsx
+    readonly:
+      - db/migrations/0005_incident_rooms.sql
+      - db/tests/incident_expiration.sql
+      - db/tests/incident_rls.sql
+    tests: [unit, typecheck, build, line-endings]
+
+  maintenance:
+    writable:
+      - scripts/expire-incident-state.mjs
+      - src/lib/maintenance/**
+      - src/routes/api/maintenance/expire-incidents.ts
+    readonly:
+      - db/migrations/0006_maintenance.sql
+      - db/tests/incident_expiration.sql
+    tests: [maintenance-tests, typecheck, build, line-endings]
+
+  resources:
+    writable:
+      - src/lib/api/resources.functions.ts
+      - src/lib/resources/**
+      - src/routes/resources.tsx
+      - src/components/incident-assignments.tsx
+    readonly:
+      - db/migrations/0007_resource_registry.sql
+      - db/migrations/0008_disclosure_profiles.sql
+      - db/tests/disclosure_projection.sql
+      - db/tests/resource_registry_rls.sql
+    tests: [resource-tests, typecheck, build, line-endings]
+
+  awareness:
+    writable:
+      - src/components/awareness-ui.tsx
+      - src/lib/api/awareness.functions.ts
+      - src/lib/awareness/**
+      - src/routes/awareness.tsx
+      - src/routes/awareness.index.tsx
+      - src/routes/awareness.$observationId.tsx
+    readonly:
+      - db/migrations/0010_awareness_observations.sql
+      - db/tests/awareness_observations_rls.sql
+    tests: [awareness-tests, typecheck, build, line-endings]
+
+  cop:
+    writable:
+      - src/lib/api/map.functions.ts
+      - src/lib/map/**
+      - src/routes/map.tsx
+    readonly:
+      - src/components/map/cop-map.tsx
+      - src/components/map/layer-install.ts
+      - db/migrations/0009_common_operating_picture.sql
+      - db/tests/map_geography_rls.sql
+    tests: [map-tests, typecheck, build, line-endings]
+
+  cop-ui:
+    writable:
+      - src/routes/map.tsx
+    readonly:
+      - src/components/map/layer-install.ts
+    protected:
+      - src/components/map/cop-map.tsx
+    tests: [map-tests, typecheck, build, line-endings]
+
+  maplibre-worker:
+    readonly:
+      - src/components/map/cop-map.tsx
+      - CHANGELOG.md
+    protected:
+      - src/components/map/cop-map.tsx
+    tests: [map-tests, typecheck, build]
+
+  basemap-provider:
+    writable:
+      - .env.example
+      - src/routes/map.tsx
+    readonly:
+      - src/components/map/cop-map.tsx
+    protected:
+      - src/components/map/cop-map.tsx
+    tests: [map-tests, typecheck, build]
+
+  postgis:
+    writable:
+      - src/lib/map/map.server.ts
+      - src/lib/map/model.ts
+      - src/lib/api/map.functions.ts
+      - db/tests/map_geography_rls.sql
+    readonly:
+      - db/migrations/0009_common_operating_picture.sql
+    tests: [map-tests, typecheck, build]
+
+  database-runtime:
+    writable:
+      - scripts/db-migrate.mjs
+      - scripts/db-migrate-repair-legacy.mjs
+      - scripts/db-reconcile-legacy.mjs
+      - scripts/db-test.mjs
+      - scripts/lib/canonical-schema.mjs
+      - scripts/lib/idempotent-sql.mjs
+      - scripts/lib/legacy-repair.mjs
+      - scripts/lib/migrate-plan.mjs
+      - scripts/lib/reconcile-legacy.mjs
+      - scripts/lib/sql-suite.mjs
+      - db/repair/**
+      - db/ledger/**
+    readonly:
+      - db/init/**
+      - db/migrations/**
+      - db/scheduler/**
+      - db/seed/**
+    tests: [migration-tests, typecheck, line-endings]
+
+  database-migrations:
+    readonly:
+      - db/migrations/**
+      - db/init/**
+      - db/scheduler/**
+      - db/seed/**
+    protected:
+      - db/migrations/**
+    tests: [migration-tests]
+
+  docker:
+    writable:
+      - Dockerfile
+      - docker-compose.yml
+      - .dockerignore
+    readonly:
+      - LOCAL_SETUP.md
+    tests: [docker-config, build, line-endings]
+
+  builder-integration:
+    writable:
+      - vite.config.ts
+      - package.json
+      - package-lock.json
+      - bun.lock
+      - bunfig.toml
+    readonly:
+      - BUILD_AUDIT.md
+      - AGENTS.md
+    tests: [builder-tests, typecheck, build, unit, line-endings]
+
+  generated-route-tree:
+    readonly:
+      - src/routeTree.gen.ts
+    protected:
+      - src/routeTree.gen.ts
+    tests: [typecheck, build]

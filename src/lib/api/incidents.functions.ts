@@ -48,7 +48,7 @@ const trust = () => import("@/lib/incidents/trust.server");
 // --- rooms --------------------------------------------------------------------
 
 export const listIncidentsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listIncidents } = await svc();
@@ -58,7 +58,7 @@ export const listIncidentsFn = createServerFn({ method: "GET" })
   );
 
 export const readIncidentFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { incidentId: string; orgId?: string | null }) =>
+  .validator((d: { incidentId: string; orgId?: string | null }) =>
     z.object({ incidentId: uuid, orgId: orgIdField }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -70,7 +70,7 @@ export const readIncidentFn = createServerFn({ method: "GET" })
   );
 
 export const createIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: {
       name: string;
       incidentType: string;
@@ -110,7 +110,7 @@ export const createIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const updateIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: {
       incidentId: string;
       expectedVersion: number;
@@ -148,7 +148,7 @@ export const updateIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const scheduleIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: {
       incidentId: string;
       startAt: string;
@@ -192,7 +192,7 @@ const simpleTransition = z.object({
 type SimpleTransition = { incidentId: string; expectedVersion: number; orgId?: string | null };
 
 export const activateIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator((d: SimpleTransition) => simpleTransition.parse(d))
+  .validator((d: SimpleTransition) => simpleTransition.parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { activateIncident } = await svc();
@@ -208,7 +208,7 @@ export const activateIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const pauseIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator((d: SimpleTransition) => simpleTransition.parse(d))
+  .validator((d: SimpleTransition) => simpleTransition.parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { pauseIncident } = await svc();
@@ -218,7 +218,7 @@ export const pauseIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const resumeIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator((d: SimpleTransition) => simpleTransition.parse(d))
+  .validator((d: SimpleTransition) => simpleTransition.parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { resumeIncident } = await svc();
@@ -228,7 +228,7 @@ export const resumeIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const archiveIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator((d: SimpleTransition) => simpleTransition.parse(d))
+  .validator((d: SimpleTransition) => simpleTransition.parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { archiveIncident } = await svc();
@@ -244,7 +244,7 @@ export const archiveIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const beginClosureFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: { incidentId: string; reason: string; expectedVersion: number; orgId?: string | null }) =>
       z
         .object({
@@ -270,7 +270,7 @@ export const beginClosureFn = createServerFn({ method: "POST" })
   );
 
 export const closeIncidentFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: {
       incidentId: string;
       reason?: string | null;
@@ -301,7 +301,7 @@ export const closeIncidentFn = createServerFn({ method: "POST" })
   );
 
 export const readIncidentAuditFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { incidentId: string; orgId?: string | null }) =>
+  .validator((d: { incidentId: string; orgId?: string | null }) =>
     z.object({ incidentId: uuid, orgId: orgIdField }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -315,7 +315,7 @@ export const readIncidentAuditFn = createServerFn({ method: "GET" })
 // --- trusted agencies -----------------------------------------------------------
 
 export const listTrustedAgenciesFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listTrustedAgencies } = await trust();
@@ -325,7 +325,7 @@ export const listTrustedAgenciesFn = createServerFn({ method: "GET" })
   );
 
 export const setTrustedAgencyStatusFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: { partnerOrgId: string; status: string; note?: string | null; orgId?: string | null }) =>
       z
         .object({
@@ -352,7 +352,7 @@ export const setTrustedAgencyStatusFn = createServerFn({ method: "POST" })
 // --- participation --------------------------------------------------------------
 
 export const listParticipantsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { incidentId: string; orgId?: string | null }) =>
+  .validator((d: { incidentId: string; orgId?: string | null }) =>
     z.object({ incidentId: uuid, orgId: orgIdField }).parse(d),
   )
   .handler(async ({ data }) =>
@@ -364,7 +364,7 @@ export const listParticipantsFn = createServerFn({ method: "GET" })
   );
 
 export const invitePartnerFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: {
       incidentId: string;
       partnerOrgId: string;
@@ -411,7 +411,7 @@ export const invitePartnerFn = createServerFn({ method: "POST" })
   );
 
 export const ownerParticipantActionFn = createServerFn({ method: "POST" })
-  .inputValidator(
+  .validator(
     (d: {
       incidentId: string;
       participantId: string;
@@ -452,7 +452,7 @@ export const ownerParticipantActionFn = createServerFn({ method: "POST" })
   );
 
 export const listPendingInvitationsFn = createServerFn({ method: "GET" })
-  .inputValidator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listPendingInvitations } = await part();
@@ -462,7 +462,7 @@ export const listPendingInvitationsFn = createServerFn({ method: "GET" })
   );
 
 export const partnerParticipationActionFn = createServerFn({ method: "POST" })
-  .inputValidator((d: { participantId: string; action: string; orgId?: string | null }) =>
+  .validator((d: { participantId: string; action: string; orgId?: string | null }) =>
     z
       .object({
         participantId: uuid,

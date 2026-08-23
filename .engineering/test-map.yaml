@@ -12,7 +12,7 @@ tests:
   platform-admin-tests: npm.cmd test -- tests/platform-admin-cli.test.ts tests/platform-admin-fixture.test.ts tests/platform-org-name.test.ts
   maintenance-tests: npm.cmd test -- tests/maintenance-expiration.test.ts
   resource-tests: npm.cmd test -- tests/disclosure.test.ts
-  awareness-tests: npm.cmd test -- tests/awareness.test.ts
+  awareness-tests: npm.cmd test -- tests/awareness.test.ts tests/awareness-recovery.test.ts
   map-tests: npm.cmd test -- tests/map-geography.test.ts tests/map-layer-install.test.ts
   migration-tests: npm.cmd test -- tests/db-migrate.test.ts tests/db-reconcile-legacy.test.ts tests/db-repair-legacy.test.ts tests/sql-suite-runner.test.ts
   docker-config: npm.cmd test -- tests/docker-build-config.test.ts

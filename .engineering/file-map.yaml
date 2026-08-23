@@ -122,6 +122,7 @@ nodes:
       - src/components/awareness-ui.tsx
       - src/lib/api/awareness.functions.ts
       - src/lib/awareness/**
+      - "tests/awareness.test.ts"
       - src/routes/awareness.tsx
       - src/routes/awareness.index.tsx
       - src/routes/awareness.$observationId.tsx

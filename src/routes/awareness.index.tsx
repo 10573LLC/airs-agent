@@ -22,6 +22,7 @@ import {
 } from "@/lib/api/awareness.functions";
 import { listIncidentsFn } from "@/lib/api/incidents.functions";
 import {
+  CLASSIFICATION_LABELS,
   CONFIDENCE_LEVELS,
   CONFIDENCE_LEVEL_LABELS,
   INFORMATION_CREDIBILITY,
@@ -43,8 +44,11 @@ import {
   URGENCY_LEVELS,
   VERIFICATION_STATUSES,
   VERIFICATION_STATUS_LABELS,
-  CLASSIFICATION_LABELS,
 } from "@/lib/awareness/model";
+import {
+  awarenessBoardState,
+  type AwarenessBoardFailure,
+} from "@/lib/awareness/recovery";
 import { PRECISION_LABELS, PRECISION_POLICIES } from "@/lib/map/model";
 
 export const Route = createFileRoute("/awareness/")({
@@ -128,6 +132,7 @@ function AwarenessBoard() {
   });
   const [form, setForm] = useState(emptyForm);
   const [formOpen, setFormOpen] = useState(false);
+  const [retryFailure, setRetryFailure] = useState<AwarenessBoardFailure | null>(null);
 
   const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
@@ -205,13 +210,32 @@ function AwarenessBoard() {
     },
   });
 
-  const rows = observations.data?.ok ? observations.data.data : [];
+  const boardState = awarenessBoardState({
+    data: observations.data,
+    isError: observations.isError,
+  });
+  const displayedBoardState = retryFailure ?? boardState;
+  const rows = displayedBoardState.status === "success" ? displayedBoardState.rows : [];
   const stats = summary.data?.ok ? summary.data.data : null;
   const incidentRows = incidents.data?.ok ? incidents.data.data : [];
-  const denied =
-    observations.data && !observations.data.ok
-      ? (DENY_MESSAGES[observations.data.code] ?? `Denied (${observations.data.code}).`)
+  const boardFailureMessage =
+    displayedBoardState.status === "failed"
+      ? displayedBoardState.kind === "api"
+        ? (DENY_MESSAGES[displayedBoardState.code] ?? `Denied (${displayedBoardState.code}).`)
+        : "The Awareness Board could not be loaded. Please try again."
       : null;
+  const isRetrying = retryFailure !== null;
+
+  const retryObservations = async () => {
+    if (boardState.status !== "failed" || retryFailure) return;
+
+    setRetryFailure(boardState);
+    try {
+      await observations.refetch();
+    } finally {
+      setRetryFailure(null);
+    }
+  };
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10">
@@ -621,58 +645,79 @@ function AwarenessBoard() {
           </label>
         </fieldset>
 
-        {denied ? (
-          <p role="alert" className="text-sm text-destructive">
-            {denied}
+        {displayedBoardState.status === "loading" ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            Loading observations…
           </p>
         ) : null}
-        {!denied && rows.length === 0 ? (
+
+        {displayedBoardState.status === "failed" ? (
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/40 bg-destructive/5 px-4 py-3"
+          >
+            <p className="text-sm font-semibold text-destructive">Unable to load observations</p>
+            <p className="mt-1 text-sm text-foreground">{boardFailureMessage}</p>
+            <button
+              type="button"
+              className={`${buttonClass} mt-3`}
+              disabled={isRetrying}
+              onClick={() => void retryObservations()}
+            >
+              {isRetrying ? "Retrying…" : "Retry"}
+            </button>
+          </div>
+        ) : null}
+
+        {displayedBoardState.status === "empty" ? (
           <p className="text-sm text-muted-foreground">No observations match these filters.</p>
         ) : null}
 
-        <ul className="flex flex-col gap-3">
-          {rows.map((o) => (
-            <li key={o.id} className="rounded-md border border-border px-4 py-3">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <Link
-                    to="/awareness/$observationId"
-                    params={{ observationId: o.id }}
-                    className="text-sm font-semibold text-foreground underline"
-                  >
-                    {o.title}
-                  </Link>
-                  <p className="text-xs text-muted-foreground">
-                    {OBSERVATION_TYPE_LABELS[o.observationType]} ·{" "}
-                    {OBSERVATION_SOURCE_LABELS[o.sourceType]} · {o.ownerOrgName}
-                    {o.relationship === "partner" ? " (released to you)" : ""}
-                  </p>
+        {displayedBoardState.status === "success" ? (
+          <ul className="flex flex-col gap-3">
+            {rows.map((o) => (
+              <li key={o.id} className="rounded-md border border-border px-4 py-3">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <Link
+                      to="/awareness/$observationId"
+                      params={{ observationId: o.id }}
+                      className="text-sm font-semibold text-foreground underline"
+                    >
+                      {o.title}
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                      {OBSERVATION_TYPE_LABELS[o.observationType]} ·{" "}
+                      {OBSERVATION_SOURCE_LABELS[o.sourceType]} · {o.ownerOrgName}
+                      {o.relationship === "partner" ? " (released to you)" : ""}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <UrgencyPill value={o.urgency} />
+                    <VerificationPill value={o.verificationStatus} />
+                    <FreshnessPill value={o.freshness} />
+                    <StatusPill tone="neutral">{LIFECYCLE_LABELS[o.lifecycleStatus]}</StatusPill>
+                  </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <UrgencyPill value={o.urgency} />
-                  <VerificationPill value={o.verificationStatus} />
-                  <FreshnessPill value={o.freshness} />
-                  <StatusPill tone="neutral">{LIFECYCLE_LABELS[o.lifecycleStatus]}</StatusPill>
+                <div className="mt-2 grid gap-2 sm:grid-cols-4">
+                  <Detail label="Observed" value={timeText(o.observedAt)} />
+                  <Detail
+                    label="Reliability / credibility"
+                    value={`${SOURCE_RELIABILITY_LABELS[o.sourceReliability]} · ${INFORMATION_CREDIBILITY_LABELS[o.informationCredibility]}`}
+                  />
+                  <Detail
+                    label="Location basis"
+                    value={OBSERVATION_LOCATION_LABELS[o.locationKind]}
+                  />
+                  <Detail
+                    label="Geography"
+                    value={o.geometry ? PRECISION_LABELS[o.precision] : null}
+                  />
                 </div>
-              </div>
-              <div className="mt-2 grid gap-2 sm:grid-cols-4">
-                <Detail label="Observed" value={timeText(o.observedAt)} />
-                <Detail
-                  label="Reliability / credibility"
-                  value={`${SOURCE_RELIABILITY_LABELS[o.sourceReliability]} · ${INFORMATION_CREDIBILITY_LABELS[o.informationCredibility]}`}
-                />
-                <Detail
-                  label="Location basis"
-                  value={OBSERVATION_LOCATION_LABELS[o.locationKind]}
-                />
-                <Detail
-                  label="Geography"
-                  value={o.geometry ? PRECISION_LABELS[o.precision] : null}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        ) : null}
       </SectionCard>
     </div>
   );

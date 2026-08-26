@@ -296,7 +296,7 @@ function ResourcesPage() {
       <PageHeading
         eyebrow="Operational readiness"
         title="Resource registry and readiness board"
-        description="Every record here belongs to your agency. Partner agencies see only what you share into an incident, and only while that sharing lasts."
+        description="This is your agency's master inventory for resources and operational personnel. Incident Rooms decide what is committed and what, if anything, is shared with partners; sharing never transfers ownership."
       />
 
       {notice ? (

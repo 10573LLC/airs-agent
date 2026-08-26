@@ -3,6 +3,16 @@
 // Assignment is temporary use inside one room: it never transfers ownership,
 // custody or the right to edit or re-share the record. Only records this
 // agency owns can be offered, and only while the room is open.
+//
+// Resource commitment is two explicit AIRS choices:
+//  - "Assign to incident (agency only)": the assignment is recorded with
+//    visibilityClassification originating_org_only and NOTHING is shared with
+//    partners. The Readiness Board remains this agency's master inventory.
+//  - "Assign and share with partners": the assignment is created first; only
+//    after it succeeds is the record shared under the operator-selected
+//    existing sharing classification and disclosure profile.
+// Release always ends the assignment and revokes any resource share
+// immediately, through the existing APIs.
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -24,6 +34,12 @@ import {
   PARTNER_DISCLOSURE_PROFILES,
   type DisclosureProfile,
 } from "@/lib/resources/disclosure";
+import {
+  executeResourceCommitment,
+  PARTNER_SHARING_CLASSIFICATIONS,
+  planResourceCommitment,
+  type ResourceCommitmentChoice,
+} from "@/lib/resources/assignment-sharing";
 
 const label = (value: string) => value.replaceAll("_", " ");
 
@@ -39,6 +55,8 @@ const inputClass =
   "rounded-md border border-input bg-background px-2 py-1.5 text-xs text-foreground";
 const buttonClass =
   "rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:opacity-50";
+const secondaryButtonClass =
+  "rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted disabled:opacity-50";
 const smallButton =
   "rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-muted";
 
@@ -55,8 +73,13 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
   const [notice, setNotice] = useState<string | null>(null);
   const [resourceId, setResourceId] = useState("");
   const [personId, setPersonId] = useState("");
-  const [classification, setClassification] = useState<string>("participating_orgs");
-  const [profile, setProfile] = useState<DisclosureProfile>("summary");
+  // Partner sharing selections for RESOURCE commitment. Only used by the
+  // "Assign and share with partners" choice; agency-only ignores both.
+  const [shareClassification, setShareClassification] = useState<string>("participating_orgs");
+  const [shareProfile, setShareProfile] = useState<DisclosureProfile>("summary");
+  // Personnel assignment keeps its existing classification/profile behavior.
+  const [personClassification, setPersonClassification] = useState<string>("participating_orgs");
+  const [personProfile, setPersonProfile] = useState<DisclosureProfile>("summary");
 
   const assignments = useQuery({
     queryKey: ["incident-assignments", incidentId],
@@ -77,24 +100,50 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
   };
 
   const assignResource = useMutation({
-    mutationFn: async () => {
-      const assigned = await assignFn({
-        data: {
-          incidentId,
-          assignmentType: "resource",
-          resourceId,
-          visibilityClassification: classification,
-          disclosureProfile: profile,
-        },
+    mutationFn: async (choice: ResourceCommitmentChoice) => {
+      const plan = planResourceCommitment({
+        choice,
+        classification: shareClassification,
+        disclosureProfile: shareProfile,
       });
-      if (assigned.ok && classification !== "originating_org_only") {
-        await shareFn({
-          data: { resourceId, incidentId, classification, disclosureProfile: profile },
-        });
-      }
-      return assigned;
+      return executeResourceCommitment(
+        plan,
+        () =>
+          assignFn({
+            data: {
+              incidentId,
+              assignmentType: "resource",
+              resourceId,
+              visibilityClassification: plan.visibilityClassification,
+              disclosureProfile: plan.disclosureProfile,
+            },
+          }),
+        (share) =>
+          shareFn({
+            data: {
+              resourceId,
+              incidentId,
+              classification: share.classification,
+              disclosureProfile: share.disclosureProfile,
+            },
+          }),
+      );
     },
-    onSuccess: (result) => report(result, "Resource assigned to this room."),
+    onSuccess: ({ assigned, shareResult, shared }) => {
+      if (assigned.ok && shareResult && !shareResult.ok) {
+        const denial =
+          DENY_MESSAGES[shareResult.code ?? ""] ?? `Denied (${shareResult.code ?? "unknown"}).`;
+        setNotice(`Resource assigned to this incident, but partner sharing failed: ${denial}`);
+        refresh();
+        return;
+      }
+      report(
+        assigned,
+        shared
+          ? "Resource assigned and shared with partners under the selected classification and disclosure profile."
+          : "Resource assigned for your agency only. Partners cannot see it.",
+      );
+    },
   });
 
   const assignPerson = useMutation({
@@ -104,8 +153,8 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
           incidentId,
           assignmentType: "person",
           personId,
-          visibilityClassification: classification,
-          disclosureProfile: profile,
+          visibilityClassification: personClassification,
+          disclosureProfile: personProfile,
         },
       }),
     onSuccess: (result) => report(result, "Person assigned to this room."),
@@ -131,78 +180,130 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
     <Panel title="Assigned resources and personnel">
       <p className="text-xs text-muted-foreground">
         Assignment grants temporary use inside this room only. Ownership, custody and editing
-        authority stay with the owning agency, and release ends partner visibility immediately.
+        authority stay with the owning agency, whose Readiness Board remains the master inventory.
+        Release ends the assignment and revokes any partner sharing immediately.
       </p>
 
       {notice ? (
         <p className="mt-3 rounded-md bg-muted px-3 py-2 text-xs text-foreground">{notice}</p>
       ) : null}
 
-      <div className="mt-4 flex flex-wrap items-end gap-2">
-        <select
-          className={inputClass}
-          value={resourceId}
-          onChange={(event) => setResourceId(event.target.value)}
-        >
-          <option value="">Select a resource…</option>
-          {owned.map((resource) => (
-            <option key={resource.id} value={resource.id}>
-              {resource.displayName} · {CATEGORY_LABELS[resource.category]}
-            </option>
-          ))}
-        </select>
-        <select
-          className={inputClass}
-          value={personId}
-          onChange={(event) => setPersonId(event.target.value)}
-        >
-          <option value="">Select a person…</option>
-          {people.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.displayName}
-            </option>
-          ))}
-        </select>
-        <select
-          className={inputClass}
-          value={classification}
-          onChange={(event) => setClassification(event.target.value)}
-        >
-          {SHARING_CLASSIFICATIONS.map((value) => (
-            <option key={value} value={value}>
-              {label(value)}
-            </option>
-          ))}
-        </select>
-        <select
-          className={inputClass}
-          value={profile}
-          onChange={(event) => setProfile(event.target.value as DisclosureProfile)}
-          aria-label="Disclosure profile"
-        >
-          {PARTNER_DISCLOSURE_PROFILES.map((value) => (
-            <option key={value} value={value}>
-              Discloses: {DISCLOSURE_PROFILE_LABELS[value]}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className={buttonClass}
-          disabled={!resourceId || assignResource.isPending}
-          onClick={() => assignResource.mutate()}
-        >
-          Assign resource
-        </button>
-        <button
-          type="button"
-          className={buttonClass}
-          disabled={!personId || assignPerson.isPending}
-          onClick={() => assignPerson.mutate()}
-        >
-          Assign person
-        </button>
-      </div>
+      <fieldset className="mt-4 rounded-md border border-border p-3">
+        <legend className="px-1 text-xs font-semibold text-foreground">Commit a resource</legend>
+        <p className="text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Agency only</span> records the assignment
+          for your agency alone — nothing is disclosed to partner agencies.{" "}
+          <span className="font-medium text-foreground">Share with partners</span> creates the
+          assignment first, then shares the record under the sharing classification and disclosure
+          profile selected below.
+        </p>
+        <div className="mt-2 flex flex-wrap items-end gap-2">
+          <select
+            className={inputClass}
+            value={resourceId}
+            onChange={(event) => setResourceId(event.target.value)}
+            aria-label="Resource to commit"
+          >
+            <option value="">Select a resource…</option>
+            {owned.map((resource) => (
+              <option key={resource.id} value={resource.id}>
+                {resource.displayName} · {CATEGORY_LABELS[resource.category]}
+              </option>
+            ))}
+          </select>
+          <select
+            className={inputClass}
+            value={shareClassification}
+            onChange={(event) => setShareClassification(event.target.value)}
+            aria-label="Partner sharing classification"
+          >
+            {PARTNER_SHARING_CLASSIFICATIONS.map((value) => (
+              <option key={value} value={value}>
+                {label(value)}
+              </option>
+            ))}
+          </select>
+          <select
+            className={inputClass}
+            value={shareProfile}
+            onChange={(event) => setShareProfile(event.target.value as DisclosureProfile)}
+            aria-label="Disclosure profile"
+          >
+            {PARTNER_DISCLOSURE_PROFILES.map((value) => (
+              <option key={value} value={value}>
+                Discloses: {DISCLOSURE_PROFILE_LABELS[value]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={secondaryButtonClass}
+            disabled={!resourceId || assignResource.isPending}
+            onClick={() => assignResource.mutate("agency_only")}
+          >
+            Assign to incident (agency only)
+          </button>
+          <button
+            type="button"
+            className={buttonClass}
+            disabled={!resourceId || assignResource.isPending}
+            onClick={() => assignResource.mutate("share_with_partners")}
+          >
+            Assign and share with partners
+          </button>
+        </div>
+      </fieldset>
+
+      <fieldset className="mt-3 rounded-md border border-border p-3">
+        <legend className="px-1 text-xs font-semibold text-foreground">Assign personnel</legend>
+        <div className="flex flex-wrap items-end gap-2">
+          <select
+            className={inputClass}
+            value={personId}
+            onChange={(event) => setPersonId(event.target.value)}
+            aria-label="Person to assign"
+          >
+            <option value="">Select a person…</option>
+            {people.map((person) => (
+              <option key={person.id} value={person.id}>
+                {person.displayName}
+              </option>
+            ))}
+          </select>
+          <select
+            className={inputClass}
+            value={personClassification}
+            onChange={(event) => setPersonClassification(event.target.value)}
+            aria-label="Personnel visibility classification"
+          >
+            {SHARING_CLASSIFICATIONS.map((value) => (
+              <option key={value} value={value}>
+                {label(value)}
+              </option>
+            ))}
+          </select>
+          <select
+            className={inputClass}
+            value={personProfile}
+            onChange={(event) => setPersonProfile(event.target.value as DisclosureProfile)}
+            aria-label="Personnel disclosure profile"
+          >
+            {PARTNER_DISCLOSURE_PROFILES.map((value) => (
+              <option key={value} value={value}>
+                Discloses: {DISCLOSURE_PROFILE_LABELS[value]}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            className={buttonClass}
+            disabled={!personId || assignPerson.isPending}
+            onClick={() => assignPerson.mutate()}
+          >
+            Assign person
+          </button>
+        </div>
+      </fieldset>
 
       {assignments.data && !assignments.data.ok ? (
         <Denied code={assignments.data.code} />
@@ -215,7 +316,9 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
                 <span className="text-xs text-muted-foreground">
                   {label(row.assignmentType)}
                   {row.ownerOrgName ? ` · ${row.ownerOrgName}` : " · your agency"}
-                  {` · ${label(row.visibilityClassification)}`}
+                  {row.visibilityClassification === "originating_org_only"
+                    ? " · agency only (not shared)"
+                    : ` · ${label(row.visibilityClassification)}`}
                   {row.disclosureProfile
                     ? ` · discloses ${DISCLOSURE_PROFILE_LABELS[row.disclosureProfile]}`
                     : ""}

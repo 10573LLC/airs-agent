@@ -6,6 +6,8 @@ export type AwarenessBoardFailure =
   | { status: "failed"; kind: "transport" }
   | { status: "failed"; kind: "api"; code: string };
 
+// Awareness recovery state is UI presentation state only; it must never alter
+// authorization decisions or API behavior.
 export type AwarenessBoardState<T> =
   | { status: "loading" }
   | AwarenessBoardFailure

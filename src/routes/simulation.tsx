@@ -126,16 +126,23 @@ function SimulationPage() {
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button type="button" onClick={start} disabled={!scenarioText.trim()} className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">Start exercise</button>
             <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted">Reset</button>
-            {scenario ? <span className="ml-auto font-mono text-lg font-semibold text-foreground">{formatClock(clockSeconds)}</span> : null}
           </div>
-          {scenario ? (
-            <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
-              <button type="button" onClick={() => setClockSeconds((value) => nextEventTime(scenario, value))} className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Advance to next event</button>
-              <button type="button" onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+1 min</button>
-              <button type="button" onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+5 min</button>
-              <button type="button" onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)} className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5">Inject conflicting report</button>
+
+          <div className="mt-4 border-t border-border pt-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Exercise playback</p>
+                <p className="mt-1 text-xs text-muted-foreground">{scenario ? "Advance the authored timeline one event at a time." : "Start the exercise to enable timeline controls."}</p>
+              </div>
+              <span className="font-mono text-lg font-semibold text-foreground">{formatClock(clockSeconds)}</span>
             </div>
-          ) : null}
+            <div className="flex flex-wrap gap-2">
+              <button type="button" disabled={!scenario} onClick={() => scenario && setClockSeconds((value) => nextEventTime(scenario, value))} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">Advance to next event</button>
+              <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+1 min</button>
+              <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+5 min</button>
+              <button type="button" disabled={!scenario} onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)} className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-40">Inject conflicting report</button>
+            </div>
+          </div>
         </SectionCard>
       </div>
 

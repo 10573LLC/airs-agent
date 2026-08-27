@@ -50,6 +50,7 @@ function SimulationPage() {
   const [scenarioText, setScenarioText] = useState("");
   const [scenario, setScenario] = useState<CompiledScenario | null>(null);
   const [clockSeconds, setClockSeconds] = useState(0);
+  const [editorOpen, setEditorOpen] = useState(true);
 
   const visible = useMemo(
     () => (scenario ? visibleEvents(scenario, clockSeconds) : []),
@@ -65,11 +66,13 @@ function SimulationPage() {
     if (!scenarioText.trim()) return;
     setScenario(compileScenario(scenarioText));
     setClockSeconds(0);
+    setEditorOpen(false);
   };
 
   const reset = () => {
     setScenario(null);
     setClockSeconds(0);
+    setEditorOpen(true);
   };
   if (session.isLoading || (session.data?.ok === true && organization.isLoading)) {
     return (
@@ -103,12 +106,12 @@ function SimulationPage() {
   }
 
   return (
-    <PageShell width="wide">
+    <PageShell width="full">
       <div className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-center text-sm font-bold tracking-wide text-warning-foreground">
         {SIMULATION_BANNER}
       </div>
 
-      <div className="mt-8">
+      <div className="mt-4">
         <PageHeading
           eyebrow="Exercise control"
           title="AIRS Simulation Lab"
@@ -116,29 +119,42 @@ function SimulationPage() {
         />
       </div>
 
-      <div className="mt-6">
-        <SectionCard title="Scenario Controller" description="Load the exercise, then watch AIRS build the operational picture below as the clock advances.">
-          <textarea
-            value={scenarioText}
-            onChange={(event) => setScenarioText(event.target.value)}
-            rows={5}
-            placeholder="Paste the exercise scenario here..."
-            className="w-full rounded-md border border-input bg-background p-3 text-sm text-foreground"
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <button type="button" onClick={start} disabled={!scenarioText.trim()} className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">Start exercise</button>
-            <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted">Reset</button>
-          </div>
+      <div className="mt-4">
+        <SectionCard title="Scenario Controller" description="Load the exercise, then watch AIRS build the operational picture as the clock advances.">
+          {scenario && !editorOpen ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Scenario loaded</p>
+                <p className="mt-0.5 text-sm font-semibold text-foreground">{scenario.title}</p>
+              </div>
+              <button type="button" onClick={() => setEditorOpen(true)} className="rounded-md border border-border px-3 py-2 text-xs font-semibold hover:bg-muted">Edit / restart scenario</button>
+            </div>
+          ) : (
+            <>
+              <textarea
+                value={scenarioText}
+                onChange={(event) => setScenarioText(event.target.value)}
+                rows={4}
+                placeholder="Paste the exercise scenario here..."
+                className="w-full rounded-md border border-input bg-background p-3 text-sm text-foreground xl:min-h-[5.5rem]"
+              />
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <button type="button" onClick={start} disabled={!scenarioText.trim()} className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">{scenario ? "Restart exercise" : "Start exercise"}</button>
+                {scenario ? <button type="button" onClick={() => setEditorOpen(false)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold hover:bg-muted">Cancel edit</button> : null}
+                <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted">Reset</button>
+              </div>
+            </>
+          )}
 
-          <div className="mt-4 border-t border-border pt-4">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <div className="mt-3 border-t border-border pt-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Exercise playback</p>
-                <p className="mt-1 text-xs text-muted-foreground">{scenario ? (hasNext && nextAt !== null ? `Next authored event: ${formatClock(nextAt)}` : "End of authored timeline reached.") : "Start the exercise to enable timeline controls."}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{scenario ? (hasNext && nextAt !== null ? `Next authored event: ${formatClock(nextAt)}` : "End of authored timeline reached.") : "Start the exercise to enable timeline controls."}</p>
               </div>
               <span className="font-mono text-lg font-semibold text-foreground">{formatClock(clockSeconds)}</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="mt-2 flex flex-wrap gap-2">
               <button type="button" disabled={!hasNext} onClick={() => nextAt !== null && setClockSeconds(nextAt)} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">Advance to next event</button>
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+1 min</button>
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+5 min</button>

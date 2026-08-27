@@ -88,7 +88,7 @@ export function PageShell({
 }: {
   children: ReactNode;
   headerRight?: ReactNode;
-  width?: "wide" | "narrow";
+  width?: "wide" | "narrow" | "full";
   variant?: "app" | "public";
 }) {
   return (
@@ -97,7 +97,7 @@ export function PageShell({
       <main
         className={cn(
           "mx-auto w-full flex-1 px-6 py-10",
-          width === "wide" ? "max-w-6xl" : "max-w-3xl",
+          width === "full" ? "max-w-[1920px]" : width === "wide" ? "max-w-6xl" : "max-w-3xl",
         )}
       >
         {children}

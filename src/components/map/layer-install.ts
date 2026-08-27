@@ -95,11 +95,11 @@ export function installCopLayers(map: MinimalMap, data: unknown, workingData: un
     source: "cop",
     layout: {
       "text-field": ["get", "label"],
-      "text-size": 11,
-      "text-offset": [0, 1.2],
+      "text-size": 14,
+      "text-offset": [0, 1.25],
       "text-anchor": "top",
     },
-    paint: { "text-color": "#e2e8f0", "text-halo-color": "#0b1220", "text-halo-width": 1.4 },
+    paint: { "text-color": "#111827", "text-halo-color": "#ffffff", "text-halo-width": 2.2, "text-halo-blur": 0.4 },
   });
 
   ensureSource(map, "working-point", { type: "geojson", data: workingData });

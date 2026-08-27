@@ -14,6 +14,11 @@ const portScenario = readFileSync(
   resolve(process.cwd(), "tests/fixtures/port-of-albany-scenario.md"),
   "utf8",
 );
+const plainPortScenario = portScenario
+  .replaceAll("**", "")
+  .replace(/^##\s+/gm, "")
+  .replace(/^---$/gm, "")
+  .replace(/\n/g, "\r\n");
 
 describe("timeline-aware simulation model", () => {
   it("parses the controller timeline instead of inventing synthetic events", () => {
@@ -23,6 +28,15 @@ describe("timeline-aware simulation model", () => {
     expect(scenario.events.some((event) => event.headline.includes("Weather"))).toBe(false);
     expect(scenario.events.every((event) => event.provenance === "scenario_fact")).toBe(true);
   });
+  it("parses plain-text browser paste without collapsing the exercise into T+0", () => {
+    const scenario = compileScenario(plainPortScenario);
+    expect(scenario.events).toHaveLength(16);
+    expect(nextEventTime(scenario, 0)).toBe(60);
+    expect(visibleEvents(scenario, 0)).toHaveLength(1);
+    expect(JSON.stringify(visibleEvents(scenario, 0))).not.toMatch(/Temporary Flight Restriction|Unified Command|Corning Preserve/i);
+    expect(visibleEvents(scenario, 18 * 60).some((event) => /Temporary Flight Restriction/i.test(event.detail))).toBe(true);
+  });
+
   it("treats exercise timestamps as hours and minutes and withholds future facts", () => {
     const scenario = compileScenario(portScenario);
     expect(scenario.events.find((event) => event.timeLabel === "T+0:18")?.atSeconds).toBe(18 * 60);

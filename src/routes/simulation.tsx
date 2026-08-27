@@ -58,6 +58,8 @@ function SimulationPage() {
   const state = useMemo(() => scenario ? buildSimulationState(scenario, clockSeconds) : null, [scenario, clockSeconds]);
   const assessments = useMemo(() => assessAirs(visible, state ?? undefined), [visible, state]);
   const operational = useMemo(() => scenario ? buildOperationalProjection(scenario, clockSeconds) : null, [scenario, clockSeconds]);
+  const nextAt = scenario ? nextEventTime(scenario, clockSeconds) : null;
+  const hasNext = nextAt !== null && nextAt > clockSeconds;
 
   const start = () => {
     if (!scenarioText.trim()) return;
@@ -132,12 +134,12 @@ function SimulationPage() {
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Exercise playback</p>
-                <p className="mt-1 text-xs text-muted-foreground">{scenario ? "Advance the authored timeline one event at a time." : "Start the exercise to enable timeline controls."}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{scenario ? (hasNext && nextAt !== null ? `Next authored event: ${formatClock(nextAt)}` : "End of authored timeline reached.") : "Start the exercise to enable timeline controls."}</p>
               </div>
               <span className="font-mono text-lg font-semibold text-foreground">{formatClock(clockSeconds)}</span>
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" disabled={!scenario} onClick={() => scenario && setClockSeconds((value) => nextEventTime(scenario, value))} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">Advance to next event</button>
+              <button type="button" disabled={!hasNext} onClick={() => nextAt !== null && setClockSeconds(nextAt)} className="rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">Advance to next event</button>
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+1 min</button>
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+5 min</button>
               <button type="button" disabled={!scenario} onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)} className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-40">Inject conflicting report</button>

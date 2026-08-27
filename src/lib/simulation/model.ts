@@ -111,9 +111,14 @@ function confidenceFor(detail: string): SimConfidence {
 }
 
 function parseTimeline(sourceText: string): SimulationEvent[] {
-  const timeline = extractSection(sourceText, "## Timeline");
-  if (!timeline) return [];
-  const pattern = /\*\*T\+([^*]+)\*\*\s*[—-]\s*([\s\S]*?)(?=\n\s*\*\*T\+|$)/g;
+  let timeline = extractSection(sourceText, "## Timeline");
+  if (!timeline) {
+    const heading = /(?:^|\n)\s*Timeline\s*:?\s*(?:\n|$)/i.exec(sourceText);
+    timeline = heading ? sourceText.slice((heading.index ?? 0) + heading[0].length) : sourceText;
+    const boundary = timeline.search(/\n\s*(?:Who shows up\b|Why this gets so complicated\b|Exercise objectives\b)/i);
+    if (boundary >= 0) timeline = timeline.slice(0, boundary);
+  }
+  const pattern = /(?:^|\n)\s*(?:[-*•]\s*)?(?:\*\*)?\s*T\+\s*(\d+:\d{2}(?:\s*[–—-]\s*\d+:\d{2})?(?:\s*\([^\n)]*\))?(?:\s+onward)?)(?:\*\*)?\s*[—–-]\s*([\s\S]*?)(?=\n\s*(?:[-*•]\s*)?(?:\*\*)?\s*T\+|$)/gim;
   const events: SimulationEvent[] = [];
   for (const match of timeline.matchAll(pattern)) {
     const timeLabel = cleanMarkdown(match[1] ?? "0:00");

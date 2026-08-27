@@ -6,6 +6,9 @@ import { buildOperationalProjection } from "./operational";
 
 const source = readFileSync(resolve(process.cwd(), "tests/fixtures/port-of-albany-scenario.md"), "utf8");
 const scenario = compileScenario(source);
+const plainScenario = compileScenario(
+  source.replaceAll("**", "").replace(/^##\s+/gm, "").replace(/^---$/gm, "").replace(/\n/g, "\r\n"),
+);
 
 describe("operational simulation projection", () => {
   it("shows an incoming threat before the local command post exists", () => {
@@ -14,6 +17,14 @@ describe("operational simulation projection", () => {
     expect(view.commandLead).toBe("Not yet established");
     expect(view.mapItems.some((item) => item.id === "uas-east-vector")).toBe(true);
     expect(view.agencies.some((item) => item.id === "afd")).toBe(false);
+  });
+
+  it("does not leak future COP layers when the scenario is pasted as plain text", () => {
+    const view = buildOperationalProjection(plainScenario, 0);
+    expect(view.mapItems.some((item) => item.id === "tfr")).toBe(false);
+    expect(view.mapItems.some((item) => item.id === "civilian-uas-launch")).toBe(false);
+    expect(view.mapItems.some((item) => item.id === "unified-command")).toBe(false);
+    expect(view.mapItems.some((item) => item.id === "uas-east-vector")).toBe(true);
   });
 
   it("spins up the room and local participants as facts arrive", () => {

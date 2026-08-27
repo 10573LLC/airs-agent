@@ -52,6 +52,7 @@ async function serverCtx() {
 const res = () => import("@/lib/resources/resources.server");
 const people = () => import("@/lib/resources/personnel.server");
 const assign = () => import("@/lib/resources/assignments.server");
+const agencyProfile = () => import("@/lib/resources/agency-system-profile.server");
 
 // --- registry reads -----------------------------------------------------------
 
@@ -225,6 +226,52 @@ export const saveResourceDetailFn = createServerFn({ method: "POST" })
       const { saveResourceDetail } = await res();
       const { token, meta } = await serverCtx();
       return saveResourceDetail(token, data.orgId ?? null, data, meta);
+    }),
+  );
+
+// --- agency systems profile -----------------------------------------------------
+//
+// The browser may only send an ID plus a usage status per declaration. The
+// schema below strips every other property (zod objects drop unknown keys),
+// and the service re-validates each ID against the technology ecosystem
+// catalog. Org ownership, confirmer, source and any credential/authorization/
+// connection/data-access fields are never accepted from a request.
+
+const usageDeclaration = z.object({
+  id: z.string().min(1).max(64),
+  usageStatus: z.string().min(1).max(32),
+});
+
+export const readAgencySystemProfileFn = createServerFn({ method: "GET" })
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: orgIdField }).parse(d ?? {}))
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { readAgencySystemProfile } = await agencyProfile();
+      const { token, meta } = await serverCtx();
+      return readAgencySystemProfile(token, data.orgId ?? null, meta);
+    }),
+  );
+
+export const saveAgencySystemProfileFn = createServerFn({ method: "POST" })
+  .validator((d: unknown) =>
+    z
+      .object({
+        orgId: orgIdField,
+        ecosystems: z.array(usageDeclaration).max(128),
+        components: z.array(usageDeclaration).max(512),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { saveAgencySystemProfile } = await agencyProfile();
+      const { token, meta } = await serverCtx();
+      return saveAgencySystemProfile(
+        token,
+        data.orgId ?? null,
+        { ecosystems: data.ecosystems, components: data.components },
+        meta,
+      );
     }),
   );
 

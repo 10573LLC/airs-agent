@@ -39,6 +39,7 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
   const [ecosystems, setEcosystems] = useState<UsageDraft>({});
   const [components, setComponents] = useState<UsageDraft>({});
   const [message, setMessage] = useState<string | null>(null);
+  const [filterText, setFilterText] = useState("");
 
   const profile = useQuery({
     queryKey: ["agency-system-profile"],
@@ -69,6 +70,33 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
   const capabilities = useMemo(
     () => normalizedCapabilitiesForComponents(confirmedComponentIds),
     [confirmedComponentIds],
+  );
+  const normalizedFilter = filterText.trim().toLowerCase();
+  const filteredEcosystems = useMemo(
+    () => ECOSYSTEMS.filter((row) => !normalizedFilter || row.vendorName.toLowerCase().includes(normalizedFilter)),
+    [normalizedFilter],
+  );
+  const filteredSuggestions = useMemo(
+    () => suggestions.filter((row) => {
+      if (!normalizedFilter) return true;
+      const component = COMPONENT_BY_ID.get(row.componentId);
+      const terms = [row.name, ECOSYSTEM_NAME.get(row.ecosystemId), component?.productFamily, ...(component?.aliases ?? [])]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return terms.includes(normalizedFilter);
+    }),
+    [normalizedFilter, suggestions],
+  );
+  const filteredConfirmedComponentIds = useMemo(
+    () => confirmedComponentIds.filter((id) => {
+      if (!normalizedFilter) return true;
+      const component = COMPONENT_BY_ID.get(id);
+      if (!component) return false;
+      return [component.name, ECOSYSTEM_NAME.get(component.ecosystemId), component.productFamily, ...(component.aliases ?? [])]
+        .filter(Boolean).join(" ").toLowerCase().includes(normalizedFilter);
+    }),
+    [confirmedComponentIds, normalizedFilter],
   );
 
   const save = useMutation({
@@ -138,6 +166,17 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
         </p>
       ) : null}
 
+      <label className="mt-4 block text-xs font-medium text-muted-foreground">
+        Search systems catalog
+        <input
+          type="search"
+          value={filterText}
+          onChange={(event) => setFilterText(event.target.value)}
+          placeholder="Vendor, product, or familiar product name…"
+          className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground"
+        />
+      </label>
+
       {profile.isLoading ? (
         <p className="mt-4 text-sm text-muted-foreground">Loading systems profile…</p>
       ) : profile.data && !profile.data.ok ? (
@@ -157,7 +196,7 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
               <span className="text-xs text-muted-foreground">{selectedEcosystemIds.length} selected</span>
             </div>
             <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {ECOSYSTEMS.map((ecosystem) => {
+              {filteredEcosystems.map((ecosystem) => {
                 const selected = ecosystems[ecosystem.id] !== undefined;
                 return (
                   <div
@@ -199,7 +238,7 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
                   Catalog suggestions based on selected ecosystems. Suggestions never become confirmed automatically.
                 </p>
               </div>
-              <span className="text-xs text-muted-foreground">{suggestions.length} suggestions</span>
+              <span className="text-xs text-muted-foreground">{filteredSuggestions.length} shown · {suggestions.length} suggested</span>
             </div>
             {suggestions.length === 0 ? (
               <p className="mt-3 text-sm text-muted-foreground">
@@ -207,7 +246,7 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
               </p>
             ) : (
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
-                {suggestions.map((suggestion) => {
+                {filteredSuggestions.map((suggestion) => {
                   const confirmed = components[suggestion.componentId] !== undefined;
                   return (
                     <div key={suggestion.componentId} className="rounded-md border border-border p-3">
@@ -259,7 +298,7 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
               <p className="mt-3 text-sm text-muted-foreground">No systems have been confirmed yet.</p>
             ) : (
               <div className="mt-3 space-y-2">
-                {confirmedComponentIds.map((id) => {
+                {filteredConfirmedComponentIds.map((id) => {
                   const component = COMPONENT_BY_ID.get(id);
                   if (!component) return null;
                   return (
@@ -304,7 +343,7 @@ export function AgencySystemsIntegrationsPanel({ canManage }: { canManage: boole
               <p className="mt-3 text-sm text-muted-foreground">No confirmed systems to evaluate.</p>
             ) : (
               <div className="mt-3 space-y-2">
-                {confirmedComponentIds.map((id) => {
+                {filteredConfirmedComponentIds.map((id) => {
                   const component = COMPONENT_BY_ID.get(id);
                   if (!component) return null;
                   return (

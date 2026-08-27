@@ -13,8 +13,6 @@ import {
 } from "@/components/brand";
 import { getMe } from "@/lib/api/auth.functions";
 import { DISCLOSURE_PROFILE_LABELS } from "@/lib/resources/disclosure";
-import { AgencySystemsIntegrationsPanel } from "@/lib/resources/agency-systems-integrations-panel";
-import { ROLE_PERMISSIONS } from "@/lib/rbac/roles";
 import {
   addQualificationFn,
   createResourceFn,
@@ -130,16 +128,6 @@ function ResourcesPage() {
 
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
   const signedIn = session.data?.ok === true;
-  const sessionData = session.data?.ok ? session.data.data : null;
-  const activeMembership = sessionData?.activeOrgId
-    ? sessionData.memberships.find(
-        (membership) => membership.orgId === sessionData.activeOrgId && membership.status === "active",
-      )
-    : undefined;
-  const canManageSystems = activeMembership
-    ? ROLE_PERMISSIONS[activeMembership.roleKey].includes("org.manage")
-    : false;
-
   const summary = useQuery({
     queryKey: ["readiness-summary"],
     queryFn: () => summaryFn({ data: {} }),
@@ -315,8 +303,6 @@ function ResourcesPage() {
       ) : null}
 
       <div className="mt-8 grid gap-6">
-        <AgencySystemsIntegrationsPanel canManage={canManageSystems} />
-
         <SectionCard title="Readiness at a glance" description="Live roll-up across your agency.">
           {summary.data?.ok ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">

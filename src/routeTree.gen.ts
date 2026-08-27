@@ -21,6 +21,7 @@ import { Route as AwarenessIndexRouteImport } from './routes/awareness.index'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 import { Route as AwarenessObservationIdRouteImport } from './routes/awareness.$observationId'
+import { Route as AgencySystemsRouteImport } from './routes/agency.systems'
 import { Route as ActivateTokenRouteImport } from './routes/activate/$token'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/maintenance/expire-incidents'
@@ -85,6 +86,11 @@ const AwarenessObservationIdRoute = AwarenessObservationIdRouteImport.update({
   path: '/$observationId',
   getParentRoute: () => AwarenessRoute,
 } as any)
+const AgencySystemsRoute = AgencySystemsRouteImport.update({
+  id: '/agency/systems',
+  path: '/agency/systems',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ActivateTokenRoute = ActivateTokenRouteImport.update({
   id: '/activate/$token',
   path: '/activate/$token',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
   '/activate/$token': typeof ActivateTokenRoute
+  '/agency/systems': typeof AgencySystemsRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
   '/activate/$token': typeof ActivateTokenRoute
+  '/agency/systems': typeof AgencySystemsRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -144,6 +152,7 @@ export interface FileRoutesById {
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
   '/activate/$token': typeof ActivateTokenRoute
+  '/agency/systems': typeof AgencySystemsRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/resources'
     | '/activate/$token'
+    | '/agency/systems'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -178,6 +188,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/resources'
     | '/activate/$token'
+    | '/agency/systems'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/resources'
     | '/activate/$token'
+    | '/agency/systems'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -213,6 +225,7 @@ export interface RootRouteChildren {
   MapRoute: typeof MapRoute
   ResourcesRoute: typeof ResourcesRoute
   ActivateTokenRoute: typeof ActivateTokenRoute
+  AgencySystemsRoute: typeof AgencySystemsRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiMaintenanceExpireIncidentsRoute: typeof ApiMaintenanceExpireIncidentsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -304,6 +317,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AwarenessObservationIdRouteImport
       parentRoute: typeof AwarenessRoute
     }
+    '/agency/systems': {
+      id: '/agency/systems'
+      path: '/agency/systems'
+      fullPath: '/agency/systems'
+      preLoaderRoute: typeof AgencySystemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/activate/$token': {
       id: '/activate/$token'
       path: '/activate/$token'
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   MapRoute: MapRoute,
   ResourcesRoute: ResourcesRoute,
   ActivateTokenRoute: ActivateTokenRoute,
+  AgencySystemsRoute: AgencySystemsRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiMaintenanceExpireIncidentsRoute: ApiMaintenanceExpireIncidentsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,

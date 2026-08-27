@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
 import { PageHeading, PageShell, SectionCard, StatusPill } from "@/components/brand";
-import { getMe } from "@/lib/api/auth.functions";
+import { getMe, getOrganization } from "@/lib/api/auth.functions";
+import { canRunSimulation } from "@/lib/rbac/module-access";
 import {
   SIMULATION_BANNER,
   assessAirs,
@@ -35,7 +36,13 @@ function formatClock(seconds: number) {
 
 function SimulationPage() {
   const me = useServerFn(getMe);
+  const org = useServerFn(getOrganization);
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
+  const organization = useQuery({
+    queryKey: ["org"],
+    queryFn: () => org({ data: {} }),
+    enabled: session.data?.ok === true,
+  });
   const [scenarioText, setScenarioText] = useState("");
   const [scenario, setScenario] = useState<CompiledScenario | null>(null);
   const [clockSeconds, setClockSeconds] = useState(0);
@@ -56,7 +63,7 @@ function SimulationPage() {
     setScenario(null);
     setClockSeconds(0);
   };
-  if (session.isLoading) {
+  if (session.isLoading || (session.data?.ok === true && organization.isLoading)) {
     return (
       <PageShell width="wide">
         <p className="text-sm text-muted-foreground">Loading simulation controls…</p>
@@ -68,9 +75,21 @@ function SimulationPage() {
     return (
       <PageShell width="narrow">
         <h1 className="text-xl font-semibold">Session required</h1>
-        <Link to="/auth" className="mt-4 inline-block text-sm underline">
-          Go to sign in
-        </Link>
+        <Link to="/auth" className="mt-4 inline-block text-sm underline">Go to sign in</Link>
+      </PageShell>
+    );
+  }
+
+  const orgResult = organization.data;
+  const roleKey = orgResult?.ok ? orgResult.data.roleKey : null;
+  if (!organization.isLoading && !canRunSimulation(roleKey)) {
+    return (
+      <PageShell width="narrow">
+        <PageHeading
+          eyebrow="Exercise control"
+          title="Simulation access required"
+          description="The Simulation Lab is available to platform administrators and designated agency exercise-controller roles. This does not grant access to agency operational records."
+        />
       </PageShell>
     );
   }
@@ -84,7 +103,8 @@ function SimulationPage() {
       <div className="mt-8">
         <PageHeading
           eyebrow="Exercise control"
-          title="AIRS Simulation Lab"          description="Run a cold, time-sequenced public safety scenario without writing operational records or implying any vendor system is actually connected."
+          title="AIRS Simulation Lab"
+          description="Run a cold, time-sequenced public safety scenario without writing operational records or implying any vendor system is actually connected."
         />
       </div>
 

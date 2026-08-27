@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 
 import { getMe, getOrganization, selectOrganization, signOut } from "@/lib/api/auth.functions";
+import { canAccessPrimaryModule } from "@/lib/rbac/module-access";
 import { ROLE_LABELS } from "@/lib/rbac/roles";
 import { cn } from "@/lib/utils";
 import { displayOrgName, displayPersonName } from "./display";
@@ -16,12 +17,12 @@ import { displayOrgName, displayPersonName } from "./display";
  */
 
 export const PRIMARY_NAV = [
-  { to: "/console", label: "Agency Dashboard" },
-  { to: "/incidents", label: "Incident Rooms" },
-  { to: "/resources", label: "Readiness Board" },
-  { to: "/map", label: "Common Operating Picture" },
-  { to: "/awareness", label: "Awareness Board" },
-  { to: "/simulation", label: "Simulation Lab" },
+  { module: "console", to: "/console", label: "Agency Dashboard" },
+  { module: "incidents", to: "/incidents", label: "Incident Rooms" },
+  { module: "resources", to: "/resources", label: "Readiness Board" },
+  { module: "map", to: "/map", label: "Common Operating Picture" },
+  { module: "awareness", to: "/awareness", label: "Awareness Board" },
+  { module: "simulation", to: "/simulation", label: "Simulation Lab" },
 ] as const;
 
 function isSectionActive(pathname: string, to: string) {
@@ -33,6 +34,13 @@ const linkBase =
 
 export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: "horizontal" | "vertical" }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const org = useServerFn(getOrganization);
+  const orgQuery = useQuery({ queryKey: ["org"], queryFn: () => org({ data: {} }) });
+  const roleKey = orgQuery.data?.ok ? orgQuery.data.data.roleKey : null;
+  const permissions = orgQuery.data?.ok ? orgQuery.data.data.permissions : [];
+  const visibleNav = PRIMARY_NAV.filter((item) =>
+    canAccessPrimaryModule(item.module, roleKey, permissions),
+  );
 
   return (
     <ul
@@ -43,7 +51,7 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
           : "flex-row items-center",
       )}
     >
-      {PRIMARY_NAV.map((item) => {
+      {visibleNav.map((item) => {
         const active = isSectionActive(pathname, item.to);
         return (
           <li key={item.to}>
@@ -58,7 +66,7 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
                   : "text-current/85 hover:bg-white/10 hover:text-current",
               )}
             >
-              {item.label}
+              {item.module === "console" && roleKey === "platform_admin" ? "Platform Console" : item.label}
             </Link>
           </li>
         );

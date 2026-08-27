@@ -16,6 +16,11 @@
 import { withAuthorized } from "@/lib/auth/authorize.server";
 import { AccessError } from "@/lib/auth/errors";
 import type { RequestMeta } from "@/lib/auth/types";
+import { isAgencyOperationalRole } from "@/lib/rbac/module-access";
+
+function assertAgencyProfileRole(roleKey: Parameters<typeof isAgencyOperationalRole>[0]) {
+  if (!isAgencyOperationalRole(roleKey)) throw new AccessError("forbidden");
+}
 
 import {
   normalizeComponentSelections,
@@ -40,6 +45,7 @@ export async function readAgencySystemProfile(
       meta,
     },
     async (ctx, q) => {
+      assertAgencyProfileRole(ctx.roleKey);
       // Every query is scoped to the resolved membership's org; forced RLS on
       // all three airs.agency_system_* tables backs this up server-side.
       const [profiles, ecosystems, components] = await Promise.all([
@@ -107,6 +113,7 @@ export async function saveAgencySystemProfile(
       meta,
     },
     async (ctx, q) => {
+      assertAgencyProfileRole(ctx.roleKey);
       // Authorize first, then validate before any mutation. This prevents
       // unauthorized callers from probing catalog/status validation behavior.
       const eco = normalizeEcosystemSelections(input.ecosystems ?? []);

@@ -155,6 +155,7 @@ function ConsolePage() {
   const { account, memberships, activeOrgId } = meResult.data;
   const orgResult = orgQuery.data;
   const permissions: string[] = orgResult?.ok ? orgResult.data.permissions : [];
+  const isPlatformAdmin = orgResult?.ok === true && orgResult.data.roleKey === "platform_admin";
   const canManageUsers = permissions.includes("user.manage");
   const canReadAudit = permissions.includes("audit.read");
 
@@ -194,17 +195,27 @@ function ConsolePage() {
         </p>
       ) : null}
 
-      <Panel title="Agency configuration">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <p className="text-sm font-medium text-foreground">Systems & Integrations</p>
-            <p className="mt-1 text-xs text-muted-foreground">Declare agency technology, review related systems, and see AIRS connection status.</p>
+      {orgResult?.ok ? (isPlatformAdmin ? (
+        <Panel title="Platform tools">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Simulation Lab</p>
+              <p className="mt-1 text-xs text-muted-foreground">Run synthetic exercises without receiving agency operational permissions or live agency data access.</p>
+            </div>
+            <Link to="/simulation" className="rounded-md border border-input px-3 py-2 text-xs font-semibold hover:bg-muted">Open Simulation Lab</Link>
           </div>
-          <Link to="/agency/systems" className="rounded-md border border-input px-3 py-2 text-xs font-semibold hover:bg-muted">
-            Open Systems & Integrations
-          </Link>
-        </div>
-      </Panel>
+        </Panel>
+      ) : (
+        <Panel title="Agency configuration">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-foreground">Systems & Integrations</p>
+              <p className="mt-1 text-xs text-muted-foreground">Declare agency technology, review related systems, and see AIRS connection status.</p>
+            </div>
+            <Link to="/agency/systems" className="rounded-md border border-input px-3 py-2 text-xs font-semibold hover:bg-muted">Open Systems & Integrations</Link>
+          </div>
+        </Panel>
+      )) : null}
 
       <Panel title="Organizations">
         <ul className="space-y-2">

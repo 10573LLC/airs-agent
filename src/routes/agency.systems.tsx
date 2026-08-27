@@ -9,7 +9,7 @@ import { AgencySystemsIntegrationsPanel } from "@/lib/resources/agency-systems-i
 export const Route = createFileRoute("/agency/systems")({
   head: () => ({
     meta: [
-      { title: "Systems & Integrations — AIRS Agent" },
+      { title: "Systems & Integrations - AIRS Agent" },
       {
         name: "description",
         content: "Agency-declared technology ecosystems, installed components, related-system suggestions, and AIRS connection status.",
@@ -34,7 +34,7 @@ function AgencySystemsPage() {
   if (session.isLoading) {
     return (
       <PageShell width="narrow">
-        <p className="text-sm text-muted-foreground">Loading…</p>
+        <p className="text-sm text-muted-foreground">Loading...</p>
       </PageShell>
     );
   }
@@ -52,7 +52,23 @@ function AgencySystemsPage() {
     );
   }
 
+  if (organization.isLoading) {
+    return <PageShell width="narrow"><p className="text-sm text-muted-foreground">Loading agency context...</p></PageShell>;
+  }
+
   const orgResult = organization.data;
+  if (orgResult?.ok && orgResult.data.roleKey === "platform_admin") {
+    return (
+      <PageShell width="narrow">
+        <PageHeading
+          eyebrow="Agency configuration"
+          title="Agency context required"
+          description="Platform administration does not grant access to an agency's Systems & Integrations profile. Select an agency membership with appropriate authorization to continue."
+        />
+        <Link to="/console" className="mt-6 inline-block text-sm underline">Return to Platform Console</Link>
+      </PageShell>
+    );
+  }
   const canManage = orgResult?.ok === true && orgResult.data.permissions.includes("org.manage");
 
   return (

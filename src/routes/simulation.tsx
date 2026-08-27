@@ -4,13 +4,17 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
 import { PageHeading, PageShell, SectionCard, StatusPill } from "@/components/brand";
+import { OperationalWorkspace } from "@/components/simulation/operational-workspace";
 import { getMe, getOrganization } from "@/lib/api/auth.functions";
 import { canRunSimulation } from "@/lib/rbac/module-access";
+import { buildOperationalProjection } from "@/lib/simulation/operational";
 import {
   SIMULATION_BANNER,
   assessAirs,
+  buildSimulationState,
   compileScenario,
   injectFriction,
+  nextEventTime,
   visibleEvents,
   type CompiledScenario,
   type SimConfidence,
@@ -24,14 +28,14 @@ export const Route = createFileRoute("/simulation")({
 
 const confidenceTone: Record<SimConfidence, "active" | "info" | "caution" | "critical"> = {
   confirmed: "active",
-  probable: "info",
+  reported: "info",
   unverified: "caution",
   conflicting: "critical",
 };
 function formatClock(seconds: number) {
-  const minutes = Math.floor(seconds / 60).toString().padStart(2, "0");
-  const remainder = (seconds % 60).toString().padStart(2, "0");
-  return `T+${minutes}:${remainder}`;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
+  return `T+${hours}:${minutes}`;
 }
 
 function SimulationPage() {
@@ -51,7 +55,9 @@ function SimulationPage() {
     () => (scenario ? visibleEvents(scenario, clockSeconds) : []),
     [scenario, clockSeconds],
   );
-  const assessments = useMemo(() => assessAirs(visible), [visible]);
+  const state = useMemo(() => scenario ? buildSimulationState(scenario, clockSeconds) : null, [scenario, clockSeconds]);
+  const assessments = useMemo(() => assessAirs(visible, state ?? undefined), [visible, state]);
+  const operational = useMemo(() => scenario ? buildOperationalProjection(scenario, clockSeconds) : null, [scenario, clockSeconds]);
 
   const start = () => {
     if (!scenarioText.trim()) return;
@@ -143,11 +149,13 @@ function SimulationPage() {
               <div className="flex flex-wrap gap-2">
                 <button
                   type="button"
-                  onClick={() => setClockSeconds((value) => value + 30)}
+                  onClick={() => setClockSeconds((value) => scenario ? nextEventTime(scenario, value) : value)}
                   className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
                 >
-                  Advance 30 sec
+                  Advance to next event
                 </button>
+                <button type="button" onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+1 min</button>
+                <button type="button" onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+5 min</button>
                 <button
                   type="button"
                   onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)}
@@ -157,7 +165,7 @@ function SimulationPage() {
                 </button>
               </div>
               <p className="text-xs leading-relaxed text-muted-foreground">
-                Events are released by exercise time. AIRS sees only information available at the current clock, not the full scenario timeline.
+                Events are released from the authored exercise timeline. AIRS receives only facts whose T+ time has arrived; future controller material remains hidden.
               </p>
             </div>
           ) : null}
@@ -172,11 +180,13 @@ function SimulationPage() {
               {visible.map((row) => (
                 <article key={row.id} className="rounded-md border border-border p-3">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-xs text-muted-foreground">{formatClock(row.atSeconds)}</span>
+                    <span className="font-mono text-xs text-muted-foreground">{row.timeLabel.startsWith("T+") ? row.timeLabel : `${formatClock(row.atSeconds)} · ${row.timeLabel}`}</span>
                     <StatusPill tone="info">{row.source}</StatusPill>
+                    <StatusPill tone={row.provenance === "controller_inject" ? "critical" : "info"}>{row.provenance.replaceAll("_", " ")}</StatusPill>
                     <StatusPill tone={confidenceTone[row.confidence]}>{row.confidence}</StatusPill>
                   </div>
                   <h3 className="mt-2 text-sm font-semibold text-foreground">{row.headline}</h3>
+                  <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{row.domains.join(" · ")}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{row.detail}</p>
                   {row.friction ? (
                     <p className="mt-2 rounded-md bg-muted px-2 py-1.5 text-xs text-muted-foreground">
@@ -189,6 +199,8 @@ function SimulationPage() {
           )}
         </SectionCard>
       </div>
+
+      {operational ? <OperationalWorkspace projection={operational} /> : null}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {assessments.map((assessment) => (
@@ -204,8 +216,33 @@ function SimulationPage() {
         ))}
       </div>
 
+      {state ? (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <SectionCard title="Known Operational State" description={state.airspaceStatus}>
+            <p className="text-sm font-medium text-foreground">Command</p>
+            <p className="mt-1 text-sm text-muted-foreground">{state.commandStatus}</p>
+            <p className="mt-4 text-sm font-medium text-foreground">Hazards</p>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+              {(state.hazards.length ? state.hazards : ["No additional hazard has been established from released facts."]).map((item) => <li key={item}>• {item}</li>)}
+            </ul>
+          </SectionCard>
+          <SectionCard title="Authority Matrix" description="Only authority established by facts released at the current exercise time is shown.">
+            {state.authorities.length ? (
+              <div className="space-y-3">
+                {state.authorities.map((item) => (
+                  <div key={item.domain} className="rounded-md border border-border p-3">
+                    <p className="text-sm font-semibold text-foreground">{item.domain}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{item.owner} · {item.status}</p>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-sm text-muted-foreground">No jurisdictional authority has yet been established by released exercise facts.</p>}
+          </SectionCard>
+        </div>
+      ) : null}
+
       <div className="mt-6 rounded-md border border-border bg-muted/40 p-4 text-xs leading-relaxed text-muted-foreground">
-        <strong className="text-foreground">Simulation boundary:</strong> synthetic CAD, RTCC, UAS, C-UAS, radio, fire/EMS, and weather updates are exercise artifacts only. They do not create operational incidents, observations, evidence, credentials, connector authorization, or live data access.
+        <strong className="text-foreground">Simulation boundary:</strong> timeline facts, controller injects, and AIRS inferences are exercise artifacts only. They do not create operational incidents, observations, evidence, credentials, connector authorization, or live data access.
       </div>
     </PageShell>
   );

@@ -1,29 +1,72 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { assessAirs, compileScenario, injectFriction, visibleEvents } from "./model";
+import {
+  assessAirs,
+  buildSimulationState,
+  compileScenario,
+  injectFriction,
+  nextEventTime,
+  visibleEvents,
+} from "./model";
 
-describe("simulation model", () => {
-  it("compiles a scenario without inventing a live connection", () => {
-    const scenario = compileScenario("Building collapse with injuries and an unknown drone nearby.");
-    expect(scenario.events.some((e) => e.source === "C-UAS")).toBe(true);
-    expect(scenario.events.some((e) => e.source === "EMS/Fire")).toBe(true);
-    expect(JSON.stringify(scenario)).not.toMatch(/credentialed|connected.*true|authorized.*true/i);
+const portScenario = readFileSync(
+  resolve(process.cwd(), "tests/fixtures/port-of-albany-scenario.md"),
+  "utf8",
+);
+
+describe("timeline-aware simulation model", () => {
+  it("parses the controller timeline instead of inventing synthetic events", () => {
+    const scenario = compileScenario(portScenario);
+    expect(scenario.events).toHaveLength(16);
+    expect(scenario.events[0]?.timeLabel).toBe("T+0:00");
+    expect(scenario.events.some((event) => event.headline.includes("Weather"))).toBe(false);
+    expect(scenario.events.every((event) => event.provenance === "scenario_fact")).toBe(true);
+  });
+  it("treats exercise timestamps as hours and minutes and withholds future facts", () => {
+    const scenario = compileScenario(portScenario);
+    expect(scenario.events.find((event) => event.timeLabel === "T+0:18")?.atSeconds).toBe(18 * 60);
+    expect(scenario.events.find((event) => event.timeLabel === "T+1:00–2:00")?.atSeconds).toBe(60 * 60);
+    expect(visibleEvents(scenario, 17 * 60).some((event) => /Temporary Flight Restriction/i.test(event.detail))).toBe(false);
+    expect(visibleEvents(scenario, 18 * 60).some((event) => /Temporary Flight Restriction/i.test(event.detail))).toBe(true);
   });
 
-  it("reveals events only when the exercise clock reaches them", () => {
-    const scenario = compileScenario("Vehicle crash");
-    expect(visibleEvents(scenario, 0)).toHaveLength(1);
-    expect(visibleEvents(scenario, 60).every((e) => e.atSeconds <= 60)).toBe(true);
+  it("recognizes the initiating UAS threat at T+0 without seeing later outcomes", () => {
+    const scenario = compileScenario(portScenario);
+    const state = buildSimulationState(scenario, 0);
+    expect(state.events).toHaveLength(1);
+    expect(state.events[0]?.source).toBe("Airspace/C-UAS");
+    expect(state.airspaceStatus).toMatch(/coordinated UAS threat/i);
+    expect(JSON.stringify(state)).not.toMatch(/TFR|Unified Command|civilian UAS|fuel or oil/i);
   });
 
-  it("preserves conflicting information as uncertainty", () => {
-    const scenario = compileScenario("Mass casualty crash with injured patients");
-    const assessment = assessAirs(visibleEvents(scenario, 120));
-    expect(assessment.find((row) => row.pillar === "Intelligence")?.summary).toMatch(/unresolved|conflicting/i);
+  it("evolves airspace state when the attack and later civilian clutter are released", () => {
+    const scenario = compileScenario(portScenario);
+    expect(buildSimulationState(scenario, 4 * 60).airspaceStatus).toMatch(/hostile UAS attack confirmed/i);
+    expect(buildSimulationState(scenario, 20 * 60).airspaceStatus).toMatch(/contested restricted airspace/i);
+  });
+  it("builds authority state only when the scenario establishes it", () => {
+    const scenario = compileScenario(portScenario);
+    expect(buildSimulationState(scenario, 9 * 60).authorities).toEqual([]);
+    expect(buildSimulationState(scenario, 10 * 60).authorities.some((item) => item.domain === "Waterway / marine security")).toBe(true);
+    expect(buildSimulationState(scenario, 17 * 60).authorities.some((item) => item.domain === "National airspace restriction")).toBe(false);
+    expect(buildSimulationState(scenario, 18 * 60).authorities.some((item) => item.owner === "FAA")).toBe(true);
+    expect(buildSimulationState(scenario, 30 * 60).authorities.some((item) => item.owner === "Unified Command")).toBe(true);
   });
 
-  it("injects friction after the current exercise time", () => {
-    const scenario = compileScenario("Suspicious activity");
-    const injected = injectFriction(scenario, 90);
-    expect(injected.events.some((e) => e.confidence === "conflicting" && e.atSeconds > 90)).toBe(true);
+  it("keeps controller injects distinct from scenario facts", () => {
+    const scenario = compileScenario(portScenario);
+    const injected = injectFriction(scenario, 20 * 60);
+    const controller = injected.events.find((event) => event.provenance === "controller_inject");
+    expect(controller?.source).toBe("Exercise Control");
+    expect(controller?.confidence).toBe("conflicting");
+    expect(controller?.atSeconds).toBeGreaterThan(20 * 60);
+  });
+
+  it("advances to the next authored event rather than an arbitrary clock tick", () => {
+    const scenario = compileScenario(portScenario);
+    expect(nextEventTime(scenario, 0)).toBe(60);
+    expect(nextEventTime(scenario, 18 * 60)).toBe(20 * 60);
+    expect(assessAirs(visibleEvents(scenario, 0), buildSimulationState(scenario, 0))[0]?.items.join(" ")).not.toMatch(/No airspace status/i);
   });
 });

@@ -27,7 +27,16 @@ function clock(seconds: number) {
   const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
   return `T+${hours}:${minutes}`;
 }
-export function OperationalWorkspace({ projection }: { projection: SimOperationalProjection }) {
+const EMPTY_OPERATIONAL_PROJECTION: SimOperationalProjection = {
+  incidentName: "No active exercise",
+  incidentStatus: "awaiting scenario",
+  commandLead: "Not established",
+  priority: "Not established",
+  agencies: [], resources: [], mapItems: [], actions: [],
+};
+
+export function OperationalWorkspace({ projection: suppliedProjection }: { projection: SimOperationalProjection | null }) {
+  const projection = suppliedProjection ?? EMPTY_OPERATIONAL_PROJECTION;
   const [view, setView] = useState<View>("command");
   const mapItems = useMemo<MapLayerItem[]>(() => projection.mapItems.map((item) => ({ ...item })), [projection.mapItems]);
   const views: { id: View; label: string }[] = [

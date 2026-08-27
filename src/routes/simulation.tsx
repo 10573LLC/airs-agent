@@ -114,69 +114,41 @@ function SimulationPage() {
         />
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.05fr_1.95fr]">
-        <SectionCard title="Scenario Controller" description="Describe the incident exactly as an exercise controller would present it.">
+      <div className="mt-6">
+        <SectionCard title="Scenario Controller" description="Load the exercise, then watch AIRS build the operational picture below as the clock advances.">
           <textarea
             value={scenarioText}
             onChange={(event) => setScenarioText(event.target.value)}
-            rows={10}
-            placeholder="Example: Multiple callers report a partial building collapse during a large event..."
+            rows={5}
+            placeholder="Paste the exercise scenario here..."
             className="w-full rounded-md border border-input bg-background p-3 text-sm text-foreground"
           />
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={start}
-              disabled={!scenarioText.trim()}
-              className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-            >
-              Start exercise
-            </button>
-            <button
-              type="button"
-              onClick={reset}
-              className="rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted"
-            >
-              Reset
-            </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button type="button" onClick={start} disabled={!scenarioText.trim()} className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">Start exercise</button>
+            <button type="button" onClick={reset} className="rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted">Reset</button>
+            {scenario ? <span className="ml-auto font-mono text-lg font-semibold text-foreground">{formatClock(clockSeconds)}</span> : null}
           </div>
           {scenario ? (
-            <div className="mt-5 space-y-3 border-t border-border pt-4">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Exercise clock</span>
-                <span className="font-mono text-lg font-semibold text-foreground">{formatClock(clockSeconds)}</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setClockSeconds((value) => scenario ? nextEventTime(scenario, value) : value)}
-                  className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
-                >
-                  Advance to next event
-                </button>
-                <button type="button" onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+1 min</button>
-                <button type="button" onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+5 min</button>
-                <button
-                  type="button"
-                  onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)}
-                  className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5"
-                >
-                  Inject conflicting report
-                </button>
-              </div>
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Events are released from the authored exercise timeline. AIRS receives only facts whose T+ time has arrived; future controller material remains hidden.
-              </p>
+            <div className="mt-3 flex flex-wrap gap-2 border-t border-border pt-3">
+              <button type="button" onClick={() => setClockSeconds((value) => nextEventTime(scenario, value))} className="rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Advance to next event</button>
+              <button type="button" onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+1 min</button>
+              <button type="button" onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold">+5 min</button>
+              <button type="button" onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)} className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5">Inject conflicting report</button>
             </div>
           ) : null}
         </SectionCard>
+      </div>
 
-        <SectionCard title="Synthetic Integration Feed" description="Industry-style source updates with provenance, confidence, and friction preserved.">          {!scenario ? (
-            <p className="text-sm text-muted-foreground">Start an exercise to begin receiving synthetic system updates.</p>
+      <OperationalWorkspace projection={operational} />
+
+      <div className="mt-6">
+        <SectionCard title="Synthetic Integration Feed" description="Supporting telemetry: source facts, provenance, confidence, and exercise friction.">
+          {!scenario ? (
+            <p className="text-sm text-muted-foreground">No exercise is running. The operational workspace above remains visible so you can see the views that will populate.</p>
           ) : visible.length === 0 ? (
             <p className="text-sm text-muted-foreground">No synthetic updates have arrived yet.</p>
           ) : (
-            <div className="space-y-3">
+            <div className="grid gap-3 lg:grid-cols-2">
               {visible.map((row) => (
                 <article key={row.id} className="rounded-md border border-border p-3">
                   <div className="flex flex-wrap items-center gap-2">
@@ -188,19 +160,13 @@ function SimulationPage() {
                   <h3 className="mt-2 text-sm font-semibold text-foreground">{row.headline}</h3>
                   <p className="mt-1 text-xs uppercase tracking-wide text-muted-foreground">{row.domains.join(" · ")}</p>
                   <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{row.detail}</p>
-                  {row.friction ? (
-                    <p className="mt-2 rounded-md bg-muted px-2 py-1.5 text-xs text-muted-foreground">
-                      Friction: {row.friction}
-                    </p>
-                  ) : null}
+                  {row.friction ? <p className="mt-2 rounded-md bg-muted px-2 py-1.5 text-xs text-muted-foreground">Friction: {row.friction}</p> : null}
                 </article>
               ))}
             </div>
           )}
         </SectionCard>
       </div>
-
-      {operational ? <OperationalWorkspace projection={operational} /> : null}
 
       <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {assessments.map((assessment) => (

@@ -96,8 +96,11 @@ export function PageShell({
       <AppHeader right={headerRight} variant={variant} />
       <main
         className={cn(
-          "mx-auto w-full flex-1 px-6 py-10",
-          width === "full" ? "max-w-[1920px]" : width === "wide" ? "max-w-6xl" : "max-w-3xl",
+          "mx-auto w-full flex-1",
+          width === "full"
+            ? "max-w-none px-3 py-5 sm:px-4 xl:px-5 2xl:px-6"
+            : "px-6 py-10",
+          width === "wide" ? "max-w-6xl" : width === "narrow" ? "max-w-3xl" : "",
         )}
       >
         {children}

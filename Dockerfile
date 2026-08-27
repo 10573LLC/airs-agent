@@ -21,6 +21,8 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0
 COPY --from=build --chown=node:node /app/.output ./.output
 COPY --from=build --chown=node:node /app/db ./db
+COPY --from=build --chown=node:node /app/scripts ./scripts
+COPY --from=build --chown=node:node /app/node_modules ./node_modules
 # Run as the unprivileged `node` user shipped with the base image.
 USER node
 EXPOSE 3000

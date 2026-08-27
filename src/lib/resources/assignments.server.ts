@@ -153,6 +153,24 @@ export async function listIncidentAssignments(
            LEFT JOIN airs.resources r ON r.id = a.resource_id AND r.org_id = a.org_id
            LEFT JOIN airs.personnel_profiles p ON p.id = a.person_id AND p.org_id = a.org_id
           WHERE a.incident_id = $1
+            AND (
+              a.org_id = $2
+              OR a.assignment_type <> 'resource'
+              OR (
+                a.resource_id IS NOT NULL
+                AND EXISTS (
+                  SELECT 1 FROM airs.resource_shares s
+                  JOIN airs.incident_rooms r ON r.id = s.incident_id
+                  WHERE s.resource_id = a.resource_id AND s.incident_id = a.incident_id
+                    AND s.org_id <> $2 AND s.revoked_at IS NULL
+                    AND (s.expires_at IS NULL OR s.expires_at > now())
+                    AND s.classification <> 'originating_org_only'
+                    AND (s.classification <> 'named_recipients' OR $2 = ANY (s.named_recipient_org_ids))
+                    AND r.status NOT IN ('closed','archived')
+                    AND airs.has_incident_access(s.incident_id)
+                )
+              )
+            )
           ORDER BY a.created_at DESC`,
           [inc, ctx.orgId],
         )

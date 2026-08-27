@@ -30,6 +30,8 @@ import {
 } from "@/lib/map/model";
 
 const MIGRATION = readFileSync("db/migrations/0009_common_operating_picture.sql", "utf8");
+const MAP_SERVER_SOURCE = readFileSync("src/lib/map/map.server.ts", "utf8");
+const ASSIGNMENTS_SERVER_SOURCE = readFileSync("src/lib/resources/assignments.server.ts", "utf8");
 
 // --- layer 1: model <-> migration parity --------------------------------------
 
@@ -58,6 +60,21 @@ describe("map model mirrors migration 0009", () => {
     for (const k of LOCATION_KINDS) expect(MIGRATION).toContain(`'${k}'`);
     for (const s of POSITION_SOURCES) expect(MIGRATION).toContain(`'${s}'`);
     for (const f of FRESHNESS_STATES) expect(MIGRATION).toContain(`'${f}'`);
+  });
+});
+
+describe("incident resource COP remains incident-scoped", () => {
+  it("uses the selected incident's exact live share for partner assignment visibility", () => {
+    expect(ASSIGNMENTS_SERVER_SOURCE).toContain("s.incident_id = a.incident_id");
+    expect(ASSIGNMENTS_SERVER_SOURCE).toContain("s.revoked_at IS NULL");
+    expect(ASSIGNMENTS_SERVER_SOURCE).toContain("airs.has_incident_access(s.incident_id)");
+  });
+
+  it("uses that incident share's disclosure profile for resource geography", () => {
+    expect(MAP_SERVER_SOURCE).toContain("s.incident_id = a.incident_id");
+    expect(MAP_SERVER_SOURCE).toContain("COALESCE(s.disclosure_profile, 'summary')");
+    expect(MAP_SERVER_SOURCE).toContain("s.revoked_at IS NULL");
+    expect(MAP_SERVER_SOURCE).toContain("airs.has_incident_access(a.incident_id)");
   });
 });
 

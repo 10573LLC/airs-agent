@@ -397,6 +397,72 @@ export async function listResourceLocations(
   );
 }
 
+
+/**
+ * Current locations for resources actively committed to one incident room.
+ * A partner resource is returned only through that room's live resource share,
+ * and its geography is reduced using that exact share's disclosure profile.
+ */
+export async function listIncidentResourceLocations(
+  token: string | null | undefined,
+  orgId: string | null,
+  incidentId: string,
+  meta?: RequestMeta,
+): Promise<ResourceLocationView[]> {
+  const inc = assertUuid(incidentId, "incident id");
+  return withAuthorized(
+    {
+      token,
+      orgId,
+      permission: "map.read",
+      action: "map.incident_resource_locations.list",
+      resourceType: "resource_location",
+      resourceId: inc,
+      audit: false,
+      meta,
+    },
+    async (ctx, q) => {
+      const rows = await q.query<RawGeoRow>(
+        `SELECT ${LOCATION_SELECT}
+           FROM airs.resource_locations l
+           JOIN airs.resources r ON r.id = l.resource_id
+           JOIN airs.incident_assignments a
+             ON a.resource_id = l.resource_id AND a.incident_id = $2
+           JOIN airs.incident_rooms ir ON ir.id = a.incident_id
+           LEFT JOIN airs.resource_shares s
+             ON s.resource_id = l.resource_id AND s.incident_id = a.incident_id
+           CROSS JOIN LATERAL (
+             SELECT CASE WHEN l.org_id = $1 THEN 'full'
+                         ELSE COALESCE(s.disclosure_profile, 'summary') END AS profile
+           ) e
+           CROSS JOIN LATERAL (
+             SELECT airs.resolve_precision(l.precision_policy, e.profile, l.org_id = $1) AS policy
+           ) p
+          WHERE l.superseded_at IS NULL
+            AND a.assignment_type = 'resource'
+            AND a.status IN ('proposed','assigned','deploying','active')
+            AND (
+              a.org_id = $1
+              OR (
+                s.id IS NOT NULL
+                AND s.org_id <> $1
+                AND s.revoked_at IS NULL
+                AND (s.expires_at IS NULL OR s.expires_at > now())
+                AND s.classification <> 'originating_org_only'
+                AND (s.classification <> 'named_recipients'
+                     OR $1 = ANY (s.named_recipient_org_ids))
+                AND ir.status NOT IN ('closed','archived')
+                AND airs.has_incident_access(a.incident_id)
+              )
+            )
+          ORDER BY l.reported_at DESC`,
+        [ctx.orgId, inc],
+      );
+      return rows.map(toLocation);
+    },
+  );
+}
+
 // --- writes -------------------------------------------------------------------
 
 /** Confirms the active organization owns a room before it may place geography in it. */

@@ -135,6 +135,19 @@ export const listResourceLocationsFn = createServerFn({ method: "GET" })
     }),
   );
 
+
+export const listIncidentResourceLocationsFn = createServerFn({ method: "GET" })
+  .validator((d: unknown) =>
+    z.object({ orgId: orgIdField, incidentId: uuid }).parse(d),
+  )
+  .handler(async ({ data }) =>
+    guard(async () => {
+      const { listIncidentResourceLocations } = await map();
+      const { token, meta } = await serverCtx();
+      return listIncidentResourceLocations(token, data.orgId ?? null, data.incidentId, meta);
+    }),
+  );
+
 // --- map features -------------------------------------------------------------
 
 export const createMapFeatureFn = createServerFn({ method: "POST" })

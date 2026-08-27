@@ -16,12 +16,13 @@ import { getMe } from "@/lib/api/auth.functions";
 import { listObservationsFn } from "@/lib/api/awareness.functions";
 import { OBSERVATION_TYPE_LABELS, OBSERVATION_FRESHNESS_LABELS } from "@/lib/awareness/model";
 import { listIncidentsFn } from "@/lib/api/incidents.functions";
-import { listResourcesFn } from "@/lib/api/resources.functions";
+import { listIncidentAssignmentsFn, listResourcesFn } from "@/lib/api/resources.functions";
 import {
   archiveMapFeatureFn,
   clearResourceLocationFn,
   createMapFeatureFn,
   createOperatingAreaFn,
+  listIncidentResourceLocationsFn,
   listMapFeaturesFn,
   listOperatingAreasFn,
   listResourceLocationsFn,
@@ -29,6 +30,11 @@ import {
   setFeaturePrecisionFn,
   setOperatingAreaStatusFn,
 } from "@/lib/api/map.functions";
+import {
+  activeIncidentResourceIds,
+  buildIncidentResourceRoster,
+  type IncidentResourceLocationState,
+} from "@/lib/map/incident-resources";
 import {
   FRESHNESS_LABELS,
   MAP_FEATURE_LABELS,
@@ -100,6 +106,18 @@ const AREA_TONE: Record<string, StatusTone> = {
   cancelled: "critical",
 };
 
+const INCIDENT_LOCATION_LABELS: Record<IncidentResourceLocationState, string> = {
+  reported: "Position available",
+  withheld: "Location withheld",
+  not_reported: "Location not reported",
+};
+
+const INCIDENT_LOCATION_TONES: Record<IncidentResourceLocationState, StatusTone> = {
+  reported: "active",
+  withheld: "caution",
+  not_reported: "neutral",
+};
+
 /** A square ring around a picked point — the portable way to draft an area
  *  without shipping a drawing toolkit. Coordinates stay plain GeoJSON. */
 function squareAround([lng, lat]: [number, number], radiusDeg: number) {
@@ -128,9 +146,11 @@ function MapPage() {
   const me = useServerFn(getMe);
   const incidentsFn = useServerFn(listIncidentsFn);
   const resourcesFn = useServerFn(listResourcesFn);
+  const assignmentsFn = useServerFn(listIncidentAssignmentsFn);
   const featuresFn = useServerFn(listMapFeaturesFn);
   const areasFn = useServerFn(listOperatingAreasFn);
   const locationsFn = useServerFn(listResourceLocationsFn);
+  const incidentLocationsFn = useServerFn(listIncidentResourceLocationsFn);
   const observationsFn = useServerFn(listObservationsFn);
 
   const createFeature = useServerFn(createMapFeatureFn);
@@ -175,6 +195,11 @@ function MapPage() {
     queryFn: () => resourcesFn({ data: {} }),
     enabled: signedIn,
   });
+  const assignments = useQuery({
+    queryKey: ["incident-resource-assignments", incidentId],
+    queryFn: () => assignmentsFn({ data: { incidentId } }),
+    enabled: signedIn && Boolean(incidentId),
+  });
   const features = useQuery({
     queryKey: ["map-features", incidentId],
     queryFn: () => featuresFn({ data: { incidentId: incidentId || null } }),
@@ -187,7 +212,10 @@ function MapPage() {
   });
   const locations = useQuery({
     queryKey: ["resource-locations", incidentId],
-    queryFn: () => locationsFn({ data: { incidentId: incidentId || null } }),
+    queryFn: () =>
+      incidentId
+        ? incidentLocationsFn({ data: { incidentId } })
+        : locationsFn({ data: { incidentId: null } }),
     enabled: signedIn,
   });
 
@@ -208,9 +236,19 @@ function MapPage() {
   const featureRows = features.data?.ok ? features.data.data : [];
   const areaRows = areas.data?.ok ? areas.data.data : [];
   const locationRows = locations.data?.ok ? locations.data.data : [];
+  const assignmentRows = assignments.data?.ok ? assignments.data.data : [];
   const incidentRows = incidents.data?.ok ? incidents.data.data : [];
   const resourceRows = resources.data?.ok ? resources.data.data : [];
   const observationRows = observations.data?.ok ? observations.data.data : [];
+  const activeResourceIds = useMemo(() => activeIncidentResourceIds(assignmentRows), [assignmentRows]);
+  const displayedLocationRows = useMemo(
+    () => incidentId ? locationRows.filter((l) => activeResourceIds.has(l.resourceId)) : locationRows,
+    [activeResourceIds, incidentId, locationRows],
+  );
+  const incidentResourceRoster = useMemo(
+    () => incidentId ? buildIncidentResourceRoster(assignmentRows, locationRows) : [],
+    [assignmentRows, incidentId, locationRows],
+  );
 
   const layers = useMemo<MapLayerItem[]>(() => {
     const items: MapLayerItem[] = [];
@@ -235,7 +273,7 @@ function MapPage() {
         });
       }
     if (showPositions)
-      for (const l of locationRows) {
+      for (const l of displayedLocationRows) {
         items.push({
           id: `loc-${l.id}`,
           label: l.resourceName,
@@ -260,7 +298,7 @@ function MapPage() {
   }, [
     areaRows,
     featureRows,
-    locationRows,
+    displayedLocationRows,
     observationRows,
     showAreas,
     showFeatures,
@@ -274,7 +312,7 @@ function MapPage() {
   const withheld =
     featureRows.filter((f) => !f.geometry).length +
     areaRows.filter((a) => !a.geometry).length +
-    locationRows.filter((l) => !l.geometry).length +
+    displayedLocationRows.filter((l) => !l.geometry).length +
     observationRows.filter((o) => !o.geometry).length;
 
   const addFeature = useMutation({
@@ -443,6 +481,37 @@ function MapPage() {
           className="flex h-[460px] w-full flex-col overflow-hidden rounded-lg border border-border"
         />
       </SectionCard>
+
+      {incidentId ? (
+        <SectionCard
+          title="Incident resources"
+          description="Resources currently committed to this incident. Partner resources appear only while their incident share remains active."
+        >
+          {assignments.isLoading ? (
+            <p className="text-sm text-muted-foreground">Loading incident resources…</p>
+          ) : assignments.data && !assignments.data.ok ? (
+            <p className="text-sm text-muted-foreground">Incident resources are not available at your access level.</p>
+          ) : incidentResourceRoster.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No active resources are visible for this incident.</p>
+          ) : (
+            <ul className="space-y-2">
+              {incidentResourceRoster.map((resource) => (
+                <li key={resource.assignmentId} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2">
+                  <div className="text-sm">
+                    <span className="font-medium">{resource.label}</span>{" "}
+                    <span className="text-muted-foreground">
+                      · {resource.ownerOrgName ?? "your agency"} · {resource.status}
+                    </span>
+                  </div>
+                  <StatusPill tone={INCIDENT_LOCATION_TONES[resource.locationState]}>
+                    {INCIDENT_LOCATION_LABELS[resource.locationState]}
+                  </StatusPill>
+                </li>
+              ))}
+            </ul>
+          )}
+        </SectionCard>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-3">
         <SectionCard title="Place a map feature" description="Owned by your agency.">

@@ -27,8 +27,9 @@ describe("platform organization display name", () => {
     expect(seed).toContain("'other','platform'");
   });
 
-  it("registers the repair migration last in the run order", () => {
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0012_fix_platform_org_display_name.sql");
+  it("keeps the display-name repair before later migrations", () => {
+    expect(MIGRATION_FILES).toContain("db/migrations/0012_fix_platform_org_display_name.sql");
+    expect(MIGRATION_FILES.indexOf("db/migrations/0012_fix_platform_org_display_name.sql")).toBeLessThan(MIGRATION_FILES.indexOf("db/migrations/0013_agency_system_profiles.sql"));
     expect(new Set(MIGRATION_FILES).size).toBe(MIGRATION_FILES.length);
   });
 

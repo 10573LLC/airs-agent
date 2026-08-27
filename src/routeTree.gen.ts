@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SimulationRouteImport } from './routes/simulation'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as MapRouteImport } from './routes/map'
 import { Route as IncidentsRouteImport } from './routes/incidents'
@@ -26,6 +27,11 @@ import { Route as ActivateTokenRouteImport } from './routes/activate/$token'
 import { Route as ApiPublicHealthRouteImport } from './routes/api/public/health'
 import { Route as ApiMaintenanceExpireIncidentsRouteImport } from './routes/api/maintenance/expire-incidents'
 
+const SimulationRoute = SimulationRouteImport.update({
+  id: '/simulation',
+  path: '/simulation',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResourcesRoute = ResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/simulation': typeof SimulationRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/agency/systems': typeof AgencySystemsRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
@@ -132,6 +139,7 @@ export interface FileRoutesByTo {
   '/console': typeof ConsoleRoute
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/simulation': typeof SimulationRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/agency/systems': typeof AgencySystemsRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/incidents': typeof IncidentsRouteWithChildren
   '/map': typeof MapRoute
   '/resources': typeof ResourcesRoute
+  '/simulation': typeof SimulationRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/agency/systems': typeof AgencySystemsRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
@@ -171,6 +180,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/map'
     | '/resources'
+    | '/simulation'
     | '/activate/$token'
     | '/agency/systems'
     | '/awareness/$observationId'
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/console'
     | '/map'
     | '/resources'
+    | '/simulation'
     | '/activate/$token'
     | '/agency/systems'
     | '/awareness/$observationId'
@@ -205,6 +216,7 @@ export interface FileRouteTypes {
     | '/incidents'
     | '/map'
     | '/resources'
+    | '/simulation'
     | '/activate/$token'
     | '/agency/systems'
     | '/awareness/$observationId'
@@ -224,6 +236,7 @@ export interface RootRouteChildren {
   IncidentsRoute: typeof IncidentsRouteWithChildren
   MapRoute: typeof MapRoute
   ResourcesRoute: typeof ResourcesRoute
+  SimulationRoute: typeof SimulationRoute
   ActivateTokenRoute: typeof ActivateTokenRoute
   AgencySystemsRoute: typeof AgencySystemsRoute
   InviteTokenRoute: typeof InviteTokenRoute
@@ -233,6 +246,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/simulation': {
+      id: '/simulation'
+      path: '/simulation'
+      fullPath: '/simulation'
+      preLoaderRoute: typeof SimulationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resources': {
       id: '/resources'
       path: '/resources'
@@ -384,6 +404,7 @@ const rootRouteChildren: RootRouteChildren = {
   IncidentsRoute: IncidentsRouteWithChildren,
   MapRoute: MapRoute,
   ResourcesRoute: ResourcesRoute,
+  SimulationRoute: SimulationRoute,
   ActivateTokenRoute: ActivateTokenRoute,
   AgencySystemsRoute: AgencySystemsRoute,
   InviteTokenRoute: InviteTokenRoute,

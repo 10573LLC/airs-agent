@@ -185,7 +185,7 @@ describe("adoption of the live reconciled state", () => {
     expect(adoptSql).toContain("platform_admin holds operational permissions");
   });
 
-  it("records exactly 0001-0012 with the manifest checksums and runs no migration body", () => {
+  it("records every manifest migration with its checksum and runs no migration body", () => {
     const script = buildAdoptionScript(migrations, adoptSql, {});
     const recorded = [...script.matchAll(/record_applied\('(\d{4})'/g)].map((m) => m[1]);
     expect(recorded).toEqual(migrations.map((m) => m.version));
@@ -202,6 +202,7 @@ describe("adoption of the live reconciled state", () => {
       "0010",
       "0011",
       "0012",
+      "0013",
     ]);
     for (const m of migrations) expect(script).toContain(m.checksum);
     expect(script).toContain("no migration body is executed during adoption");
@@ -209,18 +210,18 @@ describe("adoption of the live reconciled state", () => {
     expect(script).not.toMatch(
       /CREATE TABLE airs\.|DROP TABLE|CREATE EXTENSION|ALTER TABLE airs\./,
     );
-    expect(script).toMatch(/record_applied\('0012'.*true\);/);
+    expect(script).toMatch(/record_applied\('0013'.*true\);/);
   });
 
-  it("after adoption: 12 applied, highest 0012, zero pending, zero conflicts, no adoption required", () => {
+  it("after adoption: every migration applied, zero pending, zero conflicts, no adoption required", () => {
     const rows = migrations.map((m) => ({
       version: m.version,
       filename: m.filename,
       checksum: m.checksum,
     }));
     const { applied, pending, conflicts } = diffMigrations(migrations, rows);
-    expect(applied.length).toBe(12);
-    expect(applied.at(-1)!.version).toBe("0012");
+    expect(applied.length).toBe(migrations.length);
+    expect(applied.at(-1)!.version).toBe("0013");
     expect(pending.length).toBe(0);
     expect(conflicts.length).toBe(0);
     // `npm run db:migrate` then applies nothing

@@ -21,6 +21,7 @@ export const PRIMARY_NAV = [
   { to: "/resources", label: "Readiness Board" },
   { to: "/map", label: "Common Operating Picture" },
   { to: "/awareness", label: "Awareness Board" },
+  { to: "/simulation", label: "Simulation Lab" },
 ] as const;
 
 function isSectionActive(pathname: string, to: string) {

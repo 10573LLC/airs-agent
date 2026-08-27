@@ -57,7 +57,7 @@ describe("canonical manifest", () => {
   it("is the single source of migration order for both execution paths", () => {
     expect(readManifest()).toEqual(MIGRATION_FILES);
     expect(MIGRATION_FILES[0]).toBe("db/migrations/0001_init.sql");
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0012_fix_platform_org_display_name.sql");
+    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0013_agency_system_profiles.sql");
     expect(dockerInit).toContain("manifest.txt");
     expect(dockerInit).toContain("airs_migrations.record_applied");
   });
@@ -76,6 +76,7 @@ describe("canonical manifest", () => {
       "0010",
       "0011",
       "0012",
+      "0013",
     ]);
     expect(parseVersion("db/migrations/0012_fix_platform_org_display_name.sql")).toBe("0012");
   });
@@ -89,7 +90,7 @@ describe("canonical manifest", () => {
 });
 
 describe("pending-only execution", () => {
-  it("an empty ledger makes 0001-0012 pending, in order", () => {
+  it("an empty ledger makes every manifest migration pending, in order", () => {
     const { applied, pending, conflicts } = diffMigrations(migrations, []);
     expect(applied).toHaveLength(0);
     expect(conflicts).toHaveLength(0);
@@ -102,7 +103,7 @@ describe("pending-only execution", () => {
       rowsFor(migrations.map((m) => m.version)),
     );
     expect(pending).toHaveLength(0);
-    expect(applied).toHaveLength(12);
+    expect(applied).toHaveLength(migrations.length);
   });
 
   it("0001-0011 recorded and 0012 pending applies only 0012", () => {
@@ -190,7 +191,7 @@ describe("existing-database adoption", () => {
     expect(script).not.toContain("CREATE TABLE airs.organizations");
     expect(script).not.toContain(">>> migration body");
     for (const m of migrations) expect(script).toContain(`record_applied('${m.version}'`);
-    expect(script.match(/record_applied/g)).toHaveLength(12);
+    expect(script.match(/record_applied/g)).toHaveLength(migrations.length);
   });
 
   it("verifies before recording, inside one locked transaction", () => {

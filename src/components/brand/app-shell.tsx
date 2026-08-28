@@ -85,18 +85,21 @@ export function PageShell({
   headerRight,
   width = "wide",
   variant = "app",
+  viewport = false,
 }: {
   children: ReactNode;
   headerRight?: ReactNode;
   width?: "wide" | "narrow" | "full";
   variant?: "app" | "public";
+  viewport?: boolean;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className={cn("flex min-h-screen flex-col bg-background", viewport && "xl:h-screen xl:overflow-hidden")}>
       <AppHeader right={headerRight} variant={variant} />
       <main
         className={cn(
           "mx-auto w-full flex-1",
+          viewport && "xl:min-h-0 xl:overflow-hidden",
           width === "full"
             ? "max-w-none px-3 py-5 sm:px-4 xl:px-5 2xl:px-6"
             : "px-6 py-10",
@@ -105,7 +108,7 @@ export function PageShell({
       >
         {children}
       </main>
-      <AppFooter />
+      {viewport ? <div className="xl:hidden"><AppFooter /></div> : <AppFooter />}
     </div>
   );
 }

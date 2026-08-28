@@ -229,3 +229,21 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+@keyframes simulation-ticker-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.simulation-ticker-track {
+  animation: simulation-ticker-scroll 42s linear infinite;
+}
+
+.simulation-ticker:hover .simulation-ticker-track,
+.simulation-ticker:focus-within .simulation-ticker-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .simulation-ticker-track { animation: none; }
+}

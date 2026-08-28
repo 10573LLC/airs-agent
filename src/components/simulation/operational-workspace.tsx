@@ -47,7 +47,7 @@ const views: { id: View; label: string }[] = [
   { id: "timeline", label: "Decision Log" },
 ];
 
-export function OperationalWorkspace({ projection: suppliedProjection }: { projection: SimOperationalProjection | null }) {
+export function OperationalWorkspace({ projection: suppliedProjection, viewport = false }: { projection: SimOperationalProjection | null; viewport?: boolean }) {
   const projection = suppliedProjection ?? EMPTY_OPERATIONAL_PROJECTION;
   const [view, setView] = useState<View>("command");
   const mapItems = useMemo<MapLayerItem[]>(
@@ -56,7 +56,7 @@ export function OperationalWorkspace({ projection: suppliedProjection }: { proje
   );
 
   return (
-    <section className="mt-5 space-y-4">
+    <section className={viewport ? "mt-5 space-y-4 xl:mt-0 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-2 xl:space-y-0" : "mt-5 space-y-4"}>
       <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -97,20 +97,20 @@ export function OperationalWorkspace({ projection: suppliedProjection }: { proje
         </div>
       </div>
 
-      <DesktopConsole projection={projection} mapItems={mapItems} />
+      <DesktopConsole projection={projection} mapItems={mapItems} viewport={viewport} />
     </section>
   );
 }
 
-function DesktopConsole({ projection, mapItems }: { projection: SimOperationalProjection; mapItems: MapLayerItem[] }) {
+function DesktopConsole({ projection, mapItems, viewport }: { projection: SimOperationalProjection; mapItems: MapLayerItem[]; viewport: boolean }) {
   return (
-    <div className="hidden xl:grid xl:grid-cols-[minmax(260px,360px)_minmax(560px,1fr)_minmax(280px,400px)] xl:gap-3">
-      <div className="grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3">
+    <div className={viewport ? "hidden min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(260px,360px)_minmax(560px,1fr)_minmax(280px,400px)] xl:gap-3" : "hidden xl:grid xl:grid-cols-[minmax(260px,360px)_minmax(560px,1fr)_minmax(280px,400px)] xl:gap-3"}>
+      <div className={viewport ? "grid min-h-0 min-w-0 grid-rows-2 gap-3" : "grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3"}>
         <DesktopCommandPanel projection={projection} />
         <DesktopAgencyPanel projection={projection} />
       </div>
-      <DesktopMapPanel projection={projection} mapItems={mapItems} />
-      <div className="grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3">
+      <DesktopMapPanel projection={projection} mapItems={mapItems} viewport={viewport} />
+      <div className={viewport ? "grid min-h-0 min-w-0 grid-rows-2 gap-3" : "grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3"}>
         <DesktopResourcePanel projection={projection} />
         <DesktopDecisionPanel projection={projection} />
       </div>
@@ -221,9 +221,9 @@ function DesktopDecisionPanel({ projection }: { projection: SimOperationalProjec
   );
 }
 
-function DesktopMapPanel({ projection, mapItems }: { projection: SimOperationalProjection; mapItems: MapLayerItem[] }) {
+function DesktopMapPanel({ projection, mapItems, viewport }: { projection: SimOperationalProjection; mapItems: MapLayerItem[]; viewport: boolean }) {
   return (
-    <section className="flex h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel">
+    <section className={viewport ? "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel" : "flex h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel"}>
       <div className="flex items-start justify-between gap-3 border-b border-border px-3 py-2.5">
         <div>
           <h3 className="text-sm font-semibold text-card-foreground">Airspace / Common Operating Picture</h3>

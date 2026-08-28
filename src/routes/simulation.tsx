@@ -16,8 +16,10 @@ import {
   injectFriction,
   nextEventTime,
   visibleEvents,
+  type AirsAssessment,
   type CompiledScenario,
   type SimConfidence,
+  type SimulationEvent,
 } from "@/lib/simulation/model";
 
 export const Route = createFileRoute("/simulation")({
@@ -36,6 +38,93 @@ function formatClock(seconds: number) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
   return `T+${hours}:${minutes}`;
+}
+
+
+function DesktopAirsStrip({ assessments }: { assessments: AirsAssessment[] }) {
+  return (
+    <div className="hidden h-12 shrink-0 grid-cols-4 gap-2 xl:grid">
+      {assessments.map((assessment) => (
+        <div key={assessment.pillar} title={`${assessment.summary}\n${assessment.items.join("\n")}`} className="min-w-0 rounded-md border border-border bg-card px-3 py-2 shadow-panel">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-primary">{assessment.pillar}</span>
+            <span className="truncate text-xs text-muted-foreground">{assessment.summary}</span>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TickerSequence({ events, duplicate = false }: { events: SimulationEvent[]; duplicate?: boolean }) {
+  return (
+    <div className="flex min-w-max items-center" aria-hidden={duplicate || undefined}>
+      {events.map((row) => (
+        <span key={`${duplicate ? "dup-" : ""}${row.id}`} title={row.detail} className="flex items-center gap-2 whitespace-nowrap border-r border-border/70 px-5 text-xs">
+          <strong className="font-mono text-foreground">{row.timeLabel.startsWith("T+") ? row.timeLabel : formatClock(row.atSeconds)}</strong>
+          <span className="font-semibold uppercase tracking-wide text-primary">{row.source}</span>
+          <span className={row.confidence === "confirmed" ? "font-semibold uppercase text-success" : row.confidence === "conflicting" ? "font-semibold uppercase text-destructive" : "font-semibold uppercase text-warning"}>{row.confidence}</span>
+          <span className="font-medium text-foreground">{row.headline}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function SimulationTicker({ events }: { events: SimulationEvent[] }) {
+  return (
+    <div className="simulation-ticker hidden h-9 shrink-0 overflow-hidden rounded-md border border-border bg-card shadow-panel xl:flex">
+      <div className="flex w-28 shrink-0 items-center justify-center bg-brand-navy px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-white">Live feed</div>
+      <div className="min-w-0 flex-1 overflow-hidden">
+        {events.length ? (
+          <div className="simulation-ticker-track flex h-full min-w-max items-center">
+            <TickerSequence events={events} />
+            <TickerSequence events={events} duplicate />
+          </div>
+        ) : (
+          <div className="flex h-full items-center px-4 text-xs text-muted-foreground">Awaiting released exercise facts.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+function DesktopPlaybackBar({
+  scenario,
+  nextAt,
+  hasNext,
+  clockSeconds,
+  onAdvance,
+  onMinute,
+  onFiveMinutes,
+  onInject,
+  onEdit,
+}: {
+  scenario: CompiledScenario;
+  nextAt: number | null;
+  hasNext: boolean;
+  clockSeconds: number;
+  onAdvance: () => void;
+  onMinute: () => void;
+  onFiveMinutes: () => void;
+  onInject: () => void;
+  onEdit: () => void;
+}) {
+  return (
+    <div className="hidden h-12 shrink-0 items-center gap-3 rounded-md border border-border bg-card px-3 shadow-panel xl:flex">
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-foreground">{scenario.title}</p>
+        <p className="truncate text-[11px] text-muted-foreground">{hasNext && nextAt !== null ? `Next authored event ${formatClock(nextAt)}` : "End of authored timeline"}</p>
+      </div>
+      <span className="shrink-0 font-mono text-base font-bold text-foreground">{formatClock(clockSeconds)}</span>
+      <button type="button" disabled={!hasNext} onClick={onAdvance} className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40">Advance</button>
+      <button type="button" onClick={onMinute} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">+1</button>
+      <button type="button" onClick={onFiveMinutes} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">+5</button>
+      <button type="button" onClick={onInject} className="rounded-md border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive">Inject conflict</button>
+      <button type="button" onClick={onEdit} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">Edit</button>
+    </div>
+  );
 }
 
 function SimulationPage() {
@@ -61,6 +150,7 @@ function SimulationPage() {
   const operational = useMemo(() => scenario ? buildOperationalProjection(scenario, clockSeconds) : null, [scenario, clockSeconds]);
   const nextAt = scenario ? nextEventTime(scenario, clockSeconds) : null;
   const hasNext = nextAt !== null && nextAt > clockSeconds;
+  const activeViewport = Boolean(scenario && !editorOpen);
 
   const start = () => {
     if (!scenarioText.trim()) return;
@@ -106,12 +196,13 @@ function SimulationPage() {
   }
 
   return (
-    <PageShell width="full">
-      <div className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-center text-sm font-bold tracking-wide text-warning-foreground">
+    <PageShell width="full" viewport={activeViewport}>
+      <div className={activeViewport ? "xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-2" : ""}>
+      <div className={activeViewport ? "rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-center text-sm font-bold tracking-wide text-warning-foreground xl:shrink-0 xl:px-3 xl:py-1.5 xl:text-xs" : "rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-center text-sm font-bold tracking-wide text-warning-foreground"}>
         {SIMULATION_BANNER}
       </div>
 
-      <div className="mt-4">
+      <div className={activeViewport ? "mt-2 xl:hidden" : "mt-4"}>
         <PageHeading
           eyebrow="Exercise control"
           title="AIRS Simulation Lab"
@@ -119,7 +210,21 @@ function SimulationPage() {
         />
       </div>
 
-      <div className="mt-4">
+      {scenario && !editorOpen ? (
+        <DesktopPlaybackBar
+          scenario={scenario}
+          nextAt={nextAt}
+          hasNext={hasNext}
+          clockSeconds={clockSeconds}
+          onAdvance={() => nextAt !== null && setClockSeconds(nextAt)}
+          onMinute={() => setClockSeconds((value) => value + 60)}
+          onFiveMinutes={() => setClockSeconds((value) => value + 300)}
+          onInject={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)}
+          onEdit={() => setEditorOpen(true)}
+        />
+      ) : null}
+
+      <div className={activeViewport ? "mt-2 xl:hidden" : "mt-4"}>
         <SectionCard title="Scenario Controller" description="Load the exercise, then watch AIRS build the operational picture as the clock advances.">
           {scenario && !editorOpen ? (
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border bg-muted/30 px-3 py-2">
@@ -164,9 +269,14 @@ function SimulationPage() {
         </SectionCard>
       </div>
 
-      <OperationalWorkspace projection={operational} />
+      <div className={activeViewport ? "xl:min-h-0 xl:flex-1" : ""}>
+        <OperationalWorkspace projection={operational} viewport={activeViewport} />
+      </div>
 
-      <div className="mt-6">
+      {activeViewport ? <DesktopAirsStrip assessments={assessments} /> : null}
+      {activeViewport ? <SimulationTicker events={visible} /> : null}
+
+      <div className={activeViewport ? "mt-6 xl:hidden" : "mt-6"}>
         <SectionCard title="Synthetic Integration Feed" description="Supporting telemetry: source facts, provenance, confidence, and exercise friction.">
           {!scenario ? (
             <p className="text-sm text-muted-foreground">No exercise is running. The operational workspace above remains visible so you can see the views that will populate.</p>
@@ -193,7 +303,7 @@ function SimulationPage() {
         </SectionCard>
       </div>
 
-      <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className={activeViewport ? "mt-6 grid gap-4 md:grid-cols-2 xl:hidden" : "mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4"}>
         {assessments.map((assessment) => (
           <SectionCard key={assessment.pillar} title={assessment.pillar} description={assessment.summary}>            <ul className="space-y-2 text-sm text-muted-foreground">
               {assessment.items.map((item) => (
@@ -208,7 +318,7 @@ function SimulationPage() {
       </div>
 
       {state ? (
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+        <div className={activeViewport ? "mt-6 grid gap-4 lg:grid-cols-2 xl:hidden" : "mt-6 grid gap-4 lg:grid-cols-2"}>
           <SectionCard title="Known Operational State" description={state.airspaceStatus}>
             <p className="text-sm font-medium text-foreground">Command</p>
             <p className="mt-1 text-sm text-muted-foreground">{state.commandStatus}</p>
@@ -232,8 +342,9 @@ function SimulationPage() {
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-md border border-border bg-muted/40 p-4 text-xs leading-relaxed text-muted-foreground">
+      <div className={activeViewport ? "mt-6 rounded-md border border-border bg-muted/40 p-4 text-xs leading-relaxed text-muted-foreground xl:hidden" : "mt-6 rounded-md border border-border bg-muted/40 p-4 text-xs leading-relaxed text-muted-foreground"}>
         <strong className="text-foreground">Simulation boundary:</strong> timeline facts, controller injects, and AIRS inferences are exercise artifacts only. They do not create operational incidents, observations, evidence, credentials, connector authorization, or live data access.
+      </div>
       </div>
     </PageShell>
   );

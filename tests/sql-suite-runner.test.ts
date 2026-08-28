@@ -204,6 +204,7 @@ describe("adoption of the live reconciled state", () => {
       "0012",
       "0013",
       "0014",
+      "0015",
     ]);
     for (const m of migrations) expect(script).toContain(m.checksum);
     expect(script).toContain("no migration body is executed during adoption");
@@ -211,7 +212,7 @@ describe("adoption of the live reconciled state", () => {
     expect(script).not.toMatch(
       /CREATE TABLE airs\.|DROP TABLE|CREATE EXTENSION|ALTER TABLE airs\./,
     );
-    expect(script).toMatch(/record_applied\('0014'.*true\);/);
+    expect(script).toMatch(/record_applied\('0015'.*true\);/);
   });
 
   it("after adoption: every migration applied, zero pending, zero conflicts, no adoption required", () => {
@@ -222,7 +223,7 @@ describe("adoption of the live reconciled state", () => {
     }));
     const { applied, pending, conflicts } = diffMigrations(migrations, rows);
     expect(applied.length).toBe(migrations.length);
-    expect(applied.at(-1)!.version).toBe("0014");
+    expect(applied.at(-1)!.version).toBe("0015");
     expect(pending.length).toBe(0);
     expect(conflicts.length).toBe(0);
     // `npm run db:migrate` then applies nothing

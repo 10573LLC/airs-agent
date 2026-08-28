@@ -1,3 +1,5 @@
+import { suggestThreatHypotheses, type ThreatHypothesisSuggestion } from "@/lib/authority/jurisdiction";
+
 export type SimSource =
   | "911/CAD" | "RTCC" | "Airspace/C-UAS" | "UAS" | "LMR"
   | "EMS/Fire" | "Maritime/USCG" | "Navy" | "Law Enforcement"
@@ -32,6 +34,7 @@ export interface SimulationState {
   airspaceTracks: string[];
   commandStatus: string;
   authorities: AuthorityState[];
+  threatHypotheses: ThreatHypothesisSuggestion[];
   hazards: string[];
   unknowns: string[];
   recommendations: string[];
@@ -175,6 +178,12 @@ function authorityState(events: readonly SimulationEvent[]): AuthorityState[] {
   const out: AuthorityState[] = [];
   for (const event of events) {
     const text = event.detail;
+    if (/multiple small UAS inbound|attached payloads|explosions|hostile|attack/i.test(text)) {
+      out.push({ domain: "Hostile threat / criminal enforcement", owner: "Law-enforcement authority with applicable territorial/statutory jurisdiction", status: "reported", basisEventId: event.id });
+    }
+    if (/Fire Department|fire|rescue|MCI|EMS|ambulance|patient|people in the river/i.test(text)) {
+      out.push({ domain: "Fire / rescue / EMS function", owner: "Fire/EMS authority designated by local jurisdiction", status: "reported", basisEventId: event.id });
+    }
     if (/Captain of the Port|Coast Guard.*safety\/security zone/i.test(text)) {
       out.push({ domain: "Waterway / marine security", owner: "U.S. Coast Guard Captain of the Port", status: "established", basisEventId: event.id });
     }
@@ -219,10 +228,10 @@ function deriveAirspaceTracks(events: readonly SimulationEvent[]) {
 function deriveCommandStatus(events: readonly SimulationEvent[]) {
   const text = events.map((event) => event.detail).join(" ");
   if (/Unified Command stands up/i.test(text)) {
-    return "Unified Command established with local, county, federal, maritime, and Navy representation identified in the released exercise facts.";
+    return "Unified Command established for coordination; each participating organization retains its own jurisdictional, statutory, and functional authority.";
   }
   if (/establish an initial command post/i.test(text)) {
-    return "Initial command post established; cross-jurisdiction command structure is not yet established in released exercise facts.";
+    return "Initial command post established. Rescue/EMS and hostile-threat/security functions remain distinct; overall cross-jurisdiction authority has not yet been resolved into Unified Command.";
   }
   return "Command structure has not yet been established from released exercise facts.";
 }
@@ -256,7 +265,10 @@ function deriveRecommendations(events: readonly SimulationEvent[]) {
     recommendations.push("Protect emergency aviation access and avoid adding public safety UAS until launch authority and deconfliction can be established.");
   }
   if (/explosions|people in the river|mass casualties/i.test(text)) {
-    recommendations.push("Keep life safety primary while maintaining a separate airspace-threat function so rescue operations do not lose track accountability.");
+    recommendations.push("Run rescue/medical life-safety operations and hostile-threat/security operations concurrently. Casualty response does not establish exclusive fire jurisdiction and does not mean the initiating hostile threat has ended.");
+  }
+  if (/multiple small UAS inbound|attached payloads|explosions|impacts/i.test(text)) {
+    recommendations.push("Maintain a secondary/follow-on assault hypothesis until the available intelligence reduces it; protect responder convergence, command/staging activity, and emergency aviation without asserting attacker intent as fact.");
   }
   if (/not every drone is accounted|ordnance floating/i.test(text)) {
     recommendations.push("Maintain unresolved UAS/debris as both a responder hazard and an evidence issue; do not mark the airspace or waterway clear from absence of current detections alone.");
@@ -281,6 +293,7 @@ export function buildSimulationState(scenario: CompiledScenario, clockSeconds: n
     airspaceTracks: deriveAirspaceTracks(events),
     commandStatus: deriveCommandStatus(events),
     authorities: authorityState(events),
+    threatHypotheses: suggestThreatHypotheses(events.map((event) => event.detail).join(" ")),
     hazards: deriveHazards(events),
     unknowns: deriveUnknowns(events),
     recommendations: deriveRecommendations(events),
@@ -296,6 +309,7 @@ export function assessAirs(events: readonly SimulationEvent[], state?: Simulatio
     airspaceTracks: deriveAirspaceTracks(events),
     commandStatus: deriveCommandStatus(events),
     authorities: authorityState(events),
+    threatHypotheses: suggestThreatHypotheses(events.map((event) => event.detail).join(" ")),
     hazards: deriveHazards(events),
     unknowns: deriveUnknowns(events),
     recommendations: deriveRecommendations(events),
@@ -308,8 +322,15 @@ export function assessAirs(events: readonly SimulationEvent[], state?: Simulatio
     },
     {
       pillar: "Intelligence",
-      summary: current.unknowns.length ? `${current.unknowns.length} material unknown${current.unknowns.length === 1 ? "" : "s"} remain open.` : "No explicit unresolved question has yet been established from released facts.",
-      items: current.unknowns.length ? current.unknowns : ["Preserve source, time, provenance, and confidence as new facts arrive."],
+      summary: current.threatHypotheses.length
+        ? `${current.threatHypotheses.length} threat hypothes${current.threatHypotheses.length === 1 ? "is" : "es"} open; ${current.unknowns.length} material unknown${current.unknowns.length === 1 ? "" : "s"}.`
+        : current.unknowns.length
+          ? `${current.unknowns.length} material unknown${current.unknowns.length === 1 ? "" : "s"} remain open.`
+          : "No explicit unresolved question has yet been established from released facts.",
+      items: [
+        ...current.threatHypotheses.map((item) => `HYPOTHESIS · ${item.title} · ${item.confidence} confidence · ${item.rationale}`),
+        ...(current.unknowns.length ? current.unknowns : current.threatHypotheses.length ? [] : ["Preserve source, time, provenance, and confidence as new facts arrive."]),
+      ],
     },    {
       pillar: "Response",
       summary: current.recommendations.length ? `${current.recommendations.length} current AIRS recommendation${current.recommendations.length === 1 ? "" : "s"}.` : "No response recommendation is justified yet.",

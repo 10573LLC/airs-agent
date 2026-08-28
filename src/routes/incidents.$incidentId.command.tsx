@@ -8,7 +8,8 @@ import { CopMap, type MapLayerItem } from "@/components/map/cop-map";
 import { DENY_MESSAGES } from "@/components/incident-ui";
 import { listObservationsFn } from "@/lib/api/awareness.functions";
 import { readIncidentFn, listParticipantsFn } from "@/lib/api/incidents.functions";
-import { readIcsBoardFn, saveIcsProfileFn, addIcsObjectiveFn, setIcsObjectiveStatusFn, addIcsPositionFn, setIcsPositionStatusFn, addIncidentResourceRequestFn, setIncidentResourceRequestStatusFn } from "@/lib/api/ics.functions";
+import { readIcsBoardFn, saveIcsProfileFn, addIcsObjectiveFn, setIcsObjectiveStatusFn, addIcsPositionFn, setIcsPositionStatusFn, addIncidentResourceRequestFn, setIncidentResourceRequestStatusFn, addIncidentAuthorityFn, setIncidentAuthorityStatusFn, addThreatHypothesisFn, setThreatHypothesisStatusFn } from "@/lib/api/ics.functions";
+import { LIFE_SAFETY_AUTHORITY_NOTE, suggestAuthorities, suggestThreatHypotheses, type AuthoritySuggestion, type ThreatHypothesisSuggestion } from "@/lib/authority/jurisdiction";
 import { createMapFeatureFn, listIncidentResourceLocationsFn, listMapFeaturesFn, listOperatingAreasFn } from "@/lib/api/map.functions";
 import { listIncidentAssignmentsFn } from "@/lib/api/resources.functions";
 import { MAP_FEATURE_LABELS, MAP_FEATURE_TYPES, type MapFeatureType } from "@/lib/map/model";
@@ -27,6 +28,9 @@ const smallButton = "rounded-md border border-border px-2 py-1 text-xs font-semi
 type IcsPositionType = "incident_command" | "command_staff" | "operations" | "planning" | "logistics" | "finance_admin" | "branch" | "division" | "group" | "unit" | "staging_area" | "other";
 type RequestKind = "personnel" | "law_enforcement" | "fire_ems" | "aviation" | "uas" | "counter_uas" | "communications" | "public_works" | "medical" | "logistics" | "specialty_team" | "other";
 type RequestPriority = "immediate" | "high" | "routine";
+type AuthorityTypeValue = "jurisdictional" | "regulatory" | "functional" | "command" | "investigative" | "protective" | "delegated" | "supporting";
+type ThreatTypeValue = "secondary_assault" | "follow_on_uas" | "responder_targeting" | "coordinated_attack" | "explosive_hazard" | "cbrne" | "other";
+type ThreatConfidenceValue = "unknown" | "low" | "medium" | "high";
 const label = (value: string) => value.replaceAll("_", " ");
 const requestTone = (status: string): StatusTone => status === "filled" ? "active" : status === "denied" || status === "cancelled" ? "critical" : status === "partially_filled" || status === "acknowledged" ? "info" : "caution";
 const assignmentTone = (status: string): StatusTone => ["active","deployed"].includes(status) ? "active" : ["assigned","deploying"].includes(status) ? "info" : ["released","completed"].includes(status) ? "neutral" : "caution";
@@ -70,6 +74,10 @@ function IncidentCommandConsole() {
   const positionStatus = useServerFn(setIcsPositionStatusFn);
   const addRequest = useServerFn(addIncidentResourceRequestFn);
   const requestStatus = useServerFn(setIncidentResourceRequestStatusFn);
+  const addAuthority = useServerFn(addIncidentAuthorityFn);
+  const authorityStatus = useServerFn(setIncidentAuthorityStatusFn);
+  const addThreatHypothesis = useServerFn(addThreatHypothesisFn);
+  const threatStatus = useServerFn(setThreatHypothesisStatusFn);
   const createFeature = useServerFn(createMapFeatureFn);
 
   const [notice, setNotice] = useState<string | null>(null);
@@ -97,6 +105,15 @@ function IncidentCommandConsole() {
   const [requestBy, setRequestBy] = useState("");
   const [requestPriority, setRequestPriority] = useState<RequestPriority>("routine");
   const [requestStaging, setRequestStaging] = useState("");
+  const [authorityDomain, setAuthorityDomain] = useState("");
+  const [authorityHolder, setAuthorityHolder] = useState("");
+  const [authorityType, setAuthorityType] = useState<AuthorityTypeValue>("functional");
+  const [authorityScope, setAuthorityScope] = useState("");
+  const [authorityLimitations, setAuthorityLimitations] = useState("");
+  const [threatTitle, setThreatTitle] = useState("");
+  const [threatType, setThreatType] = useState<ThreatTypeValue>("other");
+  const [threatConfidence, setThreatConfidence] = useState<ThreatConfidenceValue>("unknown");
+  const [threatRationale, setThreatRationale] = useState("");
 
   const room = useQuery({ queryKey: ["incident", incidentId], queryFn: () => readIncident({ data: { incidentId } }) });
   const roster = useQuery({ queryKey: ["incident-participants", incidentId], queryFn: () => listParticipants({ data: { incidentId } }) });
@@ -136,6 +153,30 @@ function IncidentCommandConsole() {
   const requestStatusM = useMutation({ mutationFn: (input: { requestId: string; status: "acknowledged" | "partially_filled" | "filled" | "denied" | "cancelled" }) => requestStatus({ data: { incidentId, ...input } }),
     onSuccess: (r) => { report(r, "Resource request status updated."); if (r.ok) refresh("incident-ics"); } });
 
+  const confirmAuthorityM = useMutation({ mutationFn: (item: AuthoritySuggestion) => addAuthority({ data: {
+    incidentId, domain: item.domain, authorityHolder: item.authorityHolder, authorityType: item.authorityType,
+    geographicScope: item.geographicScope, functionalScope: item.functionalScope, basisType: item.basisType,
+    basisReference: item.basisReference, sourceReference: item.sourceReference, limitations: item.limitations, confidence: item.confidence,
+  }}), onSuccess: (r) => { report(r, "Authority record added."); if (r.ok) refresh("incident-ics"); } });
+  const authorityStatusM = useMutation({ mutationFn: (input: { authorityId: string; status: "active" | "disputed" | "superseded" | "ended" }) => authorityStatus({ data: { incidentId, ...input } }),
+    onSuccess: (r) => { report(r, "Authority status updated."); if (r.ok) refresh("incident-ics"); } });
+  const confirmThreatM = useMutation({ mutationFn: (item: ThreatHypothesisSuggestion) => addThreatHypothesis({ data: {
+    incidentId, hypothesisType: item.hypothesisType, title: item.title, confidence: item.confidence, rationale: item.rationale,
+    indicators: item.indicators, protectiveImplications: item.protectiveImplications, sourceBasis: item.sourceBasis,
+  }}), onSuccess: (r) => { report(r, "Threat hypothesis added for command review."); if (r.ok) refresh("incident-ics"); } });
+  const threatStatusM = useMutation({ mutationFn: (input: { hypothesisId: string; status: "open" | "supported" | "reduced" | "ruled_out" | "confirmed" }) => threatStatus({ data: { incidentId, ...input } }),
+    onSuccess: (r) => { report(r, "Threat hypothesis status updated."); if (r.ok) refresh("incident-ics"); } });
+  const manualAuthorityM = useMutation({ mutationFn: () => addAuthority({ data: {
+    incidentId, domain: authorityDomain, authorityHolder, authorityType, geographicScope: authorityScope,
+    functionalScope: authorityScope, basisType: "claimed" as const, limitations: authorityLimitations,
+    confidence: "reported" as const, sourceReference: "Manual command-post entry",
+  }}), onSuccess: (r) => { report(r, "Manual authority record added."); if (r.ok) { setAuthorityDomain(""); setAuthorityHolder(""); setAuthorityScope(""); setAuthorityLimitations(""); refresh("incident-ics"); } } });
+  const manualThreatM = useMutation({ mutationFn: () => addThreatHypothesis({ data: {
+    incidentId, hypothesisType: threatType, title: threatTitle, confidence: threatConfidence,
+    rationale: threatRationale, protectiveImplications: "Command review required; maintain proportionate protective posture until assessed.",
+    sourceBasis: "Manual command-post assessment",
+  }}), onSuccess: (r) => { report(r, "Manual threat hypothesis added."); if (r.ok) { setThreatTitle(""); setThreatRationale(""); refresh("incident-ics"); } } });
+
   const featureM = useMutation({ mutationFn: () => createFeature({ data: {
     incidentId, featureType, name: featureName, geometry: { type: "Point" as const, coordinates: picked as [number, number] }, precisionPolicy: "approximate" as const,
   }}), onSuccess: (r) => { report(r, `Placed ${featureName}.`); if (r.ok) { setFeatureName(""); setPicked(null); refresh("map-features"); } } });
@@ -149,7 +190,17 @@ function IncidentCommandConsole() {
   const areaRows = areas.data?.ok ? areas.data.data : [];
   const locationRows = locations.data?.ok ? locations.data.data : [];
   const observationRows = observations.data?.ok ? observations.data.data : [];
+  const authorityRows = board?.authorities ?? [];
+  const threatRows = board?.threatHypotheses ?? [];
   const loadedProfile = board?.profile ?? null;
+  const inferenceText = useMemo(() => [
+    roomData?.incident.description ?? "", loadedProfile?.situationSummary ?? "", loadedProfile?.safetyMessage ?? "",
+    ...observationRows.map((o) => `${o.title} ${o.description ?? ""} ${o.observedBehavior ?? ""}`),
+  ].join(" "), [roomData?.incident.description, loadedProfile?.situationSummary, loadedProfile?.safetyMessage, observationRows]);
+  const authoritySuggestions = useMemo(() => suggestAuthorities(inferenceText).filter((item) =>
+    !authorityRows.some((row) => row.domain === item.domain && row.status !== "ended")), [inferenceText, authorityRows]);
+  const threatSuggestions = useMemo(() => suggestThreatHypotheses(inferenceText).filter((item) =>
+    !threatRows.some((row) => row.hypothesisType === item.hypothesisType && row.status !== "ruled_out")), [inferenceText, threatRows]);
 
   useEffect(() => {
     if (!loadedProfile) return;
@@ -191,11 +242,13 @@ function IncidentCommandConsole() {
         </header>
         {notice ? <div className="shrink-0 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-foreground">{notice}</div> : null}
 
-        <div className="grid shrink-0 gap-2 sm:grid-cols-2 xl:grid-cols-6">
+        <div className="grid shrink-0 gap-2 sm:grid-cols-2 xl:grid-cols-8">
           <Metric label="Command" value={profile?.commandMode === "unified" ? "Unified Command" : "Single Command"} />
           <Metric label="Incident Commander" value={profile?.incidentCommander || "Not entered"} />
           <Metric label="Operational period" value={profile?.operationalPeriodStart ? `${time(profile.operationalPeriodStart)}–${time(profile.operationalPeriodEnd)}` : "Not entered"} />
           <Metric label="Agencies" value={`${1 + participantRows.length} in picture`} />
+          <Metric label="Authorities" value={`${authorityRows.filter((r) => r.status === "active").length} active`} />
+          <Metric label="Open hypotheses" value={`${threatRows.filter((r) => ["open","supported"].includes(r.status)).length}`} />
           <Metric label="Assigned resources" value={`${activeAssignments.length}`} />
           <Metric label="Open requests" value={`${activeRequests.length}`} />
         </div>
@@ -232,8 +285,17 @@ function IncidentCommandConsole() {
               </div>
             </Panel>
 
-            <Panel title="Agency Coordination" description="AIRS participation is distinct from outside-agency coordination.">
-              <div className="space-y-2 text-xs"><div className="rounded-md border border-border p-2"><p className="font-semibold">{roomData.incident.orgName ?? "Originating agency"}</p><p className="text-muted-foreground">Originating organization · active</p></div>{participantRows.map((p) => <div key={p.id} className="rounded-md border border-border p-2"><div className="flex items-center justify-between gap-2"><p className="font-semibold">{p.partnerOrgName ?? p.partnerOrgId}</p><StatusPill tone={p.participationStatus === "active" ? "active" : "caution"}>{label(p.participationStatus)}</StatusPill></div><p className="mt-1 text-muted-foreground">{label(p.accessLevel)} · invitation {label(p.invitationStatus)}</p></div>)}{participantRows.length === 0 ? <p className="text-muted-foreground">No AIRS partner agencies are active in this room yet. Outside agencies can still be represented manually in ICS positions and resource requests.</p> : null}</div>
+            <Panel title="Authority / Agency Coordination" description="Jurisdiction, functional authority, unresolved threat hypotheses, and participating agencies stay separate.">
+              <div className="space-y-3 text-xs">
+                <div className="rounded-md border border-warning/40 bg-warning/10 p-2"><p className="font-semibold">Life safety is an objective, not a jurisdiction</p><p className="mt-1 text-muted-foreground">{LIFE_SAFETY_AUTHORITY_NOTE}</p></div>
+                <div><p className="font-semibold text-foreground">Authority matrix</p><div className="mt-1 space-y-1.5">{authorityRows.map((a) => <div key={a.id} className="rounded-md border border-border p-2"><div className="flex items-start gap-2"><div className="min-w-0 flex-1"><p className="font-semibold">{a.domain}</p><p className="text-muted-foreground">{a.authorityHolder} · {label(a.authorityType)} · {label(a.basisType)}</p>{a.limitations ? <p className="mt-1 text-[11px] text-muted-foreground">Limit: {a.limitations}</p> : null}</div><StatusPill tone={a.status === "active" ? "active" : a.status === "disputed" ? "critical" : "neutral"}>{label(a.status)}</StatusPill></div>{isOwner && a.status === "active" ? <div className="mt-1 flex gap-2"><button className="text-[11px] underline" onClick={() => authorityStatusM.mutate({ authorityId: a.id, status: "disputed" })}>Dispute</button><button className="text-[11px] underline" onClick={() => authorityStatusM.mutate({ authorityId: a.id, status: "ended" })}>End</button></div> : null}</div>)}{authorityRows.length === 0 ? <p className="text-muted-foreground">No authority records have been confirmed for this incident.</p> : null}</div></div>
+                {isOwner && authoritySuggestions.length ? <div><p className="font-semibold text-foreground">AIRS authority suggestions — review before recording</p><div className="mt-1 space-y-1.5">{authoritySuggestions.map((a) => <div key={a.key} className="rounded-md border border-primary/30 bg-primary/5 p-2"><p className="font-semibold">{a.domain}</p><p className="text-muted-foreground">{a.authorityHolder} · {a.reason}</p><button className={`${smallButton} mt-1`} onClick={() => confirmAuthorityM.mutate(a)}>Review + record</button></div>)}</div></div> : null}
+                <div><p className="font-semibold text-foreground">Threat hypotheses</p><div className="mt-1 space-y-1.5">{threatRows.map((h) => <div key={h.id} className="rounded-md border border-border p-2"><div className="flex items-start gap-2"><div className="min-w-0 flex-1"><p className="font-semibold">{h.title}</p><p className="text-muted-foreground">{label(h.hypothesisType)} · confidence {h.confidence}</p><p className="mt-1 text-[11px] text-muted-foreground">{h.rationale}</p></div><StatusPill tone={h.status === "confirmed" ? "critical" : h.status === "supported" ? "caution" : h.status === "open" ? "info" : "neutral"}>{label(h.status)}</StatusPill></div>{isOwner && !["ruled_out","confirmed"].includes(h.status) ? <div className="mt-1 flex gap-2"><button className="text-[11px] underline" onClick={() => threatStatusM.mutate({ hypothesisId: h.id, status: "supported" })}>Support</button><button className="text-[11px] underline" onClick={() => threatStatusM.mutate({ hypothesisId: h.id, status: "reduced" })}>Reduce</button><button className="text-[11px] underline" onClick={() => threatStatusM.mutate({ hypothesisId: h.id, status: "ruled_out" })}>Rule out</button></div> : null}</div>)}{threatRows.length === 0 ? <p className="text-muted-foreground">No command-reviewed threat hypotheses are open.</p> : null}</div></div>
+                {isOwner && threatSuggestions.length ? <div><p className="font-semibold text-foreground">AIRS hypotheses — not facts</p><div className="mt-1 space-y-1.5">{threatSuggestions.map((h) => <div key={h.key} className="rounded-md border border-warning/40 bg-warning/5 p-2"><p className="font-semibold">{h.title}</p><p className="text-muted-foreground">{h.rationale}</p><button className={`${smallButton} mt-1`} onClick={() => confirmThreatM.mutate(h)}>Add for command review</button></div>)}</div></div> : null}
+                {isOwner ? <DetailForm summary="Record authority manually"><div className="grid gap-2"><Field label="Domain"><input className={inputClass} value={authorityDomain} onChange={(e) => setAuthorityDomain(e.target.value)} /></Field><Field label="Authority holder"><input className={inputClass} value={authorityHolder} onChange={(e) => setAuthorityHolder(e.target.value)} /></Field><Field label="Type"><select className={inputClass} value={authorityType} onChange={(e) => setAuthorityType(e.target.value as AuthorityTypeValue)}>{["jurisdictional","regulatory","functional","command","investigative","protective","delegated","supporting"].map((v) => <option key={v}>{v}</option>)}</select></Field><Field label="Scope"><input className={inputClass} value={authorityScope} onChange={(e) => setAuthorityScope(e.target.value)} /></Field><Field label="Limitations"><textarea className={inputClass} rows={2} value={authorityLimitations} onChange={(e) => setAuthorityLimitations(e.target.value)} /></Field></div><button className={`${buttonClass} mt-2`} disabled={!authorityDomain.trim() || !authorityHolder.trim() || manualAuthorityM.isPending} onClick={() => manualAuthorityM.mutate()}>Record claimed authority</button></DetailForm> : null}
+                {isOwner ? <DetailForm summary="Record threat hypothesis manually"><div className="grid gap-2"><Field label="Hypothesis"><input className={inputClass} value={threatTitle} onChange={(e) => setThreatTitle(e.target.value)} /></Field><Field label="Type"><select className={inputClass} value={threatType} onChange={(e) => setThreatType(e.target.value as ThreatTypeValue)}>{["secondary_assault","follow_on_uas","responder_targeting","coordinated_attack","explosive_hazard","cbrne","other"].map((v) => <option key={v}>{label(v)}</option>)}</select></Field><Field label="Confidence"><select className={inputClass} value={threatConfidence} onChange={(e) => setThreatConfidence(e.target.value as ThreatConfidenceValue)}>{["unknown","low","medium","high"].map((v) => <option key={v}>{v}</option>)}</select></Field><Field label="Rationale"><textarea className={inputClass} rows={2} value={threatRationale} onChange={(e) => setThreatRationale(e.target.value)} /></Field></div><button className={`${buttonClass} mt-2`} disabled={!threatTitle.trim() || manualThreatM.isPending} onClick={() => manualThreatM.mutate()}>Add hypothesis</button></DetailForm> : null}
+                <div className="border-t border-border pt-2"><p className="font-semibold text-foreground">Agency participation</p><div className="mt-1 space-y-1.5"><div className="rounded-md border border-border p-2"><p className="font-semibold">{roomData.incident.orgName ?? "Originating agency"}</p><p className="text-muted-foreground">Originating organization · active</p></div>{participantRows.map((p) => <div key={p.id} className="rounded-md border border-border p-2"><div className="flex items-center justify-between gap-2"><p className="font-semibold">{p.partnerOrgName ?? p.partnerOrgId}</p><StatusPill tone={p.participationStatus === "active" ? "active" : "caution"}>{label(p.participationStatus)}</StatusPill></div><p className="mt-1 text-muted-foreground">{label(p.accessLevel)} · invitation {label(p.invitationStatus)}</p></div>)}{participantRows.length === 0 ? <p className="text-muted-foreground">No AIRS partner agencies are active. Outside agencies can still be represented through ICS and requests without fake platform membership.</p> : null}</div></div>
+              </div>
             </Panel>
           </div>
           <section className="flex min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel">
@@ -269,8 +331,8 @@ function IncidentCommandConsole() {
           <div className="flex w-32 shrink-0 items-center justify-center bg-brand-navy px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-white">Operational feed</div>
           <div className="min-w-0 flex-1 overflow-hidden">
             <div className="simulation-ticker-track flex h-full min-w-max items-center">
-              {[...(board?.requests ?? []).slice(0, 6).map((r) => `${r.requestNumber} · ${label(r.status)} · ${r.quantity} ${label(r.resourceKind)}`), ...(board?.objectives ?? []).slice(0, 4).map((o) => `OBJ ${o.sequenceNo} · ${o.status} · ${o.objective}`), ...observationRows.slice(0, 6).map((o) => `OBS · ${label(o.verificationStatus)} · ${o.title}`)].map((item, index) => <span key={`${index}-${item}`} className="whitespace-nowrap border-r border-border/70 px-5 text-xs font-medium text-foreground">{item}</span>)}
-              {(!board?.requests.length && !board?.objectives.length && observationRows.length === 0) ? <span className="px-4 text-xs text-muted-foreground">Awaiting manually entered operational updates.</span> : null}
+              {[...threatRows.filter((h) => ["open","supported","confirmed"].includes(h.status)).slice(0, 4).map((h) => `THREAT · ${label(h.status)} · ${h.title}`), ...authorityRows.filter((a) => ["active","disputed"].includes(a.status)).slice(0, 4).map((a) => `AUTHORITY · ${label(a.status)} · ${a.domain} · ${a.authorityHolder}`), ...(board?.requests ?? []).slice(0, 6).map((r) => `${r.requestNumber} · ${label(r.status)} · ${r.quantity} ${label(r.resourceKind)}`), ...(board?.objectives ?? []).slice(0, 4).map((o) => `OBJ ${o.sequenceNo} · ${o.status} · ${o.objective}`), ...observationRows.slice(0, 6).map((o) => `OBS · ${label(o.verificationStatus)} · ${o.title}`)].map((item, index) => <span key={`${index}-${item}`} className="whitespace-nowrap border-r border-border/70 px-5 text-xs font-medium text-foreground">{item}</span>)}
+              {(!board?.requests.length && !board?.objectives.length && observationRows.length === 0 && authorityRows.length === 0 && threatRows.length === 0) ? <span className="px-4 text-xs text-muted-foreground">Awaiting manually entered operational updates.</span> : null}
             </div>
           </div>
         </div>

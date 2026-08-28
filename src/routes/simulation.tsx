@@ -326,6 +326,10 @@ function SimulationPage() {
             <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               {(state.hazards.length ? state.hazards : ["No additional hazard has been established from released facts."]).map((item) => <li key={item}>• {item}</li>)}
             </ul>
+            <p className="mt-4 text-sm font-medium text-foreground">Threat hypotheses — not established facts</p>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
+              {(state.threatHypotheses.length ? state.threatHypotheses.map((item) => `${item.title} · ${item.confidence} confidence`) : ["No threat hypothesis is currently justified by released facts."]).map((item) => <li key={item}>• {item}</li>)}
+            </ul>
           </SectionCard>
           <SectionCard title="Authority Matrix" description="Only authority established by facts released at the current exercise time is shown.">
             {state.authorities.length ? (

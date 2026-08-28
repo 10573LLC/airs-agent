@@ -36,11 +36,18 @@ export interface IncidentResourceRequest {
   resourceKind: string; quantity: number; description: string; priority: string; status: string;
   neededAt: string | null; stagingLocation: string; notes: string; createdAt: string; updatedAt: string;
 }
+export interface IncidentAuthority {
+  id: string; incidentId: string; domain: string; authorityHolder: string; authorityType: string;
+  geographicScope: string; functionalScope: string; basisType: string; basisReference: string; sourceReference: string;
+  status: string; limitations: string; confidence: string; effectiveFrom: string; effectiveTo: string | null; updatedAt: string;
+}
+export interface IncidentThreatHypothesis {
+  id: string; incidentId: string; hypothesisType: string; title: string; status: string; confidence: string;
+  rationale: string; indicators: string[]; protectiveImplications: string; sourceBasis: string; lastAssessedAt: string; updatedAt: string;
+}
 export interface IcsBoard {
-  profile: IcsProfile | null;
-  objectives: IcsObjective[];
-  positions: IcsPosition[];
-  requests: IncidentResourceRequest[];
+  profile: IcsProfile | null; objectives: IcsObjective[]; positions: IcsPosition[]; requests: IncidentResourceRequest[];
+  authorities: IncidentAuthority[]; threatHypotheses: IncidentThreatHypothesis[];
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -97,7 +104,16 @@ export async function readIcsBoard(token: string | null, orgId: string | null, i
         description, priority, status, to_json(needed_at)#>>'{}' AS "neededAt", staging_location AS "stagingLocation",
         notes, to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"
         FROM airs.incident_resource_requests WHERE incident_id=$1 ORDER BY created_at DESC`, [incidentId]);
-      return { profile: profile[0] ?? null, objectives, positions, requests };
+      const authorities = await q.query<IncidentAuthority>(`SELECT id, incident_id AS "incidentId", domain, authority_holder AS "authorityHolder",
+        authority_type AS "authorityType", geographic_scope AS "geographicScope", functional_scope AS "functionalScope", basis_type AS "basisType",
+        basis_reference AS "basisReference", source_reference AS "sourceReference", status, limitations, confidence,
+        to_json(effective_from)#>>'{}' AS "effectiveFrom", to_json(effective_to)#>>'{}' AS "effectiveTo", to_json(updated_at)#>>'{}' AS "updatedAt"
+        FROM airs.incident_authorities WHERE incident_id=$1 ORDER BY status, domain, created_at`, [incidentId]);
+      const threatHypotheses = await q.query<IncidentThreatHypothesis>(`SELECT id, incident_id AS "incidentId", hypothesis_type AS "hypothesisType",
+        title, status, confidence, rationale, indicators, protective_implications AS "protectiveImplications", source_basis AS "sourceBasis",
+        to_json(last_assessed_at)#>>'{}' AS "lastAssessedAt", to_json(updated_at)#>>'{}' AS "updatedAt"
+        FROM airs.incident_threat_hypotheses WHERE incident_id=$1 ORDER BY status, updated_at DESC`, [incidentId]);
+      return { profile: profile[0] ?? null, objectives, positions, requests, authorities, threatHypotheses };
     },
   );
 }
@@ -251,6 +267,120 @@ export async function setIncidentResourceRequestStatus(token: string | null, org
         [assertUuid(input.requestId, "request id"), incidentId, status, ctx.accountId]);
       if (!rows[0]) throw new AccessError("resource_request_not_found");
       await audit(q, ctx, incidentId, "incident.resource_request.status", { request_id: input.requestId, status });
+      return rows[0];
+    },
+  );
+}
+
+export const AUTHORITY_TYPES = [
+  "jurisdictional","regulatory","functional","command","investigative","protective","delegated","supporting",
+] as const;
+export const AUTHORITY_BASIS_TYPES = ["baseline","incident_confirmed","claimed","delegated","unresolved"] as const;
+export const AUTHORITY_STATUSES = ["active","disputed","superseded","ended"] as const;
+export const AUTHORITY_CONFIDENCE = ["confirmed","probable","reported","unresolved"] as const;
+export const THREAT_HYPOTHESIS_TYPES = [
+  "secondary_assault","follow_on_uas","responder_targeting","coordinated_attack","explosive_hazard","cbrne","other",
+] as const;
+export const THREAT_HYPOTHESIS_STATUSES = ["open","supported","reduced","ruled_out","confirmed"] as const;
+export const THREAT_CONFIDENCE = ["unknown","low","medium","high"] as const;
+
+export async function addIncidentAuthority(
+  token: string | null, orgId: string | null, incidentId: string,
+  input: { domain: string; authorityHolder: string; authorityType: string; geographicScope?: string; functionalScope?: string;
+    basisType?: string; basisReference?: string; sourceReference?: string; limitations?: string; confidence?: string },
+  meta: RequestMeta,
+): Promise<IncidentAuthority> {
+  return withIncidentAction(
+    { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
+    async (ctx, q, access) => {
+      const authorityType = oneOf(input.authorityType, AUTHORITY_TYPES, "authority type");
+      const basisType = oneOf(input.basisType ?? "unresolved", AUTHORITY_BASIS_TYPES, "authority basis");
+      const confidence = oneOf(input.confidence ?? "reported", AUTHORITY_CONFIDENCE, "authority confidence");
+      const rows = await q.query<IncidentAuthority>(`INSERT INTO airs.incident_authorities
+        (incident_id, org_id, domain, authority_holder, authority_type, geographic_scope, functional_scope,
+         basis_type, basis_reference, source_reference, limitations, confidence, created_by_account, updated_by_account)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)
+        RETURNING id, incident_id AS "incidentId", domain, authority_holder AS "authorityHolder",
+          authority_type AS "authorityType", geographic_scope AS "geographicScope", functional_scope AS "functionalScope",
+          basis_type AS "basisType", basis_reference AS "basisReference", source_reference AS "sourceReference",
+          status, limitations, confidence, to_json(effective_from)#>>'{}' AS "effectiveFrom",
+          to_json(effective_to)#>>'{}' AS "effectiveTo", to_json(updated_at)#>>'{}' AS "updatedAt"`,
+        [incidentId, access.incident.orgId, text(input.domain, "authority domain", 160, true),
+         text(input.authorityHolder, "authority holder", 240, true), authorityType,
+         text(input.geographicScope, "geographic scope", 1000), text(input.functionalScope, "functional scope", 1000),
+         basisType, text(input.basisReference, "basis reference", 1200), text(input.sourceReference, "source reference", 1200),
+         text(input.limitations, "authority limitations", 2000), confidence, ctx.accountId]);
+      await audit(q, ctx, incidentId, "incident.authority.create", { authority_id: rows[0].id, domain: rows[0].domain, authority_type: authorityType, basis_type: basisType });
+      return rows[0];
+    },
+  );
+}
+
+export async function setIncidentAuthorityStatus(token: string | null, orgId: string | null, incidentId: string,
+  input: { authorityId: string; status: string }, meta: RequestMeta): Promise<IncidentAuthority> {
+  return withIncidentAction(
+    { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
+    async (ctx, q) => {
+      const status = oneOf(input.status, AUTHORITY_STATUSES, "authority status");
+      const rows = await q.query<IncidentAuthority>(`UPDATE airs.incident_authorities
+        SET status=$3, effective_to=CASE WHEN $3='ended' THEN now() ELSE effective_to END, updated_by_account=$4
+        WHERE id=$1 AND incident_id=$2
+        RETURNING id, incident_id AS "incidentId", domain, authority_holder AS "authorityHolder",
+          authority_type AS "authorityType", geographic_scope AS "geographicScope", functional_scope AS "functionalScope",
+          basis_type AS "basisType", basis_reference AS "basisReference", source_reference AS "sourceReference",
+          status, limitations, confidence, to_json(effective_from)#>>'{}' AS "effectiveFrom",
+          to_json(effective_to)#>>'{}' AS "effectiveTo", to_json(updated_at)#>>'{}' AS "updatedAt"`,
+        [assertUuid(input.authorityId, "authority id"), incidentId, status, ctx.accountId]);
+      if (!rows[0]) throw new AccessError("authority_record_not_found");
+      await audit(q, ctx, incidentId, "incident.authority.status", { authority_id: input.authorityId, status });
+      return rows[0];
+    },
+  );
+}
+
+export async function addThreatHypothesis(
+  token: string | null, orgId: string | null, incidentId: string,
+  input: { hypothesisType: string; title: string; confidence?: string; rationale?: string; indicators?: string[];
+    protectiveImplications?: string; sourceBasis?: string }, meta: RequestMeta,
+): Promise<IncidentThreatHypothesis> {
+  return withIncidentAction(
+    { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
+    async (ctx, q, access) => {
+      const hypothesisType = oneOf(input.hypothesisType, THREAT_HYPOTHESIS_TYPES, "threat hypothesis type");
+      const confidence = oneOf(input.confidence ?? "unknown", THREAT_CONFIDENCE, "threat confidence");
+      const indicators = (input.indicators ?? []).slice(0, 20).map((v) => text(v, "indicator", 300, true));
+      const rows = await q.query<IncidentThreatHypothesis>(`INSERT INTO airs.incident_threat_hypotheses
+        (incident_id, org_id, hypothesis_type, title, confidence, rationale, indicators,
+         protective_implications, source_basis, created_by_account, updated_by_account)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$10)
+        RETURNING id, incident_id AS "incidentId", hypothesis_type AS "hypothesisType", title, status, confidence,
+          rationale, indicators, protective_implications AS "protectiveImplications", source_basis AS "sourceBasis",
+          to_json(last_assessed_at)#>>'{}' AS "lastAssessedAt", to_json(updated_at)#>>'{}' AS "updatedAt"`,
+        [incidentId, access.incident.orgId, hypothesisType, text(input.title, "hypothesis title", 240, true), confidence,
+         text(input.rationale, "hypothesis rationale", 3000), indicators,
+         text(input.protectiveImplications, "protective implications", 3000), text(input.sourceBasis, "source basis", 1600), ctx.accountId]);
+      await audit(q, ctx, incidentId, "incident.threat_hypothesis.create", { hypothesis_id: rows[0].id, hypothesis_type: hypothesisType, confidence });
+      return rows[0];
+    },
+  );
+}
+
+export async function setThreatHypothesisStatus(token: string | null, orgId: string | null, incidentId: string,
+  input: { hypothesisId: string; status: string; confidence?: string }, meta: RequestMeta): Promise<IncidentThreatHypothesis> {
+  return withIncidentAction(
+    { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
+    async (ctx, q) => {
+      const status = oneOf(input.status, THREAT_HYPOTHESIS_STATUSES, "threat hypothesis status");
+      const confidence = input.confidence ? oneOf(input.confidence, THREAT_CONFIDENCE, "threat confidence") : null;
+      const rows = await q.query<IncidentThreatHypothesis>(`UPDATE airs.incident_threat_hypotheses
+        SET status=$3, confidence=COALESCE($4, confidence), last_assessed_at=now(), updated_by_account=$5
+        WHERE id=$1 AND incident_id=$2
+        RETURNING id, incident_id AS "incidentId", hypothesis_type AS "hypothesisType", title, status, confidence,
+          rationale, indicators, protective_implications AS "protectiveImplications", source_basis AS "sourceBasis",
+          to_json(last_assessed_at)#>>'{}' AS "lastAssessedAt", to_json(updated_at)#>>'{}' AS "updatedAt"`,
+        [assertUuid(input.hypothesisId, "hypothesis id"), incidentId, status, confidence, ctx.accountId]);
+      if (!rows[0]) throw new AccessError("threat_hypothesis_not_found");
+      await audit(q, ctx, incidentId, "incident.threat_hypothesis.status", { hypothesis_id: input.hypothesisId, status, confidence });
       return rows[0];
     },
   );

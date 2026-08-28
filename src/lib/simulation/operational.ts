@@ -199,12 +199,12 @@ function buildActions(text: string): SimCoordinationAction[] {
   if (/Albany County 911 is flooded with calls/i.test(text)) incidentStatus = "Incident room spinning up";
   if (/establish an initial command post/i.test(text)) {
     incidentStatus = "Active response / initial command";
-    commandLead = "Albany Fire Department (initial IC)";
+    commandLead = "Initial command post established; rescue/EMS and hostile-threat/security functional leads remain distinct pending jurisdictional resolution";
   }
   if (/county-wide Mass Casualty Incident/i.test(text)) priority = "Mass casualty + active airspace threat";
   if (/Unified Command stands up/i.test(text)) {
     incidentStatus = "Active Unified Command";
-    commandLead = "Unified Command; Albany Fire retains life-safety IC role in exercise facts";
+    commandLead = "Unified Command; participating agencies retain their own jurisdictional and functional authority";
   }
   if (/scene shifts from rescue to recovery and investigation/i.test(text)) {
     incidentStatus = "Recovery / investigation transition";

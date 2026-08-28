@@ -10,7 +10,7 @@
 // database can therefore be complete and still fail a historical probe.
 //
 // Rules:
-//   * every entry below is an object the CURRENT (post-0014) schema must have;
+//   * every entry below is an object the CURRENT (post-0015) schema must have;
 //   * SUPERSEDED_OBJECTS records objects that must NOT be required, with the
 //     reason and the current equivalent - they are never recreated;
 //   * `version` is the migration that owns the object today, and doubles as the
@@ -301,6 +301,14 @@ export const CANONICAL_OBJECTS = [
   { version: "0014", id: "airs.incident_resource_requests", label: "incident resource requests table", probe: table("incident_resource_requests") },
   { version: "0014", id: "policy:incident_ics_profiles", label: "ICS profile RLS policy", probe: policy("incident_ics_profiles"), requires: ["airs.incident_ics_profiles"] },
   { version: "0014", id: "rlsforce:incident_ics_profiles", label: "forced RLS on ICS profile", probe: forced("incident_ics_profiles"), requires: ["airs.incident_ics_profiles"] },
+
+  // ---- 0015 authority / jurisdiction / assessment hypotheses ------------
+  { version: "0015", id: "airs.incident_authorities", label: "incident authorities table", probe: table("incident_authorities") },
+  { version: "0015", id: "airs.incident_threat_hypotheses", label: "incident assessment hypotheses table", probe: table("incident_threat_hypotheses") },
+  { version: "0015", id: "policy:incident_authorities", label: "incident authorities RLS policy", probe: policy("incident_authorities"), requires: ["airs.incident_authorities"] },
+  { version: "0015", id: "policy:incident_threat_hypotheses", label: "incident hypotheses RLS policy", probe: policy("incident_threat_hypotheses"), requires: ["airs.incident_threat_hypotheses"] },
+  { version: "0015", id: "rlsforce:incident_authorities", label: "forced RLS on incident authorities", probe: forced("incident_authorities"), requires: ["airs.incident_authorities"] },
+  { version: "0015", id: "rlsforce:incident_threat_hypotheses", label: "forced RLS on incident hypotheses", probe: forced("incident_threat_hypotheses"), requires: ["airs.incident_threat_hypotheses"] },
 ];
 
 /** Versions whose canonical objects reconciliation is allowed to create. */

@@ -87,3 +87,49 @@ export const setIncidentResourceRequestStatusFn = createServerFn({ method: "POST
     const { setIncidentResourceRequestStatus } = await svc(); const { token, meta } = await serverCtx();
     return setIncidentResourceRequestStatus(token, data.orgId ?? null, data.incidentId, { requestId: data.requestId, status: data.status }, meta);
   }));
+
+export const addIncidentAuthorityFn = createServerFn({ method: "POST" })
+  .validator((d: any) => z.object({
+    incidentId: uuid, orgId, domain: z.string().min(2).max(160), authorityHolder: z.string().min(2).max(240),
+    authorityType: z.enum(["jurisdictional","regulatory","functional","command","investigative","protective","delegated","supporting"]),
+    geographicScope: z.string().max(1000).optional(), functionalScope: z.string().max(1000).optional(),
+    basisType: z.enum(["baseline","incident_confirmed","claimed","delegated","unresolved"]).optional(),
+    basisReference: z.string().max(1200).optional(), sourceReference: z.string().max(1200).optional(),
+    limitations: z.string().max(2000).optional(), confidence: z.enum(["confirmed","probable","reported","unresolved"]).optional(),
+  }).parse(d))
+  .handler(async ({ data }) => guard(async () => {
+    const { addIncidentAuthority } = await svc(); const { token, meta } = await serverCtx();
+    const { incidentId, orgId, ...input } = data; return addIncidentAuthority(token, orgId ?? null, incidentId, input, meta);
+  }));
+
+export const setIncidentAuthorityStatusFn = createServerFn({ method: "POST" })
+  .validator((d: any) => z.object({ incidentId: uuid, orgId, authorityId: uuid, status: z.enum(["active","disputed","superseded","ended"]) }).parse(d))
+  .handler(async ({ data }) => guard(async () => {
+    const { setIncidentAuthorityStatus } = await svc(); const { token, meta } = await serverCtx();
+    return setIncidentAuthorityStatus(token, data.orgId ?? null, data.incidentId, { authorityId: data.authorityId, status: data.status }, meta);
+  }));
+
+export const addThreatHypothesisFn = createServerFn({ method: "POST" })
+  .validator((d: any) => z.object({
+    incidentId: uuid, orgId,
+    hypothesisType: z.enum(["secondary_assault","follow_on_uas","responder_targeting","coordinated_attack","explosive_hazard","cbrne","other"]),
+    title: z.string().min(2).max(240), confidence: z.enum(["unknown","low","medium","high"]).optional(),
+    rationale: z.string().max(3000).optional(), indicators: z.array(z.string().min(1).max(300)).max(20).optional(),
+    protectiveImplications: z.string().max(3000).optional(), sourceBasis: z.string().max(1600).optional(),
+  }).parse(d))
+  .handler(async ({ data }) => guard(async () => {
+    const { addThreatHypothesis } = await svc(); const { token, meta } = await serverCtx();
+    const { incidentId, orgId, ...input } = data; return addThreatHypothesis(token, orgId ?? null, incidentId, input, meta);
+  }));
+
+export const setThreatHypothesisStatusFn = createServerFn({ method: "POST" })
+  .validator((d: any) => z.object({
+    incidentId: uuid, orgId, hypothesisId: uuid,
+    status: z.enum(["open","supported","reduced","ruled_out","confirmed"]),
+    confidence: z.enum(["unknown","low","medium","high"]).optional(),
+  }).parse(d))
+  .handler(async ({ data }) => guard(async () => {
+    const { setThreatHypothesisStatus } = await svc(); const { token, meta } = await serverCtx();
+    return setThreatHypothesisStatus(token, data.orgId ?? null, data.incidentId,
+      { hypothesisId: data.hypothesisId, status: data.status, confidence: data.confidence }, meta);
+  }));

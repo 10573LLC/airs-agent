@@ -59,9 +59,13 @@ describe("timeline-aware simulation model", () => {
     expect(buildSimulationState(scenario, 4 * 60).airspaceStatus).toMatch(/hostile UAS attack confirmed/i);
     expect(buildSimulationState(scenario, 20 * 60).airspaceStatus).toMatch(/contested restricted airspace/i);
   });
-  it("builds authority state only when the scenario establishes it", () => {
+  it("separates reported functional authority from incident-established authority", () => {
     const scenario = compileScenario(portScenario);
-    expect(buildSimulationState(scenario, 9 * 60).authorities).toEqual([]);
+    const early = buildSimulationState(scenario, 9 * 60).authorities;
+    expect(early.some((item) => item.domain === "Hostile threat / criminal enforcement" && item.status === "reported")).toBe(true);
+    expect(early.some((item) => item.domain === "Fire / rescue / EMS function" && item.status === "reported")).toBe(true);
+    expect(early.some((item) => item.domain === "Waterway / marine security")).toBe(false);
+    expect(early.some((item) => item.domain === "National airspace restriction")).toBe(false);
     expect(buildSimulationState(scenario, 10 * 60).authorities.some((item) => item.domain === "Waterway / marine security")).toBe(true);
     expect(buildSimulationState(scenario, 17 * 60).authorities.some((item) => item.domain === "National airspace restriction")).toBe(false);
     expect(buildSimulationState(scenario, 18 * 60).authorities.some((item) => item.owner === "FAA")).toBe(true);

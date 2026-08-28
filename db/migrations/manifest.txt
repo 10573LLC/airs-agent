@@ -12,3 +12,4 @@
 0012_fix_platform_org_display_name.sql
 0013_agency_system_profiles.sql
 0014_ics_command_operations.sql
+0015_authority_jurisdiction_threats.sql

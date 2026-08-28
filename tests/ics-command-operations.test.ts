@@ -7,9 +7,10 @@ const service = readFileSync(`${REPO_ROOT}/src/lib/incidents/ics.server.ts`, "ut
 const route = readFileSync(`${REPO_ROOT}/src/routes/incidents.$incidentId.command.tsx`, "utf8");
 
 describe("ICS command operations", () => {
-  it("persists the ICS command plane as the migration after agency systems", () => {
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0014_ics_command_operations.sql");
+  it("keeps the ICS command plane after agency systems and before authority/jurisdiction", () => {
+    expect(MIGRATION_FILES).toContain("db/migrations/0014_ics_command_operations.sql");
     expect(MIGRATION_FILES.indexOf("db/migrations/0013_agency_system_profiles.sql")).toBeLessThan(MIGRATION_FILES.indexOf("db/migrations/0014_ics_command_operations.sql"));
+    expect(MIGRATION_FILES.indexOf("db/migrations/0014_ics_command_operations.sql")).toBeLessThan(MIGRATION_FILES.indexOf("db/migrations/0015_authority_jurisdiction_threats.sql"));
     for (const table of ["incident_ics_profiles", "incident_ics_objectives", "incident_ics_positions", "incident_resource_requests"]) expect(migration).toContain(`CREATE TABLE airs.${table}`);
   });
 
@@ -31,7 +32,7 @@ describe("ICS command operations", () => {
     expect(route).toContain("ICS Command");
     expect(route).toContain("Common Operating Picture");
     expect(route).toContain("Resource Requests");
-    expect(route).toContain("Outside agencies can still be represented manually");
+    expect(route).toContain("Outside agencies can still be represented through ICS and requests");
     expect(route).not.toContain("SIMULATION MODE");
   });
 

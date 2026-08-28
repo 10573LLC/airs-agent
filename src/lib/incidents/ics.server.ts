@@ -4,6 +4,9 @@ import type { RequestMeta } from "@/lib/auth/types";
 import { withIncidentAction } from "./incidents.server";
 
 export const ICS_COMMAND_MODES = ["single", "unified"] as const;
+export const ICS_OPERATIONAL_CONDITIONS = ["nominal", "elevated", "emergency", "recovery"] as const;
+export const COORDINATION_CONNECTION_MODES = ["airs", "external_liaison", "emergency_communications", "radio", "phone", "email", "other"] as const;
+export const COORDINATION_PARTNER_STATES = ["planned", "invited", "confirmed", "on_scene", "active", "released", "cancelled"] as const;
 export const ICS_POSITION_TYPES = [
   "incident_command", "command_staff", "operations", "planning", "logistics", "finance_admin",
   "branch", "division", "group", "unit", "staging_area", "other",
@@ -21,7 +24,7 @@ export const RESOURCE_REQUEST_STATUSES = [
 export interface IcsProfile {
   incidentId: string; commandMode: string; incidentCommander: string; commandPostName: string;
   commandPostDescription: string; operationalPeriodStart: string | null; operationalPeriodEnd: string | null;
-  situationSummary: string; safetyMessage: string; version: number; updatedAt: string;
+  situationSummary: string; safetyMessage: string; operationalCondition: string; version: number; updatedAt: string;
 }
 export interface IcsObjective {
   id: string; incidentId: string; sequenceNo: number; objective: string; status: string;
@@ -36,6 +39,11 @@ export interface IncidentResourceRequest {
   resourceKind: string; quantity: number; description: string; priority: string; status: string;
   neededAt: string | null; stagingLocation: string; notes: string; createdAt: string; updatedAt: string;
 }
+export interface IncidentCoordinationPartner {
+  id: string; incidentId: string; partnerOrgId: string | null; organizationName: string; operationalRole: string;
+  commandPostRole: string; connectionMode: string; participationState: string; primaryContact: string; notes: string;
+  plannedFrom: string | null; plannedTo: string | null; createdAt: string; updatedAt: string;
+}
 export interface IncidentAuthority {
   id: string; incidentId: string; domain: string; authorityHolder: string; authorityType: string;
   geographicScope: string; functionalScope: string; basisType: string; basisReference: string; sourceReference: string;
@@ -47,7 +55,7 @@ export interface IncidentThreatHypothesis {
 }
 export interface IcsBoard {
   profile: IcsProfile | null; objectives: IcsObjective[]; positions: IcsPosition[]; requests: IncidentResourceRequest[];
-  authorities: IncidentAuthority[]; threatHypotheses: IncidentThreatHypothesis[];
+  coordinationPartners: IncidentCoordinationPartner[]; authorities: IncidentAuthority[]; threatHypotheses: IncidentThreatHypothesis[];
 }
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -89,7 +97,7 @@ export async function readIcsBoard(token: string | null, orgId: string | null, i
         incident_commander AS "incidentCommander", command_post_name AS "commandPostName",
         command_post_description AS "commandPostDescription", to_json(operational_period_start)#>>'{}' AS "operationalPeriodStart",
         to_json(operational_period_end)#>>'{}' AS "operationalPeriodEnd", situation_summary AS "situationSummary",
-        safety_message AS "safetyMessage", version, to_json(updated_at)#>>'{}' AS "updatedAt"
+        safety_message AS "safetyMessage", operational_condition AS "operationalCondition", version, to_json(updated_at)#>>'{}' AS "updatedAt"
         FROM airs.incident_ics_profiles WHERE incident_id=$1`, [incidentId]);
       const objectives = await q.query<IcsObjective>(`SELECT id, incident_id AS "incidentId", sequence_no AS "sequenceNo",
         objective, status, operational_period_label AS "operationalPeriodLabel",
@@ -104,6 +112,12 @@ export async function readIcsBoard(token: string | null, orgId: string | null, i
         description, priority, status, to_json(needed_at)#>>'{}' AS "neededAt", staging_location AS "stagingLocation",
         notes, to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"
         FROM airs.incident_resource_requests WHERE incident_id=$1 ORDER BY created_at DESC`, [incidentId]);
+      const coordinationPartners = await q.query<IncidentCoordinationPartner>(`SELECT id, incident_id AS "incidentId", partner_org_id AS "partnerOrgId",
+        organization_name AS "organizationName", operational_role AS "operationalRole", command_post_role AS "commandPostRole",
+        connection_mode AS "connectionMode", participation_state AS "participationState", primary_contact AS "primaryContact", notes,
+        to_json(planned_from)#>>'{}' AS "plannedFrom", to_json(planned_to)#>>'{}' AS "plannedTo",
+        to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"
+        FROM airs.incident_coordination_partners WHERE incident_id=$1 ORDER BY participation_state, organization_name`, [incidentId]);
       const authorities = await q.query<IncidentAuthority>(`SELECT id, incident_id AS "incidentId", domain, authority_holder AS "authorityHolder",
         authority_type AS "authorityType", geographic_scope AS "geographicScope", functional_scope AS "functionalScope", basis_type AS "basisType",
         basis_reference AS "basisReference", source_reference AS "sourceReference", status, limitations, confidence,
@@ -113,7 +127,7 @@ export async function readIcsBoard(token: string | null, orgId: string | null, i
         title, status, confidence, rationale, indicators, protective_implications AS "protectiveImplications", source_basis AS "sourceBasis",
         to_json(last_assessed_at)#>>'{}' AS "lastAssessedAt", to_json(updated_at)#>>'{}' AS "updatedAt"
         FROM airs.incident_threat_hypotheses WHERE incident_id=$1 ORDER BY status, updated_at DESC`, [incidentId]);
-      return { profile: profile[0] ?? null, objectives, positions, requests, authorities, threatHypotheses };
+      return { profile: profile[0] ?? null, objectives, positions, requests, coordinationPartners, authorities, threatHypotheses };
     },
   );
 }
@@ -121,7 +135,7 @@ export async function readIcsBoard(token: string | null, orgId: string | null, i
 export interface SaveIcsProfileInput {
   commandMode: string; incidentCommander?: string; commandPostName?: string; commandPostDescription?: string;
   operationalPeriodStart?: string | null; operationalPeriodEnd?: string | null;
-  situationSummary?: string; safetyMessage?: string;
+  situationSummary?: string; safetyMessage?: string; operationalCondition?: string;
 }
 
 export async function saveIcsProfile(token: string | null, orgId: string | null, incidentId: string, input: SaveIcsProfileInput, meta: RequestMeta): Promise<IcsProfile> {
@@ -129,27 +143,28 @@ export async function saveIcsProfile(token: string | null, orgId: string | null,
     { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
     async (ctx, q, access) => {
       const mode = oneOf(input.commandMode, ICS_COMMAND_MODES, "command mode");
+      const operationalCondition = oneOf(input.operationalCondition ?? "nominal", ICS_OPERATIONAL_CONDITIONS, "operational condition");
       const start = maybeTime(input.operationalPeriodStart, "operational period start");
       const end = maybeTime(input.operationalPeriodEnd, "operational period end");
       if (start && end && Date.parse(end) <= Date.parse(start)) throw new AccessError("invalid_input", "operational period end must follow start");
       const rows = await q.query<IcsProfile>(`INSERT INTO airs.incident_ics_profiles
         (incident_id, org_id, command_mode, incident_commander, command_post_name, command_post_description,
-         operational_period_start, operational_period_end, situation_summary, safety_message, created_by_account, updated_by_account)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$11)
+         operational_period_start, operational_period_end, situation_summary, safety_message, operational_condition, created_by_account, updated_by_account)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$12)
         ON CONFLICT (incident_id) DO UPDATE SET command_mode=EXCLUDED.command_mode,
           incident_commander=EXCLUDED.incident_commander, command_post_name=EXCLUDED.command_post_name,
           command_post_description=EXCLUDED.command_post_description, operational_period_start=EXCLUDED.operational_period_start,
           operational_period_end=EXCLUDED.operational_period_end, situation_summary=EXCLUDED.situation_summary,
-          safety_message=EXCLUDED.safety_message, updated_by_account=EXCLUDED.updated_by_account,
+          safety_message=EXCLUDED.safety_message, operational_condition=EXCLUDED.operational_condition, updated_by_account=EXCLUDED.updated_by_account,
           version=airs.incident_ics_profiles.version+1
         RETURNING incident_id AS "incidentId", command_mode AS "commandMode", incident_commander AS "incidentCommander",
           command_post_name AS "commandPostName", command_post_description AS "commandPostDescription",
           to_json(operational_period_start)#>>'{}' AS "operationalPeriodStart", to_json(operational_period_end)#>>'{}' AS "operationalPeriodEnd",
-          situation_summary AS "situationSummary", safety_message AS "safetyMessage", version, to_json(updated_at)#>>'{}' AS "updatedAt"`,
+          situation_summary AS "situationSummary", safety_message AS "safetyMessage", operational_condition AS "operationalCondition", version, to_json(updated_at)#>>'{}' AS "updatedAt"`,
         [incidentId, access.incident.orgId, mode, text(input.incidentCommander, "incident commander", 200),
          text(input.commandPostName, "command post name", 200), text(input.commandPostDescription, "command post description", 500),
-         start, end, text(input.situationSummary, "situation summary", 4000), text(input.safetyMessage, "safety message", 2000), ctx.accountId]);
-      await audit(q, ctx, incidentId, "incident.ics.profile.update", { command_mode: mode });
+         start, end, text(input.situationSummary, "situation summary", 4000), text(input.safetyMessage, "safety message", 2000), operationalCondition, ctx.accountId]);
+      await audit(q, ctx, incidentId, "incident.ics.profile.update", { command_mode: mode, operational_condition: operationalCondition });
       return rows[0];
     },
   );
@@ -267,6 +282,67 @@ export async function setIncidentResourceRequestStatus(token: string | null, org
         [assertUuid(input.requestId, "request id"), incidentId, status, ctx.accountId]);
       if (!rows[0]) throw new AccessError("resource_request_not_found");
       await audit(q, ctx, incidentId, "incident.resource_request.status", { request_id: input.requestId, status });
+      return rows[0];
+    },
+  );
+}
+
+
+export async function addCoordinationPartner(
+  token: string | null, orgId: string | null, incidentId: string,
+  input: { partnerOrgId?: string | null; organizationName: string; operationalRole?: string; commandPostRole?: string;
+    connectionMode?: string; participationState?: string; primaryContact?: string; notes?: string;
+    plannedFrom?: string | null; plannedTo?: string | null }, meta: RequestMeta,
+): Promise<IncidentCoordinationPartner> {
+  return withIncidentAction(
+    { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
+    async (ctx, q, access) => {
+      const connectionMode = oneOf(input.connectionMode ?? "external_liaison", COORDINATION_CONNECTION_MODES, "coordination connection mode");
+      const participationState = oneOf(input.participationState ?? "planned", COORDINATION_PARTNER_STATES, "coordination partner state");
+      const plannedFrom = maybeTime(input.plannedFrom, "planned from");
+      const plannedTo = maybeTime(input.plannedTo, "planned to");
+      if (plannedFrom && plannedTo && Date.parse(plannedTo) <= Date.parse(plannedFrom)) throw new AccessError("invalid_input", "planned end must follow planned start");
+      const rows = await q.query<IncidentCoordinationPartner>(`INSERT INTO airs.incident_coordination_partners
+        (incident_id, org_id, partner_org_id, organization_name, operational_role, command_post_role,
+         connection_mode, participation_state, primary_contact, notes, planned_from, planned_to,
+         created_by_account, updated_by_account)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)
+        RETURNING id, incident_id AS "incidentId", partner_org_id AS "partnerOrgId", organization_name AS "organizationName",
+          operational_role AS "operationalRole", command_post_role AS "commandPostRole", connection_mode AS "connectionMode",
+          participation_state AS "participationState", primary_contact AS "primaryContact", notes,
+          to_json(planned_from)#>>'{}' AS "plannedFrom", to_json(planned_to)#>>'{}' AS "plannedTo",
+          to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"`,
+        [incidentId, access.incident.orgId, input.partnerOrgId ? assertUuid(input.partnerOrgId, "partner org id") : null,
+         text(input.organizationName, "organization name", 240, true), text(input.operationalRole, "operational role", 500),
+         text(input.commandPostRole, "command post role", 300), connectionMode, participationState,
+         text(input.primaryContact, "primary contact", 240), text(input.notes, "coordination notes", 2000),
+         plannedFrom, plannedTo, ctx.accountId]);
+      await audit(q, ctx, incidentId, "incident.coordination_partner.create", { coordination_partner_id: rows[0].id, organization_name: rows[0].organizationName, connection_mode: connectionMode, participation_state: participationState });
+      return rows[0];
+    },
+  );
+}
+
+
+export async function setCoordinationPartnerState(
+  token: string | null, orgId: string | null, incidentId: string,
+  input: { coordinationPartnerId: string; participationState: string }, meta: RequestMeta,
+): Promise<IncidentCoordinationPartner> {
+  return withIncidentAction(
+    { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
+    async (ctx, q) => {
+      const participationState = oneOf(input.participationState, COORDINATION_PARTNER_STATES, "coordination partner state");
+      const rows = await q.query<IncidentCoordinationPartner>(`UPDATE airs.incident_coordination_partners
+        SET participation_state=$3, updated_by_account=$4
+        WHERE id=$1 AND incident_id=$2
+        RETURNING id, incident_id AS "incidentId", partner_org_id AS "partnerOrgId", organization_name AS "organizationName",
+          operational_role AS "operationalRole", command_post_role AS "commandPostRole", connection_mode AS "connectionMode",
+          participation_state AS "participationState", primary_contact AS "primaryContact", notes,
+          to_json(planned_from)#>>'{}' AS "plannedFrom", to_json(planned_to)#>>'{}' AS "plannedTo",
+          to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"`,
+        [assertUuid(input.coordinationPartnerId, "coordination partner id"), incidentId, participationState, ctx.accountId]);
+      if (!rows[0]) throw new AccessError("invalid_input", "coordination partner not found");
+      await audit(q, ctx, incidentId, "incident.coordination_partner.status", { coordination_partner_id: input.coordinationPartnerId, participation_state: participationState });
       return rows[0];
     },
   );

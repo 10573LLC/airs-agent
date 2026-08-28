@@ -32,7 +32,9 @@ describe("ICS command operations", () => {
     expect(route).toContain("ICS Command");
     expect(route).toContain("Common Operating Picture");
     expect(route).toContain("Resource Requests");
-    expect(route).toContain("Outside agencies can still be represented through ICS and requests");
+    expect(route).toContain("Planned / external coordination roster");
+    expect(route).toContain("Roster presence is operational context only");
+    expect(route).toContain("AIRS-authorized agency participation");
     expect(route).not.toContain("SIMULATION MODE");
   });
 

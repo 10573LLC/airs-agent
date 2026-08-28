@@ -100,7 +100,7 @@ function buildAgencies(text: string): SimAgency[] {
   if (/Albany Medical Center|St\. Peter's Hospital|Samaritan Hospital/i.test(text)) rows.push(agency("hospitals", "Regional Receiving Hospitals", "Trauma and overflow receiving", "external_liaison", "notified", 12 * 60, "EMS council / hospital coordination represented as an external operational dependency."));
   if (/NCIS/i.test(text)) rows.push(agency("ncis", "NCIS", "Navy crime-scene and investigative authority", "external_liaison", "active", 15 * 60, "Federal investigative liaison; no AIRS membership assumed."));
   if (/FBI/i.test(text)) rows.push(agency("fbi", "FBI Albany Field Office / JTTF", "Federal criminal/terrorism investigation", "external_liaison", "notified", 15 * 60, "External federal liaison/request tracked in the incident room."));
-  if (/FAA/i.test(text)) rows.push(agency("faa", "FAA", "National airspace restriction and UAS enforcement coordination", "external_liaison", "active", 18 * 60, "Airspace authority represented through external coordination and TFR status."));
+  if (/FAA|naval-vessel security restriction/i.test(text)) rows.push(agency("faa", "FAA", "National airspace restriction and UAS enforcement coordination", "external_liaison", "active", /pre-existing FAA naval-vessel security restriction/i.test(text) ? 0 : 18 * 60, "Standing naval-vessel security restriction plus any incident-specific FAA restriction are represented separately from ground command."));
   return rows;
 }function addLaterAgencies(rows: SimAgency[], text: string) {
   if (/State Police aviation|NY State Police Troop G|State Police Bomb Disposal/i.test(text)) rows.push(agency("nysp", "New York State Police", "Aviation, patrol, bomb disposal, counter terrorism", "airs_room", /dispatched/i.test(text) ? "active" : "requested", 20 * 60, "Simulated AIRS partner request/participation; specialized assets remain separately tracked."));
@@ -118,13 +118,14 @@ function buildResources(text: string): SimResource[] {
   const rows: SimResource[] = [];
   if (/USS Cohoes|Navy.*ship|ship/i.test(text)) rows.push(resource("uss-cohoes", "USS Cohoes", "U.S. Navy", "Vessel / protected asset", "on_scene", 0, "Port of Albany pier"));
   if (/small-boat security element|security boat/i.test(text)) rows.push(resource("navy-security-boat", "Ship security boat", "U.S. Navy", "Marine security", "on_scene", 0, "Hudson River safety zone"));
+  if (/local\/state C-UAS monitoring posture|pre-staged C-UAS sensors/i.test(text)) rows.push(resource("cuas-baseline", "Pre-staged C-UAS detection / airspace awareness", "Albany PD / New York State Police", "C-UAS detect / track / identify", "active", 0, "Port of Albany protective footprint; exact sensor locations intentionally not represented"));
   if (/Albany Fire Department engine|First-due Albany Fire/i.test(text)) rows.push(resource("afd-engine", "First-due Albany Fire engine", "Albany Fire Department", "Fire apparatus", "on_scene", 8 * 60, "Initial command post / foot of pier"));
   if (/Albany PD patrol units/i.test(text)) rows.push(resource("apd-patrol", "Albany PD patrol units", "Albany Police Department", "Law enforcement units", "on_scene", 8 * 60, "Initial command post / port perimeter"));
   if (/Coast Guard small boats|Auxiliary vessels/i.test(text)) rows.push(resource("uscg-boats", "Coast Guard / Auxiliary small boats", "U.S. Coast Guard", "Marine response", "en_route", 10 * 60, "Exact position not reported"));
   if (/ambulances from Rensselaer, Schenectady, and Saratoga/i.test(text)) rows.push(resource("ems-mutual-aid", "Regional ambulance mutual aid", "Regional EMS", "EMS transport", "en_route", 12 * 60, "Multiple jurisdictions; exact unit positions not yet reported"));
   return rows;
 }function addLaterResources(rows: SimResource[], text: string) {
-  if (/counter-UAS detection element is requested|counter-UAS detection element are requested/i.test(text)) rows.push(resource("cuas-element", "Counter-UAS detection element", "Requested capability", "C-UAS detection", "requested", 20 * 60, "Deployment location not yet reported"));
+  if (/additional C-UAS capacity are assigned|additional C-UAS capacity is assigned/i.test(text)) rows.push(resource("cuas-augmentation", "Additional C-UAS capacity", "New York State Police / mutual-aid capability", "C-UAS detect / track / identify", "active", 20 * 60, "Augmentation location not yet reported"));
   if (/State Police aviation/i.test(text)) rows.push(resource("nysp-aviation", "State Police Aviation", "New York State Police", "Manned aviation", "requested", 20 * 60, "Position not yet reported"));
   if (/medevac helicopter/i.test(text)) rows.push(resource("medevac", "Medevac aviation requirement", "EMS / receiving system", "Emergency aviation", "requested", 20 * 60, "Protected approach corridor required; exact aircraft position not reported"));
   if (/Bomb Disposal Unit/i.test(text)) rows.push(resource("nysp-bdu", "State Police Bomb Disposal Unit", "New York State Police", "EOD", "en_route", 25 * 60, "Exact unit position not reported"));
@@ -138,6 +139,7 @@ function buildResources(text: string): SimResource[] {
 function buildMapItems(text: string): SimMapItem[] {
   const items: SimMapItem[] = [];
   if (/USS Cohoes|Navy.*ship|ship/i.test(text)) items.push({ id: "ship", label: "USS Cohoes — exercise position", geometry: point(PORT), tone: "partner", detail: "Fictional Navy vessel moored at the Port of Albany. Exercise geometry only." });
+  if (/naval-vessel security restriction/i.test(text)) items.push({ id: "naval-security-airspace", label: "Standing FAA naval-vessel UAS security restriction", geometry: approximateBox(PORT, 0.011, 0.009), tone: "area", detail: "Exercise visualization only. Actual 14 CFR § 99.7 / security-NOTAM geometry and authorization data control; AIRS must not treat this approximate box as authoritative." });
   if (/multiple small UAS inbound|dozen-plus quadcopters/i.test(text)) {
     items.push({ id: "uas-east-vector", label: "Reported UAS approach — Rensselaer side", geometry: line([RENSSELAER_APPROACH, PORT]), tone: "muted", detail: "Reported inbound vector; not a precision track." });
     items.push({ id: "uas-railyard-vector", label: "Reported UAS approach — rail-yard parcel", geometry: line([RAILYARD_APPROACH, PORT]), tone: "muted", detail: "Reported inbound vector from wooded rail-yard area; exercise approximation." });
@@ -149,7 +151,7 @@ function buildMapItems(text: string): SimMapItem[] {
   if (/some go down in the river|ordnance floating/i.test(text)) items.push({ id: "river-wreckage", label: "Unaccounted / downed UAS hazard area", geometry: approximateBox(RIVER_NEAR_PORT, 0.004, 0.003), tone: "area", detail: "Exercise hazard area for downed UAS/debris; not a surveyed boundary." });
   if (/establish an initial command post at the foot of the pier/i.test(text)) items.push({ id: "initial-cp", label: "Initial command post", geometry: point([-73.7572, 42.6272]), tone: "own", detail: "Albany Fire / Albany PD initial command post, exercise approximation." });
   if (/emergency safety\/security zone/i.test(text)) items.push({ id: "uscg-zone", label: "USCG emergency safety/security zone", geometry: approximateBox(PORT, 0.009, 0.008), tone: "area", detail: "Exercise visualization only; scenario does not provide the legal zone coordinates." });
-  if (/Temporary Flight Restriction/i.test(text)) items.push({ id: "tfr", label: "FAA TFR active — geometry not authoritative", geometry: approximateBox(PORT, 0.03, 0.025), tone: "area", detail: "Exercise visualization only. AIRS must ingest the actual FAA TFR geometry in a live operation." });
+  if (/Temporary Flight Restriction/i.test(text)) items.push({ id: "tfr", label: "Broader incident-specific FAA TFR — geometry not authoritative", geometry: approximateBox(PORT, 0.03, 0.025), tone: "area", detail: "Supplemental exercise visualization only. The standing naval-vessel security restriction remains a separate baseline layer; AIRS must ingest actual FAA restriction geometry in a live operation." });
   if (/Corning Preserve|riverfront park just north/i.test(text)) items.push({ id: "civilian-uas-launch", label: "Reported civilian UAS launch activity", geometry: point(CORNING_PRESERVE), tone: "position", detail: "Reported hobbyist/livestreamer launch activity near Corning Preserve/riverfront." });
   if (/Unified Command stands up at a staging area on port property/i.test(text)) items.push({ id: "unified-command", label: "Unified Command / staging", geometry: point([-73.7590, 42.6285]), tone: "own", detail: "Exercise approximation on port property; exact staging location was not specified." });
   if (/fuel sheen/i.test(text)) items.push({ id: "fuel-sheen", label: "Fuel sheen / environmental hazard", geometry: approximateBox(RIVER_NEAR_PORT, 0.003, 0.002), tone: "position", detail: "Exercise approximation of reported fuel sheen from damaged vessels." });
@@ -158,6 +160,8 @@ function buildMapItems(text: string): SimMapItem[] {
 
 function buildActions(text: string): SimCoordinationAction[] {
   const rows: SimCoordinationAction[] = [];
+  if (/pre-existing FAA naval-vessel security restriction/i.test(text)) rows.push(action("naval-airspace-baseline", 0, "AIRS airspace function", "Load standing naval-vessel security restriction into the common operating picture", "Protected vessel airspace", "System", "active"));
+  if (/local\/state C-UAS monitoring posture|pre-staged C-UAS sensors/i.test(text)) rows.push(action("cuas-monitoring-baseline", 0, "Protective airspace function", "Maintain pre-staged C-UAS detect / track / identify watch", "Port of Albany / protected vessel", "System", "active"));
   if (/Albany County 911 is flooded with calls/i.test(text)) rows.push(action("room-create", 6 * 60, "Albany County 911 / command staff", "Spin up AIRS incident room from converging emergency calls", "Port of Albany multi-agency incident", "AIRS room"));
   if (/Albany Fire Department.*Albany PD patrol units arrive/i.test(text)) {
     rows.push(action("afd-lead", 8 * 60, "Initial command post", "Set initial life-safety command lead", "Albany Fire Department", "AIRS room"));
@@ -170,11 +174,11 @@ function buildActions(text: string): SimCoordinationAction[] {
 }function addLaterActions(rows: SimCoordinationAction[], text: string) {
   if (/NCIS agents.*secure the ship/i.test(text)) rows.push(action("ncis-add", 15 * 60, "Command post", "Add federal investigative liaison", "NCIS", "External liaison"));
   if (/notify the FBI/i.test(text)) rows.push(action("fbi-notify", 15 * 60, "Albany PD / County", "Notify and request federal investigative response", "FBI Albany Field Office / JTTF", "External liaison"));
-  if (/FAA issues an emergency Temporary Flight Restriction/i.test(text)) rows.push(action("tfr-layer", 18 * 60, "Airspace function", "Publish TFR status into common operating picture", "Incident airspace", "System"));
-  if (/State Police aviation and a counter-UAS detection element are requested/i.test(text)) {
+  if (/FAA supplements the standing naval-vessel security restriction with a broader incident-specific emergency Temporary Flight Restriction/i.test(text)) rows.push(action("tfr-layer", 18 * 60, "Airspace function", "Publish broader incident-specific TFR while retaining the standing naval-vessel restriction", "Incident airspace", "System"));
+  if (/State Police aviation and additional C-UAS capacity are assigned/i.test(text)) {
     rows.push(action("nysp-aviation-request", 20 * 60, "Incident air operations", "Request public safety aviation support", "New York State Police Aviation", "AIRS room", "pending"));
-    rows.push(action("cuas-request", 20 * 60, "Incident air operations", "Request dedicated C-UAS detect/track/identify capability", "Counter-UAS detection element", "AIRS room", "pending"));
-    rows.push(action("airspace-classification", 20 * 60, "AIRS", "Separate civilian, emergency, public safety, and unresolved threat aircraft", "Common operating picture", "System", "active"));
+    rows.push(action("cuas-augment", 20 * 60, "Incident air operations", "Augment the already-active C-UAS detect / track / identify posture", "Additional state/local C-UAS capacity", "AIRS room", "active"));
+    rows.push(action("airspace-classification", 20 * 60, "AIRS", "Separate civilian, emergency, public safety, and unresolved threat aircraft without resetting the original track history", "Common operating picture", "System", "active"));
   }
   if (/NY State Police Troop G.*dispatched/i.test(text)) rows.push(action("nysp-add", 25 * 60, "Command post", "Add state police response and specialized assets", "New York State Police", "AIRS room"));
   if (/State Emergency Operations Center goes to alert/i.test(text)) rows.push(action("state-eoc", 25 * 60, "County / command", "Open State EOC coordination path", "NYS DHSES / State EOC", "External liaison"));

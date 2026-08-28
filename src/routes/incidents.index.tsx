@@ -21,13 +21,13 @@ import {
 export const Route = createFileRoute("/incidents/")({
   head: () => ({
     meta: [
-      { title: "Incident rooms — AIRS Agent" },
+      { title: "Operations & incident rooms — AIRS Agent" },
       {
         name: "description",
         content:
-          "Create and monitor temporary incident rooms, review partner invitations and end sharing when an incident closes.",
+          "Create planned multi-agency operations before event day, or open incident rooms for emergent response.",
       },
-      { property: "og:title", content: "Incident rooms — AIRS Agent" },
+      { property: "og:title", content: "Operations & incident rooms — AIRS Agent" },
       {
         property: "og:description",
         content:
@@ -106,16 +106,15 @@ function IncidentsPage() {
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
         AIRS Agent
       </p>
-      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Incident rooms</h1>
+      <h1 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">Operations &amp; incident rooms</h1>
       <p className="mt-1 text-sm text-muted-foreground">
-        Every room is owned by the organization that created it. Partner access is temporary and
-        ends when the room closes.
+        Planned events can be built, staffed, mapped, and coordinated before operations begin. Every room remains owned by the organization that created it, and partner access stays explicit and temporary.
       </p>
       {notice && (
         <p className="mt-4 rounded-md bg-muted px-3 py-2 text-sm text-foreground">{notice}</p>
       )}
 
-      <Panel title="Open a new incident room">
+      <Panel title="Open a new operation / incident room">
         <form
           className="flex flex-wrap items-end gap-3"
           onSubmit={(e) => {
@@ -134,7 +133,7 @@ function IncidentsPage() {
             />
           </label>
           <label className="flex flex-col gap-1 text-xs text-muted-foreground">
-            Incident type
+            Operation / incident type
             <select
               value={incidentType}
               onChange={(e) => setIncidentType(e.target.value)}
@@ -152,7 +151,7 @@ function IncidentsPage() {
             disabled={createRoom.isPending}
             className="rounded-md border border-input px-3 py-2 text-sm disabled:opacity-50"
           >
-            Create draft room
+            {incidentType === "planned_event" ? "Create planning room" : "Create draft room"}
           </button>
         </form>
       </Panel>

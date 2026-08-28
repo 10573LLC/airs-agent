@@ -35,6 +35,7 @@ export const saveIcsProfileFn = createServerFn({ method: "POST" })
     commandPostName: z.string().max(200).optional(), commandPostDescription: z.string().max(500).optional(),
     operationalPeriodStart: z.string().max(64).nullish(), operationalPeriodEnd: z.string().max(64).nullish(),
     situationSummary: z.string().max(4000).optional(), safetyMessage: z.string().max(2000).optional(),
+    operationalCondition: z.enum(["nominal","elevated","emergency","recovery"]).optional(),
   }).parse(d))
   .handler(async ({ data }) => guard(async () => {
     const { saveIcsProfile } = await svc(); const { token, meta } = await serverCtx();
@@ -86,6 +87,33 @@ export const setIncidentResourceRequestStatusFn = createServerFn({ method: "POST
   .handler(async ({ data }) => guard(async () => {
     const { setIncidentResourceRequestStatus } = await svc(); const { token, meta } = await serverCtx();
     return setIncidentResourceRequestStatus(token, data.orgId ?? null, data.incidentId, { requestId: data.requestId, status: data.status }, meta);
+  }));
+
+
+export const addCoordinationPartnerFn = createServerFn({ method: "POST" })
+  .validator((d: any) => z.object({
+    incidentId: uuid, orgId, partnerOrgId: uuid.nullish(), organizationName: z.string().min(1).max(240),
+    operationalRole: z.string().max(500).optional(), commandPostRole: z.string().max(300).optional(),
+    connectionMode: z.enum(["airs","external_liaison","emergency_communications","radio","phone","email","other"]).optional(),
+    participationState: z.enum(["planned","invited","confirmed","on_scene","active","released","cancelled"]).optional(),
+    primaryContact: z.string().max(240).optional(), notes: z.string().max(2000).optional(),
+    plannedFrom: z.string().max(64).nullish(), plannedTo: z.string().max(64).nullish(),
+  }).parse(d))
+  .handler(async ({ data }) => guard(async () => {
+    const { addCoordinationPartner } = await svc(); const { token, meta } = await serverCtx();
+    const { incidentId, orgId, ...input } = data;
+    return addCoordinationPartner(token, orgId ?? null, incidentId, input, meta);
+  }));
+
+export const setCoordinationPartnerStateFn = createServerFn({ method: "POST" })
+  .validator((d: any) => z.object({
+    incidentId: uuid, orgId, coordinationPartnerId: uuid,
+    participationState: z.enum(["planned","invited","confirmed","on_scene","active","released","cancelled"]),
+  }).parse(d))
+  .handler(async ({ data }) => guard(async () => {
+    const { setCoordinationPartnerState } = await svc(); const { token, meta } = await serverCtx();
+    return setCoordinationPartnerState(token, data.orgId ?? null, data.incidentId,
+      { coordinationPartnerId: data.coordinationPartnerId, participationState: data.participationState }, meta);
   }));
 
 export const addIncidentAuthorityFn = createServerFn({ method: "POST" })

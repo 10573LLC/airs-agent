@@ -187,7 +187,7 @@ function authorityState(events: readonly SimulationEvent[]): AuthorityState[] {
     if (/Captain of the Port|Coast Guard.*safety\/security zone/i.test(text)) {
       out.push({ domain: "Waterway / marine security", owner: "U.S. Coast Guard Captain of the Port", status: "established", basisEventId: event.id });
     }
-    if (/FAA issues.*Temporary Flight Restriction|FAA issues.*TFR/i.test(text)) {
+    if (/FAA.*naval-vessel security restriction|standing naval-vessel security restriction|FAA.*Temporary Flight Restriction|FAA.*TFR/i.test(text)) {
       out.push({ domain: "National airspace restriction", owner: "FAA", status: "established", basisEventId: event.id });
     }
     if (/NCIS.*secure the ship as a crime scene|NCIS agents.*secure the ship/i.test(text)) {
@@ -209,6 +209,7 @@ function deriveAirspaceStatus(events: readonly SimulationEvent[]) {
     return "Hostile UAS attack confirmed; track accounting and secondary-wave risk remain operational priorities.";
   }
   if (/multiple small UAS inbound|dozen-plus quadcopters|carrying attached payloads/i.test(text)) {
+    if (/naval-vessel security restriction/i.test(text) && /C-UAS monitoring posture|pre-staged C-UAS sensors/i.test(text)) return "Immediate coordinated UAS threat detected inside pre-existing protected naval airspace; local/state C-UAS monitoring is active, while intent and full track identity remain unresolved.";
     return "Immediate coordinated UAS threat reported from multiple approach vectors; intent and full track identity are not yet resolved.";
   }
   return "No airspace threat has been established from released exercise facts.";
@@ -221,6 +222,7 @@ function deriveAirspaceTracks(events: readonly SimulationEvent[]) {
   if (/news helicopters.*hold clear|Local news helicopters/i.test(text)) tracks.push("News aviation: known media aircraft instructed to hold clear or coordinate under incident air operations.");
   if (/hobbyist drones|independent livestreamers|rogue civilian drones/i.test(text)) tracks.push("Civilian UAS: known/unknown hobbyist and media-adjacent aircraft entering or approaching restricted incident airspace.");
   if (/medevac helicopter/i.test(text)) tracks.push("Emergency aviation: medevac aircraft requires a protected, deconflicted operating corridor.");
+  if (/C-UAS monitoring posture|pre-staged C-UAS sensors/i.test(text)) tracks.push("Protective monitoring: local/state C-UAS detection and airspace-awareness systems were active before the attack; preserve pre-incident and attack track history.");
   if (/State Police aviation/i.test(text)) tracks.push("Public safety aviation: State Police aviation requested; authorization/deconfliction must be represented separately from civilian and hostile tracks.");
   return unique(tracks);
 }
@@ -273,8 +275,11 @@ function deriveRecommendations(events: readonly SimulationEvent[]) {
   if (/not every drone is accounted|ordnance floating/i.test(text)) {
     recommendations.push("Maintain unresolved UAS/debris as both a responder hazard and an evidence issue; do not mark the airspace or waterway clear from absence of current detections alone.");
   }
-  if (/Temporary Flight Restriction|TFR/i.test(text)) {
-    recommendations.push("Publish the active restriction into the common operating picture and classify every detected aircraft against known authorization before operational use of the airspace.");
+  if (/Temporary Flight Restriction|TFR|naval-vessel security restriction|security NOTAM|Special Security Instructions/i.test(text)) {
+    recommendations.push("Keep the active naval-vessel security restriction and any broader incident-specific restriction in the common operating picture; classify every detected aircraft against known authorization before operational use of the airspace.");
+  }
+  if (/C-UAS monitoring posture|pre-staged C-UAS sensors/i.test(text)) {
+    recommendations.push("Preserve and correlate the pre-staged C-UAS track history from before first detection through the attack; do not treat augmentation at the incident as the start of the airspace record.");
   }
   if (/rogue civilian drones|medevac helicopter|hobbyist drones/i.test(text)) {
     recommendations.push("Separate authorized emergency aircraft, known civilian/RID-correlated aircraft, unknown tracks, and suspected hostile tracks; preserve a medevac corridor and hand off non-immediate violators for enforcement follow-up.");

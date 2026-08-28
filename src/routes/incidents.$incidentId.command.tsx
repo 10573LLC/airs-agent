@@ -8,7 +8,7 @@ import { CopMap, type MapLayerItem } from "@/components/map/cop-map";
 import { DENY_MESSAGES } from "@/components/incident-ui";
 import { listObservationsFn } from "@/lib/api/awareness.functions";
 import { readIncidentFn, listParticipantsFn } from "@/lib/api/incidents.functions";
-import { readIcsBoardFn, saveIcsProfileFn, addIcsObjectiveFn, setIcsObjectiveStatusFn, addIcsPositionFn, setIcsPositionStatusFn, addIncidentResourceRequestFn, setIncidentResourceRequestStatusFn, addIncidentAuthorityFn, setIncidentAuthorityStatusFn, addThreatHypothesisFn, setThreatHypothesisStatusFn } from "@/lib/api/ics.functions";
+import { readIcsBoardFn, saveIcsProfileFn, addIcsObjectiveFn, setIcsObjectiveStatusFn, addIcsPositionFn, setIcsPositionStatusFn, addIncidentResourceRequestFn, setIncidentResourceRequestStatusFn, addCoordinationPartnerFn, setCoordinationPartnerStateFn, addIncidentAuthorityFn, setIncidentAuthorityStatusFn, addThreatHypothesisFn, setThreatHypothesisStatusFn } from "@/lib/api/ics.functions";
 import { LIFE_SAFETY_AUTHORITY_NOTE, suggestAuthorities, suggestThreatHypotheses, type AuthoritySuggestion, type ThreatHypothesisSuggestion } from "@/lib/authority/jurisdiction";
 import { createMapFeatureFn, listIncidentResourceLocationsFn, listMapFeaturesFn, listOperatingAreasFn } from "@/lib/api/map.functions";
 import { listIncidentAssignmentsFn } from "@/lib/api/resources.functions";
@@ -31,6 +31,9 @@ type RequestPriority = "immediate" | "high" | "routine";
 type AuthorityTypeValue = "jurisdictional" | "regulatory" | "functional" | "command" | "investigative" | "protective" | "delegated" | "supporting";
 type ThreatTypeValue = "secondary_assault" | "follow_on_uas" | "responder_targeting" | "coordinated_attack" | "explosive_hazard" | "cbrne" | "other";
 type ThreatConfidenceValue = "unknown" | "low" | "medium" | "high";
+type OperationalCondition = "nominal" | "elevated" | "emergency" | "recovery";
+type CoordinationConnectionMode = "airs" | "external_liaison" | "emergency_communications" | "radio" | "phone" | "email" | "other";
+type CoordinationPartnerState = "planned" | "invited" | "confirmed" | "on_scene" | "active" | "released" | "cancelled";
 const label = (value: string) => value.replaceAll("_", " ");
 const requestTone = (status: string): StatusTone => status === "filled" ? "active" : status === "denied" || status === "cancelled" ? "critical" : status === "partially_filled" || status === "acknowledged" ? "info" : "caution";
 const assignmentTone = (status: string): StatusTone => ["active","deployed"].includes(status) ? "active" : ["assigned","deploying"].includes(status) ? "info" : ["released","completed"].includes(status) ? "neutral" : "caution";
@@ -74,6 +77,8 @@ function IncidentCommandConsole() {
   const positionStatus = useServerFn(setIcsPositionStatusFn);
   const addRequest = useServerFn(addIncidentResourceRequestFn);
   const requestStatus = useServerFn(setIncidentResourceRequestStatusFn);
+  const addCoordinationPartner = useServerFn(addCoordinationPartnerFn);
+  const coordinationPartnerState = useServerFn(setCoordinationPartnerStateFn);
   const addAuthority = useServerFn(addIncidentAuthorityFn);
   const authorityStatus = useServerFn(setIncidentAuthorityStatusFn);
   const addThreatHypothesis = useServerFn(addThreatHypothesisFn);
@@ -85,6 +90,7 @@ function IncidentCommandConsole() {
   const [featureType, setFeatureType] = useState<MapFeatureType>("command_post");
   const [featureName, setFeatureName] = useState("");
   const [commandMode, setCommandMode] = useState("single");
+  const [operationalCondition, setOperationalCondition] = useState<OperationalCondition>("nominal");
   const [commander, setCommander] = useState("");
   const [commandPostName, setCommandPostName] = useState("");
   const [situation, setSituation] = useState("");
@@ -105,6 +111,13 @@ function IncidentCommandConsole() {
   const [requestBy, setRequestBy] = useState("");
   const [requestPriority, setRequestPriority] = useState<RequestPriority>("routine");
   const [requestStaging, setRequestStaging] = useState("");
+  const [partnerName, setPartnerName] = useState("");
+  const [partnerRole, setPartnerRole] = useState("");
+  const [partnerCommandRole, setPartnerCommandRole] = useState("");
+  const [partnerConnection, setPartnerConnection] = useState<CoordinationConnectionMode>("external_liaison");
+  const [partnerState, setPartnerState] = useState<CoordinationPartnerState>("planned");
+  const [partnerContact, setPartnerContact] = useState("");
+  const [partnerNotes, setPartnerNotes] = useState("");
   const [authorityDomain, setAuthorityDomain] = useState("");
   const [authorityHolder, setAuthorityHolder] = useState("");
   const [authorityType, setAuthorityType] = useState<AuthorityTypeValue>("functional");
@@ -127,7 +140,7 @@ function IncidentCommandConsole() {
   const refresh = (...keys: string[]) => keys.forEach((key) => void qc.invalidateQueries({ queryKey: [key, incidentId] }));
   const report = (result: { ok: boolean; code?: string }, success: string) => setNotice(result.ok ? success : (DENY_MESSAGES[result.code ?? ""] ?? `Denied (${result.code ?? "unknown"}).`));
   const saveProfileM = useMutation({ mutationFn: () => saveProfile({ data: {
-    incidentId, commandMode, incidentCommander: commander, commandPostName, operationalPeriodStart: periodStart ? new Date(periodStart).toISOString() : null,
+    incidentId, commandMode, operationalCondition, incidentCommander: commander, commandPostName, operationalPeriodStart: periodStart ? new Date(periodStart).toISOString() : null,
     operationalPeriodEnd: periodEnd ? new Date(periodEnd).toISOString() : null, situationSummary: situation, safetyMessage: safety,
   }}), onSuccess: (r) => { report(r, "ICS command profile updated."); if (r.ok) refresh("incident-ics"); } });
 
@@ -152,6 +165,13 @@ function IncidentCommandConsole() {
 
   const requestStatusM = useMutation({ mutationFn: (input: { requestId: string; status: "acknowledged" | "partially_filled" | "filled" | "denied" | "cancelled" }) => requestStatus({ data: { incidentId, ...input } }),
     onSuccess: (r) => { report(r, "Resource request status updated."); if (r.ok) refresh("incident-ics"); } });
+
+  const coordinationPartnerM = useMutation({ mutationFn: () => addCoordinationPartner({ data: {
+    incidentId, organizationName: partnerName, operationalRole: partnerRole, commandPostRole: partnerCommandRole,
+    connectionMode: partnerConnection, participationState: partnerState, primaryContact: partnerContact, notes: partnerNotes,
+  }}), onSuccess: (r) => { report(r, "Coordination partner added."); if (r.ok) { setPartnerName(""); setPartnerRole(""); setPartnerCommandRole(""); setPartnerContact(""); setPartnerNotes(""); refresh("incident-ics"); } } });
+  const coordinationPartnerStateM = useMutation({ mutationFn: (input: { coordinationPartnerId: string; participationState: CoordinationPartnerState }) => coordinationPartnerState({ data: { incidentId, ...input } }),
+    onSuccess: (r) => { report(r, "Coordination partner status updated."); if (r.ok) refresh("incident-ics"); } });
 
   const confirmAuthorityM = useMutation({ mutationFn: (item: AuthoritySuggestion) => addAuthority({ data: {
     incidentId, domain: item.domain, authorityHolder: item.authorityHolder, authorityType: item.authorityType,
@@ -190,6 +210,7 @@ function IncidentCommandConsole() {
   const areaRows = areas.data?.ok ? areas.data.data : [];
   const locationRows = locations.data?.ok ? locations.data.data : [];
   const observationRows = observations.data?.ok ? observations.data.data : [];
+  const coordinationRows = board?.coordinationPartners ?? [];
   const authorityRows = board?.authorities ?? [];
   const threatRows = board?.threatHypotheses ?? [];
   const loadedProfile = board?.profile ?? null;
@@ -205,6 +226,7 @@ function IncidentCommandConsole() {
   useEffect(() => {
     if (!loadedProfile) return;
     setCommandMode(loadedProfile.commandMode);
+    setOperationalCondition((loadedProfile.operationalCondition || "nominal") as OperationalCondition);
     setCommander(loadedProfile.incidentCommander);
     setCommandPostName(loadedProfile.commandPostName);
     setSituation(loadedProfile.situationSummary);
@@ -228,25 +250,36 @@ function IncidentCommandConsole() {
   const profile = loadedProfile;
   const activeRequests = board?.requests.filter((r) => !["filled","denied","cancelled"].includes(r.status)) ?? [];
   const activeAssignments = assignmentRows.filter((r) => !["released","completed","cancelled"].includes(r.status));
+  const isPlannedOperation = roomData.incident.incidentType === "planned_event";
+  const currentCondition = (profile?.operationalCondition || "nominal") as OperationalCondition;
+  const operationLabel = isPlannedOperation
+    ? roomData.incident.status === "draft" ? "PLANNING"
+      : roomData.incident.status === "scheduled" ? "PRE-EVENT READY"
+      : roomData.incident.status === "active" && currentCondition === "emergency" ? "EVENT + INCIDENT RESPONSE"
+      : roomData.incident.status === "active" ? "EVENT OPERATIONS LIVE"
+      : `PLANNED EVENT · ${label(roomData.incident.status).toUpperCase()}`
+    : roomData.incident.status === "active" ? "LIVE INCIDENT" : label(roomData.incident.status).toUpperCase();
+  const operationTone: StatusTone = currentCondition === "emergency" ? "critical" : currentCondition === "elevated" ? "caution" : currentCondition === "recovery" ? "info" : "active";
 
   return (
     <PageShell width="full" viewport>
       <div className="flex h-full min-h-0 flex-col gap-2">
         <header className="flex shrink-0 flex-wrap items-center gap-3 rounded-md border border-border bg-card px-3 py-2 shadow-panel">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2"><StatusPill tone="active">LIVE INCIDENT</StatusPill><StatusPill tone="neutral">MANUAL + AIRS DATA</StatusPill></div>
+            <div className="flex items-center gap-2"><StatusPill tone={operationTone}>{operationLabel}</StatusPill><StatusPill tone={operationTone}>CONDITION · {label(currentCondition).toUpperCase()}</StatusPill><StatusPill tone="neutral">MANUAL + AIRS DATA</StatusPill></div>
             <h1 className="mt-1 truncate text-lg font-semibold text-foreground">{roomData.incident.name}</h1>
           </div>
           <div className="text-right text-xs text-muted-foreground"><p>{label(roomData.incident.incidentType)} · {label(roomData.incident.status)}</p><p>{isOwner ? "Originating agency" : `Partner · ${label(roomData.relationship)}`}</p></div>
           <Link to="/incidents/$incidentId" params={{ incidentId }} className={smallButton}>Manage room</Link>
         </header>
         {notice ? <div className="shrink-0 rounded-md border border-border bg-muted/50 px-3 py-1.5 text-xs text-foreground">{notice}</div> : null}
+        {isPlannedOperation ? <div className="shrink-0 rounded-md border border-primary/30 bg-primary/5 px-3 py-1.5 text-xs text-foreground"><strong>Preplanned operation:</strong> command structure, agencies, authorities, resources, zones, and assignments may be established before event day. Emergency escalation changes the operational condition; it does not reset the plan.</div> : null}
 
         <div className="grid shrink-0 gap-2 sm:grid-cols-2 xl:grid-cols-8">
           <Metric label="Command" value={profile?.commandMode === "unified" ? "Unified Command" : "Single Command"} />
           <Metric label="Incident Commander" value={profile?.incidentCommander || "Not entered"} />
           <Metric label="Operational period" value={profile?.operationalPeriodStart ? `${time(profile.operationalPeriodStart)}–${time(profile.operationalPeriodEnd)}` : "Not entered"} />
-          <Metric label="Agencies" value={`${1 + participantRows.length} in picture`} />
+          <Metric label="Agencies" value={`${1 + participantRows.length + coordinationRows.filter((r) => !["released","cancelled"].includes(r.participationState)).length} in picture`} />
           <Metric label="Authorities" value={`${authorityRows.filter((r) => r.status === "active").length} active`} />
           <Metric label="Open hypotheses" value={`${threatRows.filter((r) => ["open","supported"].includes(r.status)).length}`} />
           <Metric label="Assigned resources" value={`${activeAssignments.length}`} />
@@ -255,7 +288,7 @@ function IncidentCommandConsole() {
 
         <div className="min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(300px,380px)_minmax(620px,1fr)_minmax(330px,430px)] xl:gap-2">
           <div className="grid min-h-0 grid-rows-[1.25fr_.75fr] gap-2">
-            <Panel title="ICS Command" description="Command, objectives, organization, and operational period.">
+            <Panel title="ICS Command" description={isPlannedOperation ? "Pre-event command, objectives, organization, and operational period remain live before an emergency occurs." : "Command, objectives, organization, and operational period."}>
               <div className="space-y-3 text-xs">
                 <div><p className="font-semibold text-foreground">Situation</p><p className="mt-1 text-muted-foreground">{profile?.situationSummary || roomData.incident.description || "No situation summary entered."}</p></div>
                 {profile?.safetyMessage ? <div className="rounded-md border border-warning/40 bg-warning/10 p-2"><p className="font-semibold">Safety message</p><p className="mt-1">{profile.safetyMessage}</p></div> : null}
@@ -265,6 +298,7 @@ function IncidentCommandConsole() {
                 {isOwner ? <DetailForm summary="Edit ICS command profile">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <Field label="Command mode"><select className={inputClass} value={commandMode} onChange={(e) => setCommandMode(e.target.value)}><option value="single">Single Command</option><option value="unified">Unified Command</option></select></Field>
+                    <Field label="Operational condition"><select className={inputClass} value={operationalCondition} onChange={(e) => setOperationalCondition(e.target.value as OperationalCondition)}><option value="nominal">Nominal</option><option value="elevated">Elevated</option><option value="emergency">Emergency</option><option value="recovery">Recovery</option></select></Field>
                     <Field label="Incident Commander / Unified Command lead"><input className={inputClass} value={commander} onChange={(e) => setCommander(e.target.value)} placeholder={profile?.incidentCommander || "Name / title"} /></Field>
                     <Field label="Command Post"><input className={inputClass} value={commandPostName} onChange={(e) => setCommandPostName(e.target.value)} placeholder={profile?.commandPostName || "ICP name / location"} /></Field>
                     <Field label="Operational period start"><input type="datetime-local" className={inputClass} value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} /></Field>
@@ -294,13 +328,15 @@ function IncidentCommandConsole() {
                 {isOwner && threatSuggestions.length ? <div><p className="font-semibold text-foreground">AIRS hypotheses — not facts</p><div className="mt-1 space-y-1.5">{threatSuggestions.map((h) => <div key={h.key} className="rounded-md border border-warning/40 bg-warning/5 p-2"><p className="font-semibold">{h.title}</p><p className="text-muted-foreground">{h.rationale}</p><button className={`${smallButton} mt-1`} onClick={() => confirmThreatM.mutate(h)}>Add for command review</button></div>)}</div></div> : null}
                 {isOwner ? <DetailForm summary="Record authority manually"><div className="grid gap-2"><Field label="Domain"><input className={inputClass} value={authorityDomain} onChange={(e) => setAuthorityDomain(e.target.value)} /></Field><Field label="Authority holder"><input className={inputClass} value={authorityHolder} onChange={(e) => setAuthorityHolder(e.target.value)} /></Field><Field label="Type"><select className={inputClass} value={authorityType} onChange={(e) => setAuthorityType(e.target.value as AuthorityTypeValue)}>{["jurisdictional","regulatory","functional","command","investigative","protective","delegated","supporting"].map((v) => <option key={v}>{v}</option>)}</select></Field><Field label="Scope"><input className={inputClass} value={authorityScope} onChange={(e) => setAuthorityScope(e.target.value)} /></Field><Field label="Limitations"><textarea className={inputClass} rows={2} value={authorityLimitations} onChange={(e) => setAuthorityLimitations(e.target.value)} /></Field></div><button className={`${buttonClass} mt-2`} disabled={!authorityDomain.trim() || !authorityHolder.trim() || manualAuthorityM.isPending} onClick={() => manualAuthorityM.mutate()}>Record claimed authority</button></DetailForm> : null}
                 {isOwner ? <DetailForm summary="Record threat hypothesis manually"><div className="grid gap-2"><Field label="Hypothesis"><input className={inputClass} value={threatTitle} onChange={(e) => setThreatTitle(e.target.value)} /></Field><Field label="Type"><select className={inputClass} value={threatType} onChange={(e) => setThreatType(e.target.value as ThreatTypeValue)}>{["secondary_assault","follow_on_uas","responder_targeting","coordinated_attack","explosive_hazard","cbrne","other"].map((v) => <option key={v}>{label(v)}</option>)}</select></Field><Field label="Confidence"><select className={inputClass} value={threatConfidence} onChange={(e) => setThreatConfidence(e.target.value as ThreatConfidenceValue)}>{["unknown","low","medium","high"].map((v) => <option key={v}>{v}</option>)}</select></Field><Field label="Rationale"><textarea className={inputClass} rows={2} value={threatRationale} onChange={(e) => setThreatRationale(e.target.value)} /></Field></div><button className={`${buttonClass} mt-2`} disabled={!threatTitle.trim() || manualThreatM.isPending} onClick={() => manualThreatM.mutate()}>Add hypothesis</button></DetailForm> : null}
-                <div className="border-t border-border pt-2"><p className="font-semibold text-foreground">Agency participation</p><div className="mt-1 space-y-1.5"><div className="rounded-md border border-border p-2"><p className="font-semibold">{roomData.incident.orgName ?? "Originating agency"}</p><p className="text-muted-foreground">Originating organization · active</p></div>{participantRows.map((p) => <div key={p.id} className="rounded-md border border-border p-2"><div className="flex items-center justify-between gap-2"><p className="font-semibold">{p.partnerOrgName ?? p.partnerOrgId}</p><StatusPill tone={p.participationStatus === "active" ? "active" : "caution"}>{label(p.participationStatus)}</StatusPill></div><p className="mt-1 text-muted-foreground">{label(p.accessLevel)} · invitation {label(p.invitationStatus)}</p></div>)}{participantRows.length === 0 ? <p className="text-muted-foreground">No AIRS partner agencies are active. Outside agencies can still be represented through ICS and requests without fake platform membership.</p> : null}</div></div>
+                <div className="border-t border-border pt-2"><p className="font-semibold text-foreground">Planned / external coordination roster</p><p className="mt-1 text-[11px] text-muted-foreground">Roster presence is operational context only. It never grants AIRS access; platform authorization still comes only from accepted incident participation.</p><div className="mt-1 space-y-1.5">{coordinationRows.map((p) => <div key={p.id} className="rounded-md border border-border p-2"><div className="flex items-center justify-between gap-2"><p className="font-semibold">{p.organizationName}</p><StatusPill tone={["active","on_scene","confirmed"].includes(p.participationState) ? "active" : p.participationState === "cancelled" ? "critical" : "neutral"}>{label(p.participationState)}</StatusPill></div><p className="mt-1 text-muted-foreground">{p.operationalRole || "Coordination partner"}{p.commandPostRole ? ` · ${p.commandPostRole}` : ""} · {label(p.connectionMode)}</p>{p.primaryContact ? <p className="mt-1 text-[11px] text-muted-foreground">Contact: {p.primaryContact}</p> : null}{isOwner && !["released","cancelled"].includes(p.participationState) ? <div className="mt-1 flex gap-2"><button className="text-[11px] underline" onClick={() => coordinationPartnerStateM.mutate({ coordinationPartnerId: p.id, participationState: "confirmed" })}>Confirm</button><button className="text-[11px] underline" onClick={() => coordinationPartnerStateM.mutate({ coordinationPartnerId: p.id, participationState: "on_scene" })}>On scene</button><button className="text-[11px] underline" onClick={() => coordinationPartnerStateM.mutate({ coordinationPartnerId: p.id, participationState: "active" })}>Active</button></div> : null}</div>)}{coordinationRows.length === 0 ? <p className="text-muted-foreground">No preplanned or external coordination partners entered.</p> : null}</div></div>
+                {isOwner ? <DetailForm summary="Add planned / external coordination partner"><div className="grid gap-2 sm:grid-cols-2"><Field label="Organization"><input className={inputClass} value={partnerName} onChange={(e) => setPartnerName(e.target.value)} /></Field><Field label="Operational role"><input className={inputClass} value={partnerRole} onChange={(e) => setPartnerRole(e.target.value)} placeholder="Maritime security, fire/rescue, dive, etc." /></Field><Field label="Command-post role"><input className={inputClass} value={partnerCommandRole} onChange={(e) => setPartnerCommandRole(e.target.value)} placeholder="Unified Command rep / liaison / branch" /></Field><Field label="Coordination path"><select className={inputClass} value={partnerConnection} onChange={(e) => setPartnerConnection(e.target.value as CoordinationConnectionMode)}>{["airs","external_liaison","emergency_communications","radio","phone","email","other"].map((v) => <option key={v} value={v}>{label(v)}</option>)}</select></Field><Field label="Pre-event status"><select className={inputClass} value={partnerState} onChange={(e) => setPartnerState(e.target.value as CoordinationPartnerState)}>{["planned","invited","confirmed","on_scene","active"].map((v) => <option key={v} value={v}>{label(v)}</option>)}</select></Field><Field label="Primary contact"><input className={inputClass} value={partnerContact} onChange={(e) => setPartnerContact(e.target.value)} /></Field></div><Field label="Notes"><textarea className={`${inputClass} mt-2`} rows={2} value={partnerNotes} onChange={(e) => setPartnerNotes(e.target.value)} /></Field><button className={`${buttonClass} mt-2`} disabled={!partnerName.trim() || coordinationPartnerM.isPending} onClick={() => coordinationPartnerM.mutate()}>Add coordination partner</button></DetailForm> : null}
+                <div className="border-t border-border pt-2"><p className="font-semibold text-foreground">AIRS-authorized agency participation</p><div className="mt-1 space-y-1.5"><div className="rounded-md border border-border p-2"><p className="font-semibold">{roomData.incident.orgName ?? "Originating agency"}</p><p className="text-muted-foreground">Originating organization · active</p></div>{participantRows.map((p) => <div key={p.id} className="rounded-md border border-border p-2"><div className="flex items-center justify-between gap-2"><p className="font-semibold">{p.partnerOrgName ?? p.partnerOrgId}</p><StatusPill tone={p.participationStatus === "active" ? "active" : "caution"}>{label(p.participationStatus)}</StatusPill></div><p className="mt-1 text-muted-foreground">{label(p.accessLevel)} · invitation {label(p.invitationStatus)}</p></div>)}{participantRows.length === 0 ? <p className="text-muted-foreground">No partner agency currently has AIRS incident access.</p> : null}</div></div>
               </div>
             </Panel>
           </div>
           <section className="flex min-h-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel">
             <div className="shrink-0 border-b border-border px-3 py-2">
-              <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-sm font-semibold">Common Operating Picture</h2><p className="text-[11px] text-muted-foreground">Live incident geography. Manual reports are labeled by source and retain normal AIRS precision rules.</p></div><StatusPill tone="info">{mapItems.filter((i) => i.geometry).length} plotted</StatusPill></div>
+              <div className="flex flex-wrap items-center justify-between gap-2"><div><h2 className="text-sm font-semibold">Common Operating Picture</h2><p className="text-[11px] text-muted-foreground">{isPlannedOperation ? "Preplanned and live event geography share one COP. Planned zones/positions stay distinct from later observed or reported conditions." : "Live incident geography. Manual reports are labeled by source and retain normal AIRS precision rules."}</p></div><StatusPill tone="info">{mapItems.filter((i) => i.geometry).length} plotted</StatusPill></div>
               {isOwner ? <div className="mt-2 grid items-end gap-2 grid-cols-[10rem_1fr_auto]">
                 <Field label="Plot type"><select className={inputClass} value={featureType} onChange={(e) => setFeatureType(e.target.value as MapFeatureType)}>{MAP_FEATURE_TYPES.map((v) => <option key={v} value={v}>{MAP_FEATURE_LABELS[v]}</option>)}</select></Field>
                 <Field label="Label"><input className={inputClass} value={featureName} onChange={(e) => setFeatureName(e.target.value)} placeholder="Click map, name the point, then plot" /></Field>
@@ -314,7 +350,7 @@ function IncidentCommandConsole() {
           </section>
 
           <div className="grid min-h-0 grid-rows-2 gap-2">
-            <Panel title="Resources / Assignments" description="Committed assets retain ownership with their supplying agency.">
+            <Panel title="Resources / Assignments" description={isPlannedOperation ? "Preassigned and deployed event assets remain owned by their supplying agency and carry forward if conditions escalate." : "Committed assets retain ownership with their supplying agency."}>
               <div className="space-y-2 text-xs">{activeAssignments.map((a) => <div key={a.id} className="rounded-md border border-border p-2"><div className="flex items-center gap-2"><p className="min-w-0 flex-1 truncate font-semibold">{a.label ?? "Restricted assignment"}</p><StatusPill tone={assignmentTone(a.status)}>{label(a.status)}</StatusPill></div><p className="mt-1 text-muted-foreground">{a.ownerOrgName ?? "Your agency"} · {label(a.assignmentType)}{a.assignedRole ? ` · ${a.assignedRole}` : ""}</p></div>)}{activeAssignments.length === 0 ? <p className="text-muted-foreground">No active resource or personnel assignments.</p> : null}</div>
               <Link to="/incidents/$incidentId" params={{ incidentId }} className={`${smallButton} mt-3 inline-block`}>Manage assignments</Link>
             </Panel>
@@ -331,7 +367,7 @@ function IncidentCommandConsole() {
           <div className="flex w-32 shrink-0 items-center justify-center bg-brand-navy px-3 text-[11px] font-bold uppercase tracking-[0.16em] text-white">Operational feed</div>
           <div className="min-w-0 flex-1 overflow-hidden">
             <div className="simulation-ticker-track flex h-full min-w-max items-center">
-              {[...threatRows.filter((h) => ["open","supported","confirmed"].includes(h.status)).slice(0, 4).map((h) => `THREAT · ${label(h.status)} · ${h.title}`), ...authorityRows.filter((a) => ["active","disputed"].includes(a.status)).slice(0, 4).map((a) => `AUTHORITY · ${label(a.status)} · ${a.domain} · ${a.authorityHolder}`), ...(board?.requests ?? []).slice(0, 6).map((r) => `${r.requestNumber} · ${label(r.status)} · ${r.quantity} ${label(r.resourceKind)}`), ...(board?.objectives ?? []).slice(0, 4).map((o) => `OBJ ${o.sequenceNo} · ${o.status} · ${o.objective}`), ...observationRows.slice(0, 6).map((o) => `OBS · ${label(o.verificationStatus)} · ${o.title}`)].map((item, index) => <span key={`${index}-${item}`} className="whitespace-nowrap border-r border-border/70 px-5 text-xs font-medium text-foreground">{item}</span>)}
+              {[...coordinationRows.filter((p) => !["released","cancelled"].includes(p.participationState)).slice(0, 6).map((p) => `COORD · ${label(p.participationState)} · ${p.organizationName} · ${p.operationalRole || label(p.connectionMode)}`), ...threatRows.filter((h) => ["open","supported","confirmed"].includes(h.status)).slice(0, 4).map((h) => `THREAT · ${label(h.status)} · ${h.title}`), ...authorityRows.filter((a) => ["active","disputed"].includes(a.status)).slice(0, 4).map((a) => `AUTHORITY · ${label(a.status)} · ${a.domain} · ${a.authorityHolder}`), ...(board?.requests ?? []).slice(0, 6).map((r) => `${r.requestNumber} · ${label(r.status)} · ${r.quantity} ${label(r.resourceKind)}`), ...(board?.objectives ?? []).slice(0, 4).map((o) => `OBJ ${o.sequenceNo} · ${o.status} · ${o.objective}`), ...observationRows.slice(0, 6).map((o) => `OBS · ${label(o.verificationStatus)} · ${o.title}`)].map((item, index) => <span key={`${index}-${item}`} className="whitespace-nowrap border-r border-border/70 px-5 text-xs font-medium text-foreground">{item}</span>)}
               {(!board?.requests.length && !board?.objectives.length && observationRows.length === 0 && authorityRows.length === 0 && threatRows.length === 0) ? <span className="px-4 text-xs text-muted-foreground">Awaiting manually entered operational updates.</span> : null}
             </div>
           </div>

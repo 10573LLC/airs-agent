@@ -12,10 +12,12 @@ const route = readFileSync(`${REPO_ROOT}/src/routes/incidents.$incidentId.comman
 const simulation = readFileSync(`${REPO_ROOT}/src/lib/simulation/model.ts`, "utf8");
 
 describe("authority and jurisdiction layer", () => {
-  it("places the authority stage after ICS command operations", () => {
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0015_authority_jurisdiction_threats.sql");
-    expect(MIGRATION_FILES.indexOf("db/migrations/0014_ics_command_operations.sql"))
-      .toBeLessThan(MIGRATION_FILES.indexOf("db/migrations/0015_authority_jurisdiction_threats.sql"));
+  it("places the authority stage after ICS command operations and before planned operations", () => {
+    const ics = MIGRATION_FILES.indexOf("db/migrations/0014_ics_command_operations.sql");
+    const authority = MIGRATION_FILES.indexOf("db/migrations/0015_authority_jurisdiction_threats.sql");
+    const planned = MIGRATION_FILES.indexOf("db/migrations/0016_planned_operations.sql");
+    expect(ics).toBeLessThan(authority);
+    expect(authority).toBeLessThan(planned);
   });
 
   it("keeps incident authority and hypotheses tenant-owned with partner read access", () => {

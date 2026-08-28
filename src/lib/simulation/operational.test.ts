@@ -16,6 +16,10 @@ describe("operational simulation projection", () => {
     expect(view.incidentStatus).toBe("Incoming report / not yet organized");
     expect(view.commandLead).toBe("Not yet established");
     expect(view.mapItems.some((item) => item.id === "uas-east-vector")).toBe(true);
+    expect(view.mapItems.some((item) => item.id === "naval-security-airspace")).toBe(true);
+    expect(view.resources.some((item) => item.id === "cuas-baseline" && item.status === "active")).toBe(true);
+    expect(view.actions.some((item) => item.id === "naval-airspace-baseline")).toBe(true);
+    expect(view.actions.some((item) => item.id === "cuas-monitoring-baseline")).toBe(true);
     expect(view.agencies.some((item) => item.id === "afd")).toBe(false);
   });
 
@@ -44,7 +48,8 @@ describe("operational simulation projection", () => {
 
   it("turns airspace requests into visible resources and COP changes", () => {
     const view = buildOperationalProjection(scenario, 20 * 60);
-    expect(view.resources.some((item) => item.id === "cuas-element" && item.status === "requested")).toBe(true);
+    expect(view.resources.some((item) => item.id === "cuas-baseline" && item.status === "active")).toBe(true);
+    expect(view.resources.some((item) => item.id === "cuas-augmentation" && item.status === "active")).toBe(true);
     expect(view.resources.some((item) => item.id === "nysp-aviation")).toBe(true);
     expect(view.mapItems.some((item) => item.id === "tfr")).toBe(true);
     expect(view.mapItems.some((item) => item.id === "civilian-uas-launch")).toBe(true);

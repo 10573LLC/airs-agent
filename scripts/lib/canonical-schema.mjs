@@ -1,5 +1,5 @@
 // AIRS Agent - canonical cumulative schema description (the schema that must
-// exist AFTER migration 0014), expressed as concrete, individually probeable
+// exist AFTER migration 0016), expressed as concrete, individually probeable
 // database objects.
 //
 // Why this file exists
@@ -56,7 +56,7 @@ const column = (t, c) =>
   `EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='airs' AND table_name='${t}' AND column_name='${c}')`;
 
 /**
- * The canonical post-0014 object inventory. `requires` names prerequisite
+ * The canonical post-0016 object inventory. `requires` names prerequisite
  * object ids: reconciliation refuses to create an object whose prerequisites
  * are neither present nor part of the same plan.
  */
@@ -309,6 +309,12 @@ export const CANONICAL_OBJECTS = [
   { version: "0015", id: "policy:incident_threat_hypotheses", label: "incident hypotheses RLS policy", probe: policy("incident_threat_hypotheses"), requires: ["airs.incident_threat_hypotheses"] },
   { version: "0015", id: "rlsforce:incident_authorities", label: "forced RLS on incident authorities", probe: forced("incident_authorities"), requires: ["airs.incident_authorities"] },
   { version: "0015", id: "rlsforce:incident_threat_hypotheses", label: "forced RLS on incident hypotheses", probe: forced("incident_threat_hypotheses"), requires: ["airs.incident_threat_hypotheses"] },
+
+  // ---- 0016 planned operations / coordination roster ---------------------
+  { version: "0016", id: "col:incident_ics_profiles.operational_condition", label: "ICS operational condition column", probe: column("incident_ics_profiles", "operational_condition"), requires: ["airs.incident_ics_profiles"] },
+  { version: "0016", id: "airs.incident_coordination_partners", label: "planned/external coordination partner table", probe: table("incident_coordination_partners") },
+  { version: "0016", id: "policy:incident_coordination_partners", label: "coordination partner RLS policy", probe: policy("incident_coordination_partners"), requires: ["airs.incident_coordination_partners"] },
+  { version: "0016", id: "rlsforce:incident_coordination_partners", label: "forced RLS on coordination partners", probe: forced("incident_coordination_partners"), requires: ["airs.incident_coordination_partners"] },
 ];
 
 /** Versions whose canonical objects reconciliation is allowed to create. */

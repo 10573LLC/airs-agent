@@ -65,9 +65,9 @@ describe("timeline-aware simulation model", () => {
     expect(early.some((item) => item.domain === "Hostile threat / criminal enforcement" && item.status === "reported")).toBe(true);
     expect(early.some((item) => item.domain === "Fire / rescue / EMS function" && item.status === "reported")).toBe(true);
     expect(early.some((item) => item.domain === "Waterway / marine security")).toBe(false);
-    expect(early.some((item) => item.domain === "National airspace restriction")).toBe(false);
+    expect(early.some((item) => item.domain === "National airspace restriction" && item.owner === "FAA" && item.status === "established")).toBe(true);
     expect(buildSimulationState(scenario, 10 * 60).authorities.some((item) => item.domain === "Waterway / marine security")).toBe(true);
-    expect(buildSimulationState(scenario, 17 * 60).authorities.some((item) => item.domain === "National airspace restriction")).toBe(false);
+    expect(buildSimulationState(scenario, 17 * 60).authorities.some((item) => item.domain === "National airspace restriction")).toBe(true);
     expect(buildSimulationState(scenario, 18 * 60).authorities.some((item) => item.owner === "FAA")).toBe(true);
     expect(buildSimulationState(scenario, 30 * 60).authorities.some((item) => item.owner === "Unified Command")).toBe(true);
   });

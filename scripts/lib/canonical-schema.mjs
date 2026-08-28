@@ -1,5 +1,5 @@
 // AIRS Agent - canonical cumulative schema description (the schema that must
-// exist AFTER migration 0012), expressed as concrete, individually probeable
+// exist AFTER migration 0014), expressed as concrete, individually probeable
 // database objects.
 //
 // Why this file exists
@@ -10,7 +10,7 @@
 // database can therefore be complete and still fail a historical probe.
 //
 // Rules:
-//   * every entry below is an object the CURRENT (post-0013) schema must have;
+//   * every entry below is an object the CURRENT (post-0014) schema must have;
 //   * SUPERSEDED_OBJECTS records objects that must NOT be required, with the
 //     reason and the current equivalent - they are never recreated;
 //   * `version` is the migration that owns the object today, and doubles as the
@@ -56,7 +56,7 @@ const column = (t, c) =>
   `EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema='airs' AND table_name='${t}' AND column_name='${c}')`;
 
 /**
- * The canonical post-0013 object inventory. `requires` names prerequisite
+ * The canonical post-0014 object inventory. `requires` names prerequisite
  * object ids: reconciliation refuses to create an object whose prerequisites
  * are neither present nor part of the same plan.
  */
@@ -292,7 +292,16 @@ export const CANONICAL_OBJECTS = [
   { version: "0013", id: "airs.agency_system_ecosystems", label: "agency systems ecosystem table", probe: table("agency_system_ecosystems") },
   { version: "0013", id: "airs.agency_system_components", label: "agency systems component table", probe: table("agency_system_components") },
   { version: "0013", id: "policy:agency_system_profiles", label: "agency systems profile RLS policy", probe: policy("agency_system_profiles"), requires: ["airs.agency_system_profiles"] },
-  { version: "0013", id: "rlsforce:agency_system_profiles", label: "forced RLS on agency systems profile", probe: forced("agency_system_profiles"), requires: ["airs.agency_system_profiles"] },];
+  { version: "0013", id: "rlsforce:agency_system_profiles", label: "forced RLS on agency systems profile", probe: forced("agency_system_profiles"), requires: ["airs.agency_system_profiles"] },
+
+  // ---- 0014 ICS command operations --------------------------------------
+  { version: "0014", id: "airs.incident_ics_profiles", label: "ICS incident profile table", probe: table("incident_ics_profiles") },
+  { version: "0014", id: "airs.incident_ics_objectives", label: "ICS objectives table", probe: table("incident_ics_objectives") },
+  { version: "0014", id: "airs.incident_ics_positions", label: "ICS positions table", probe: table("incident_ics_positions") },
+  { version: "0014", id: "airs.incident_resource_requests", label: "incident resource requests table", probe: table("incident_resource_requests") },
+  { version: "0014", id: "policy:incident_ics_profiles", label: "ICS profile RLS policy", probe: policy("incident_ics_profiles"), requires: ["airs.incident_ics_profiles"] },
+  { version: "0014", id: "rlsforce:incident_ics_profiles", label: "forced RLS on ICS profile", probe: forced("incident_ics_profiles"), requires: ["airs.incident_ics_profiles"] },
+];
 
 /** Versions whose canonical objects reconciliation is allowed to create. */
 export const RECONCILABLE_VERSIONS = ["0008", "0009", "0010"];

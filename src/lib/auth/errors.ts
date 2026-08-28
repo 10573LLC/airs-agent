@@ -36,6 +36,9 @@ export type AccessCode =
   | "shift_conflict"
   | "assignment_not_found"
   | "assignment_terminated"
+  | "ics_objective_not_found"
+  | "ics_position_not_found"
+  | "resource_request_not_found"
   // Stage 7 — common operating picture and operating areas
   | "invalid_geometry"
   | "invalid_altitude_block"
@@ -87,6 +90,9 @@ const STATUS: Record<AccessCode, number> = {
   shift_conflict: 409,
   assignment_not_found: 404,
   assignment_terminated: 409,
+  ics_objective_not_found: 404,
+  ics_position_not_found: 404,
+  resource_request_not_found: 404,
   invalid_geometry: 400,
   invalid_altitude_block: 400,
   invalid_time_window: 400,

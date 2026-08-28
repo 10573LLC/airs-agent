@@ -195,9 +195,10 @@ function IncidentDetailPage() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
-      <Link to="/incidents" className="text-sm underline">
-        Back to incident rooms
-      </Link>
+      <div className="flex flex-wrap items-center gap-3">
+        <Link to="/incidents" className="text-sm underline">Back to incident rooms</Link>
+        <Link to="/incidents/$incidentId/command" params={{ incidentId }} className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Open command console</Link>
+      </div>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
         {incident.name}
       </h1>

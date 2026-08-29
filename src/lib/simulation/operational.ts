@@ -1,14 +1,14 @@
 import type { Geometry } from "@/lib/map/model";
 import type { CompiledScenario } from "./model";
 
-export type SimAgencyConnection = "airs_room" | "external_liaison" | "regional_mutual_aid";
+export type SimAgencyInformationPath = "command_post" | "command_post_liaison" | "dispatch" | "mutual_aid_coordination";
 export type SimAgencyStatus = "requested" | "invited" | "active" | "notified";
 
 export interface SimAgency {
   id: string;
   name: string;
   role: string;
-  connection: SimAgencyConnection;
+  informationPath: SimAgencyInformationPath;
   status: SimAgencyStatus;
   sinceSeconds: number;
   coordination: string;
@@ -37,7 +37,7 @@ export interface SimCoordinationAction {
   actor: string;
   action: string;
   target: string;
-  channel: "AIRS room" | "External liaison" | "Emergency communications" | "System";
+  channel: "Incident workspace" | "External liaison" | "Emergency communications" | "System";
   status: "completed" | "pending" | "active";
 }
 
@@ -78,8 +78,8 @@ function textThrough(scenario: CompiledScenario, clockSeconds: number) {
     .join(" ");
 }
 
-function agency(id: string, name: string, role: string, connection: SimAgencyConnection, status: SimAgencyStatus, sinceSeconds: number, coordination: string): SimAgency {
-  return { id, name, role, connection, status, sinceSeconds, coordination };
+function agency(id: string, name: string, role: string, informationPath: SimAgencyInformationPath, status: SimAgencyStatus, sinceSeconds: number, coordination: string): SimAgency {
+  return { id, name, role, informationPath, status, sinceSeconds, coordination };
 }
 
 function resource(id: string, name: string, owner: string, category: string, status: SimResource["status"], sinceSeconds: number, location: string): SimResource {
@@ -91,26 +91,26 @@ function action(id: string, atSeconds: number, actor: string, actionText: string
 }
 function buildAgencies(text: string): SimAgency[] {
   const rows: SimAgency[] = [];
-  if (/Navy|ship/i.test(text)) rows.push(agency("navy", "U.S. Navy / Ship Command", "Shipboard force protection and damage control", "external_liaison", "active", 0, "On-scene ship command liaison; represented in AIRS without implying platform membership."));
-  if (/Albany Fire Department|Albany FD/i.test(text)) rows.push(agency("afd", "Albany Fire Department", "Initial incident command, fire, rescue, MCI", "airs_room", "active", 8 * 60, "Simulated AIRS incident-room participant and initial command lead."));
-  if (/Albany PD/i.test(text)) rows.push(agency("apd", "Albany Police Department", "Law enforcement, perimeter, investigations", "airs_room", "active", 8 * 60, "Simulated AIRS incident-room participant."));
-  if (/Coast Guard|Captain of the Port/i.test(text)) rows.push(agency("uscg", "U.S. Coast Guard", "Waterway safety/security and marine traffic", "external_liaison", "active", 10 * 60, "External maritime liaison and interoperable communications; no AIRS membership assumed."));
-  if (/Albany County Emergency Communications|Albany County 911/i.test(text)) rows.push(agency("acec", "Albany County 911 / Emergency Communications", "Dispatch and regional mutual aid coordination", "airs_room", "active", 6 * 60, "Simulated AIRS participant feeding incident and mutual-aid status."));
-  if (/Rensselaer, Schenectady, and Saratoga counties/i.test(text)) rows.push(agency("regional-ems", "Regional EMS Mutual Aid", "Ambulance surge and patient movement", "regional_mutual_aid", "requested", 12 * 60, "Brought in through county mutual-aid/ECC channels; individual providers need not be AIRS members."));
-  if (/Albany Medical Center|St\. Peter's Hospital|Samaritan Hospital/i.test(text)) rows.push(agency("hospitals", "Regional Receiving Hospitals", "Trauma and overflow receiving", "external_liaison", "notified", 12 * 60, "EMS council / hospital coordination represented as an external operational dependency."));
-  if (/NCIS/i.test(text)) rows.push(agency("ncis", "NCIS", "Navy crime-scene and investigative authority", "external_liaison", "active", 15 * 60, "Federal investigative liaison; no AIRS membership assumed."));
-  if (/FBI/i.test(text)) rows.push(agency("fbi", "FBI Albany Field Office / JTTF", "Federal criminal/terrorism investigation", "external_liaison", "notified", 15 * 60, "External federal liaison/request tracked in the incident room."));
-  if (/FAA|naval-vessel security restriction/i.test(text)) rows.push(agency("faa", "FAA", "National airspace restriction and UAS enforcement coordination", "external_liaison", "active", /pre-existing FAA naval-vessel security restriction/i.test(text) ? 0 : 18 * 60, "Standing naval-vessel security restriction plus any incident-specific FAA restriction are represented separately from ground command."));
+  if (/Navy|ship/i.test(text)) rows.push(agency("navy", "U.S. Navy / Ship Command", "Shipboard force protection and damage control", "command_post_liaison", "active", 0, "On-scene ship command liaison; represented in the operational picture without implying workspace access or technical integration."));
+  if (/Albany Fire Department|Albany FD/i.test(text)) rows.push(agency("afd", "Albany Fire Department", "Fire, rescue, EMS/MCI life-safety functional operations", "command_post", "active", 8 * 60, "Represented through command-post operational entry; no technical integration is implied."));
+  if (/Albany PD/i.test(text)) rows.push(agency("apd", "Albany Police Department", "Law enforcement, perimeter, investigations", "command_post", "active", 8 * 60, "Represented through command-post operational entry; no technical integration is implied."));
+  if (/Coast Guard|Captain of the Port/i.test(text)) rows.push(agency("uscg", "U.S. Coast Guard", "Waterway safety/security and marine traffic", "command_post_liaison", "active", 10 * 60, "External maritime liaison and interoperable communications; no incident-workspace access or technical integration assumed."));
+  if (/Albany County Emergency Communications|Albany County 911/i.test(text)) rows.push(agency("acec", "Albany County 911 / Emergency Communications", "Dispatch and regional mutual aid coordination", "dispatch", "active", 6 * 60, "Represented through emergency-communications operational updates; no agency connectivity is implied."));
+  if (/Rensselaer, Schenectady, and Saratoga counties/i.test(text)) rows.push(agency("regional-ems", "Regional EMS Mutual Aid", "Ambulance surge and patient movement", "mutual_aid_coordination", "requested", 12 * 60, "Brought in through county mutual-aid/ECC channels; individual providers need not have workspace access or direct system integrations."));
+  if (/Albany Medical Center|St\. Peter's Hospital|Samaritan Hospital/i.test(text)) rows.push(agency("hospitals", "Regional Receiving Hospitals", "Trauma and overflow receiving", "command_post_liaison", "notified", 12 * 60, "EMS council / hospital coordination represented as an external operational dependency."));
+  if (/NCIS/i.test(text)) rows.push(agency("ncis", "NCIS", "Navy crime-scene and investigative authority", "command_post_liaison", "active", 15 * 60, "Federal investigative liaison; no incident-workspace access or technical integration assumed."));
+  if (/FBI/i.test(text)) rows.push(agency("fbi", "FBI Albany Field Office / JTTF", "Federal criminal/terrorism investigation", "command_post_liaison", "notified", 15 * 60, "External federal liaison/request tracked in the incident workspace."));
+  if (/FAA|naval-vessel security restriction/i.test(text)) rows.push(agency("faa", "FAA", "National airspace restriction and UAS enforcement coordination", "command_post_liaison", "active", /pre-existing FAA naval-vessel security restriction/i.test(text) ? 0 : 18 * 60, "Standing naval-vessel security restriction plus any incident-specific FAA restriction are represented separately from ground command."));
   return rows;
 }function addLaterAgencies(rows: SimAgency[], text: string) {
-  if (/State Police aviation|NY State Police Troop G|State Police Bomb Disposal/i.test(text)) rows.push(agency("nysp", "New York State Police", "Aviation, patrol, bomb disposal, counter terrorism", "airs_room", /dispatched/i.test(text) ? "active" : "requested", 20 * 60, "Simulated AIRS partner request/participation; specialized assets remain separately tracked."));
-  if (/DHSES|State Emergency Operations Center/i.test(text)) rows.push(agency("dh-ses", "NYS DHSES / State EOC", "State resource coordination", "external_liaison", "notified", 25 * 60, "State EOC liaison represented outside the AIRS participant roster unless separately invited."));
-  if (/Albany County Sheriff/i.test(text)) rows.push(agency("acso", "Albany County Sheriff's Office", "Marine, patrol, county support", "airs_room", "active", 30 * 60, "Simulated AIRS incident-room participant."));
-  if (/Albany County Emergency Management/i.test(text)) rows.push(agency("acem", "Albany County Emergency Management", "County EOC, mutual aid, consequence management", "airs_room", "active", 30 * 60, "Simulated AIRS incident-room participant and Unified Command/EOC bridge."));
-  if (/DEC Police/i.test(text)) rows.push(agency("dec", "NYS DEC Police", "Environmental spill/waterway response", "external_liaison", "requested", 35 * 60, "External agency request tracked by liaison/status update."));
-  if (/WMD Civil Support Team/i.test(text)) rows.push(agency("wmd-cst", "New York National Guard WMD Civil Support Team", "Technical CBRNE assessment", "external_liaison", "requested", 35 * 60, "External military support request tracked as a capability dependency."));
-  if (/ATF/i.test(text)) rows.push(agency("atf", "ATF", "Explosives/post-blast support if confirmed", "external_liaison", "notified", 120 * 60, "Conditional external investigative coordination."));
-  if (/Red Cross/i.test(text)) rows.push(agency("red-cross", "American Red Cross", "Family reunification and mass care", "external_liaison", "active", 120 * 60, "NGO coordination represented as an external partner function."));
+  if (/State Police aviation|NY State Police Troop G|State Police Bomb Disposal/i.test(text)) rows.push(agency("nysp", "New York State Police", "Aviation, patrol, bomb disposal, counter terrorism", "command_post", /dispatched/i.test(text) ? "active" : "requested", 20 * 60, "State response represented through command-post coordination; specialized assets remain separately tracked."));
+  if (/DHSES|State Emergency Operations Center/i.test(text)) rows.push(agency("dh-ses", "NYS DHSES / State EOC", "State resource coordination", "command_post_liaison", "notified", 25 * 60, "State EOC liaison represented through the current information path; workspace access remains a separate authorization decision."));
+  if (/Albany County Sheriff/i.test(text)) rows.push(agency("acso", "Albany County Sheriff's Office", "Marine, patrol, county support", "command_post", "active", 30 * 60, "Represented through command-post operational entry; no technical integration is implied."));
+  if (/Albany County Emergency Management/i.test(text)) rows.push(agency("acem", "Albany County Emergency Management", "County EOC, mutual aid, consequence management", "command_post", "active", 30 * 60, "Represented through command-post operational entry and the Unified Command/EOC coordination path; no technical integration is implied."));
+  if (/DEC Police/i.test(text)) rows.push(agency("dec", "NYS DEC Police", "Environmental spill/waterway response", "command_post_liaison", "requested", 35 * 60, "External agency request tracked by liaison/status update."));
+  if (/WMD Civil Support Team/i.test(text)) rows.push(agency("wmd-cst", "New York National Guard WMD Civil Support Team", "Technical CBRNE assessment", "command_post_liaison", "requested", 35 * 60, "External military support request tracked as a capability dependency."));
+  if (/ATF/i.test(text)) rows.push(agency("atf", "ATF", "Explosives/post-blast support if confirmed", "command_post_liaison", "notified", 120 * 60, "Conditional external investigative coordination."));
+  if (/Red Cross/i.test(text)) rows.push(agency("red-cross", "American Red Cross", "Family reunification and mass care", "command_post_liaison", "active", 120 * 60, "NGO coordination represented as an external partner function."));
   return rows.filter((row, index) => rows.findIndex((other) => other.id === row.id) === index);
 }
 
@@ -162,10 +162,10 @@ function buildActions(text: string): SimCoordinationAction[] {
   const rows: SimCoordinationAction[] = [];
   if (/pre-existing FAA naval-vessel security restriction/i.test(text)) rows.push(action("naval-airspace-baseline", 0, "AIRS airspace function", "Load standing naval-vessel security restriction into the common operating picture", "Protected vessel airspace", "System", "active"));
   if (/local\/state C-UAS monitoring posture|pre-staged C-UAS sensors/i.test(text)) rows.push(action("cuas-monitoring-baseline", 0, "Protective airspace function", "Maintain pre-staged C-UAS detect / track / identify watch", "Port of Albany / protected vessel", "System", "active"));
-  if (/Albany County 911 is flooded with calls/i.test(text)) rows.push(action("room-create", 6 * 60, "Albany County 911 / command staff", "Spin up AIRS incident room from converging emergency calls", "Port of Albany multi-agency incident", "AIRS room"));
+  if (/Albany County 911 is flooded with calls/i.test(text)) rows.push(action("room-create", 6 * 60, "Albany County 911 / command staff", "Open the incident workspace from converging emergency calls", "Port of Albany multi-agency incident", "Incident workspace"));
   if (/Albany Fire Department.*Albany PD patrol units arrive/i.test(text)) {
-    rows.push(action("afd-lead", 8 * 60, "Initial command post", "Set initial life-safety command lead", "Albany Fire Department", "AIRS room"));
-    rows.push(action("apd-add", 8 * 60, "Initial command post", "Add law-enforcement participant", "Albany Police Department", "AIRS room"));
+    rows.push(action("afd-lead", 8 * 60, "Initial command post", "Record fire/rescue life-safety functional lead without assigning overall jurisdiction", "Albany Fire Department", "Incident workspace"));
+    rows.push(action("apd-add", 8 * 60, "Initial command post", "Add law-enforcement participant", "Albany Police Department", "Incident workspace"));
   }
   if (/Coast Guard.*notified/i.test(text)) rows.push(action("uscg-liaison", 10 * 60, "Command post", "Open external maritime coordination", "U.S. Coast Guard / Captain of the Port", "External liaison"));
   if (/regional mutual-aid MCI plan/i.test(text)) rows.push(action("ems-request", 12 * 60, "Albany County Emergency Communications", "Send regional MCI resource requests", "Rensselaer, Schenectady, and Saratoga EMS", "Emergency communications"));
@@ -176,14 +176,14 @@ function buildActions(text: string): SimCoordinationAction[] {
   if (/notify the FBI/i.test(text)) rows.push(action("fbi-notify", 15 * 60, "Albany PD / County", "Notify and request federal investigative response", "FBI Albany Field Office / JTTF", "External liaison"));
   if (/FAA supplements the standing naval-vessel security restriction with a broader incident-specific emergency Temporary Flight Restriction/i.test(text)) rows.push(action("tfr-layer", 18 * 60, "Airspace function", "Publish broader incident-specific TFR while retaining the standing naval-vessel restriction", "Incident airspace", "System"));
   if (/State Police aviation and additional C-UAS capacity are assigned/i.test(text)) {
-    rows.push(action("nysp-aviation-request", 20 * 60, "Incident air operations", "Request public safety aviation support", "New York State Police Aviation", "AIRS room", "pending"));
-    rows.push(action("cuas-augment", 20 * 60, "Incident air operations", "Augment the already-active C-UAS detect / track / identify posture", "Additional state/local C-UAS capacity", "AIRS room", "active"));
+    rows.push(action("nysp-aviation-request", 20 * 60, "Incident air operations", "Request public safety aviation support", "New York State Police Aviation", "Incident workspace", "pending"));
+    rows.push(action("cuas-augment", 20 * 60, "Incident air operations", "Augment the already-active C-UAS detect / track / identify posture", "Additional state/local C-UAS capacity", "Incident workspace", "active"));
     rows.push(action("airspace-classification", 20 * 60, "AIRS", "Separate civilian, emergency, public safety, and unresolved threat aircraft without resetting the original track history", "Common operating picture", "System", "active"));
   }
-  if (/NY State Police Troop G.*dispatched/i.test(text)) rows.push(action("nysp-add", 25 * 60, "Command post", "Add state police response and specialized assets", "New York State Police", "AIRS room"));
+  if (/NY State Police Troop G.*dispatched/i.test(text)) rows.push(action("nysp-add", 25 * 60, "Command post", "Add state police response and specialized assets", "New York State Police", "Incident workspace"));
   if (/State Emergency Operations Center goes to alert/i.test(text)) rows.push(action("state-eoc", 25 * 60, "County / command", "Open State EOC coordination path", "NYS DHSES / State EOC", "External liaison"));
-  if (/Unified Command stands up/i.test(text)) rows.push(action("uc-establish", 30 * 60, "Command post", "Establish Unified Command roster and authority matrix", "Navy, NCIS, Albany Fire, Albany PD, Sheriff, USCG, FBI, County EM", "AIRS room", "active"));
-  if (/dive\/underwater recovery teams are requested/i.test(text)) rows.push(action("dive-request", 35 * 60, "Unified Command", "Request dive / underwater capability", "Albany Fire and State Police dive teams", "AIRS room", "pending"));
+  if (/Unified Command stands up/i.test(text)) rows.push(action("uc-establish", 30 * 60, "Command post", "Establish Unified Command roster and authority matrix", "Navy, NCIS, Albany Fire, Albany PD, Sheriff, USCG, FBI, County EM", "Incident workspace", "active"));
+  if (/dive\/underwater recovery teams are requested/i.test(text)) rows.push(action("dive-request", 35 * 60, "Unified Command", "Request dive / underwater capability", "Albany Fire and State Police dive teams", "Incident workspace", "pending"));
   if (/WMD Civil Support Team is requested/i.test(text)) rows.push(action("wmd-request", 35 * 60, "Unified Command", "Request technical CBRNE assessment", "New York National Guard WMD CST", "External liaison", "pending"));
   if (/Joint Information Center/i.test(text)) rows.push(action("jic", 60 * 60, "Unified Command", "Stand up Joint Information Center", "Navy PA, FBI, Albany PD, Coast Guard", "External liaison", "active"));
   if (/Red Cross open a family reunification center/i.test(text)) rows.push(action("red-cross", 120 * 60, "County Emergency Management", "Open family reunification / mass care coordination", "American Red Cross", "External liaison", "active"));

@@ -20,18 +20,19 @@ describe("preplanned operations", () => {
   });
 
   it("adds operational condition and a non-authorizing coordination roster", () => {
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0016_planned_operations.sql");
+    expect(MIGRATION_FILES).toContain("db/migrations/0016_planned_operations.sql");
+    expect(MIGRATION_FILES.indexOf("db/migrations/0016_planned_operations.sql")).toBeLessThan(MIGRATION_FILES.indexOf("db/migrations/0017_information_path_model.sql"));
     expect(migration).toMatch(/operational_condition.*nominal/s);
     expect(migration).toMatch(/incident_coordination_partners/);
     expect(migration).toMatch(/FORCE ROW LEVEL SECURITY/);
     expect(migration).toMatch(/does NOT create incident access/i);
   });
-  it("keeps external coordination separate from AIRS authorization", () => {
+  it("keeps organization representation separate from workspace authorization", () => {
     expect(server).toMatch(/incident_coordination_partners/);
     expect(server).toMatch(/addCoordinationPartner/);
     expect(route).toMatch(/Roster presence is operational context only/);
-    expect(route).toMatch(/never grants AIRS access/);
-    expect(route).toMatch(/AIRS-authorized agency participation/);
+    expect(route).toMatch(/does not define workspace access/);
+    expect(route).toMatch(/Incident workspace access/);
   });
 
   it("lets a planned event run nominally before emergency escalation", () => {

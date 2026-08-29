@@ -5,7 +5,7 @@ import { withIncidentAction } from "./incidents.server";
 
 export const ICS_COMMAND_MODES = ["single", "unified"] as const;
 export const ICS_OPERATIONAL_CONDITIONS = ["nominal", "elevated", "emergency", "recovery"] as const;
-export const COORDINATION_CONNECTION_MODES = ["airs", "external_liaison", "emergency_communications", "radio", "phone", "email", "other"] as const;
+export const COORDINATION_INFORMATION_PATHS = ["system_integration", "command_post_liaison", "dispatch", "radio", "phone", "email", "manual_entry", "mutual_aid_coordination", "other"] as const;
 export const COORDINATION_PARTNER_STATES = ["planned", "invited", "confirmed", "on_scene", "active", "released", "cancelled"] as const;
 export const ICS_POSITION_TYPES = [
   "incident_command", "command_staff", "operations", "planning", "logistics", "finance_admin",
@@ -41,7 +41,7 @@ export interface IncidentResourceRequest {
 }
 export interface IncidentCoordinationPartner {
   id: string; incidentId: string; partnerOrgId: string | null; organizationName: string; operationalRole: string;
-  commandPostRole: string; connectionMode: string; participationState: string; primaryContact: string; notes: string;
+  commandPostRole: string; informationPath: string; participationState: string; primaryContact: string; notes: string;
   plannedFrom: string | null; plannedTo: string | null; createdAt: string; updatedAt: string;
 }
 export interface IncidentAuthority {
@@ -114,7 +114,7 @@ export async function readIcsBoard(token: string | null, orgId: string | null, i
         FROM airs.incident_resource_requests WHERE incident_id=$1 ORDER BY created_at DESC`, [incidentId]);
       const coordinationPartners = await q.query<IncidentCoordinationPartner>(`SELECT id, incident_id AS "incidentId", partner_org_id AS "partnerOrgId",
         organization_name AS "organizationName", operational_role AS "operationalRole", command_post_role AS "commandPostRole",
-        connection_mode AS "connectionMode", participation_state AS "participationState", primary_contact AS "primaryContact", notes,
+        information_path AS "informationPath", participation_state AS "participationState", primary_contact AS "primaryContact", notes,
         to_json(planned_from)#>>'{}' AS "plannedFrom", to_json(planned_to)#>>'{}' AS "plannedTo",
         to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"
         FROM airs.incident_coordination_partners WHERE incident_id=$1 ORDER BY participation_state, organization_name`, [incidentId]);
@@ -291,33 +291,33 @@ export async function setIncidentResourceRequestStatus(token: string | null, org
 export async function addCoordinationPartner(
   token: string | null, orgId: string | null, incidentId: string,
   input: { partnerOrgId?: string | null; organizationName: string; operationalRole?: string; commandPostRole?: string;
-    connectionMode?: string; participationState?: string; primaryContact?: string; notes?: string;
+    informationPath?: string; participationState?: string; primaryContact?: string; notes?: string;
     plannedFrom?: string | null; plannedTo?: string | null }, meta: RequestMeta,
 ): Promise<IncidentCoordinationPartner> {
   return withIncidentAction(
     { token, orgId, incidentId: assertUuid(incidentId, "incident id"), action: "update", meta, audit: false },
     async (ctx, q, access) => {
-      const connectionMode = oneOf(input.connectionMode ?? "external_liaison", COORDINATION_CONNECTION_MODES, "coordination connection mode");
+      const informationPath = oneOf(input.informationPath ?? "command_post_liaison", COORDINATION_INFORMATION_PATHS, "coordination information path");
       const participationState = oneOf(input.participationState ?? "planned", COORDINATION_PARTNER_STATES, "coordination partner state");
       const plannedFrom = maybeTime(input.plannedFrom, "planned from");
       const plannedTo = maybeTime(input.plannedTo, "planned to");
       if (plannedFrom && plannedTo && Date.parse(plannedTo) <= Date.parse(plannedFrom)) throw new AccessError("invalid_input", "planned end must follow planned start");
       const rows = await q.query<IncidentCoordinationPartner>(`INSERT INTO airs.incident_coordination_partners
         (incident_id, org_id, partner_org_id, organization_name, operational_role, command_post_role,
-         connection_mode, participation_state, primary_contact, notes, planned_from, planned_to,
+         information_path, participation_state, primary_contact, notes, planned_from, planned_to,
          created_by_account, updated_by_account)
         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$13)
         RETURNING id, incident_id AS "incidentId", partner_org_id AS "partnerOrgId", organization_name AS "organizationName",
-          operational_role AS "operationalRole", command_post_role AS "commandPostRole", connection_mode AS "connectionMode",
+          operational_role AS "operationalRole", command_post_role AS "commandPostRole", information_path AS "informationPath",
           participation_state AS "participationState", primary_contact AS "primaryContact", notes,
           to_json(planned_from)#>>'{}' AS "plannedFrom", to_json(planned_to)#>>'{}' AS "plannedTo",
           to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"`,
         [incidentId, access.incident.orgId, input.partnerOrgId ? assertUuid(input.partnerOrgId, "partner org id") : null,
          text(input.organizationName, "organization name", 240, true), text(input.operationalRole, "operational role", 500),
-         text(input.commandPostRole, "command post role", 300), connectionMode, participationState,
+         text(input.commandPostRole, "command post role", 300), informationPath, participationState,
          text(input.primaryContact, "primary contact", 240), text(input.notes, "coordination notes", 2000),
          plannedFrom, plannedTo, ctx.accountId]);
-      await audit(q, ctx, incidentId, "incident.coordination_partner.create", { coordination_partner_id: rows[0].id, organization_name: rows[0].organizationName, connection_mode: connectionMode, participation_state: participationState });
+      await audit(q, ctx, incidentId, "incident.coordination_partner.create", { coordination_partner_id: rows[0].id, organization_name: rows[0].organizationName, information_path: informationPath, participation_state: participationState });
       return rows[0];
     },
   );
@@ -336,7 +336,7 @@ export async function setCoordinationPartnerState(
         SET participation_state=$3, updated_by_account=$4
         WHERE id=$1 AND incident_id=$2
         RETURNING id, incident_id AS "incidentId", partner_org_id AS "partnerOrgId", organization_name AS "organizationName",
-          operational_role AS "operationalRole", command_post_role AS "commandPostRole", connection_mode AS "connectionMode",
+          operational_role AS "operationalRole", command_post_role AS "commandPostRole", information_path AS "informationPath",
           participation_state AS "participationState", primary_contact AS "primaryContact", notes,
           to_json(planned_from)#>>'{}' AS "plannedFrom", to_json(planned_to)#>>'{}' AS "plannedTo",
           to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"`,

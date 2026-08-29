@@ -1,5 +1,5 @@
 // AIRS Agent - canonical cumulative schema description (the schema that must
-// exist AFTER migration 0016), expressed as concrete, individually probeable
+// exist AFTER migration 0017), expressed as concrete, individually probeable
 // database objects.
 //
 // Why this file exists
@@ -315,6 +315,10 @@ export const CANONICAL_OBJECTS = [
   { version: "0016", id: "airs.incident_coordination_partners", label: "planned/external coordination partner table", probe: table("incident_coordination_partners") },
   { version: "0016", id: "policy:incident_coordination_partners", label: "coordination partner RLS policy", probe: policy("incident_coordination_partners"), requires: ["airs.incident_coordination_partners"] },
   { version: "0016", id: "rlsforce:incident_coordination_partners", label: "forced RLS on coordination partners", probe: forced("incident_coordination_partners"), requires: ["airs.incident_coordination_partners"] },
+
+  // ---- 0017 information-path semantic correction -------------------------
+  { version: "0017", id: "col:incident_coordination_partners.information_path", label: "coordination information-path column", probe: column("incident_coordination_partners", "information_path"), requires: ["airs.incident_coordination_partners"] },
+  { version: "0017", id: "guard:no_incident_coordination_connection_mode", label: "legacy agency-connectivity column removed", probe: "NOT " + column("incident_coordination_partners", "connection_mode"), requires: ["airs.incident_coordination_partners"] },
 ];
 
 /** Versions whose canonical objects reconciliation is allowed to create. */

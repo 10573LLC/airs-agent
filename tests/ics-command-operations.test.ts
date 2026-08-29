@@ -34,7 +34,7 @@ describe("ICS command operations", () => {
     expect(route).toContain("Resource Requests");
     expect(route).toContain("Planned / external coordination roster");
     expect(route).toContain("Roster presence is operational context only");
-    expect(route).toContain("AIRS-authorized agency participation");
+    expect(route).toContain("Incident workspace access");
     expect(route).not.toContain("SIMULATION MODE");
   });
 

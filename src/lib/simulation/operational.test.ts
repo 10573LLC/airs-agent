@@ -35,14 +35,14 @@ describe("operational simulation projection", () => {
     const view = buildOperationalProjection(scenario, 8 * 60);
     expect(view.incidentStatus).toMatch(/initial command/i);
     expect(view.actions.some((item) => item.id === "room-create")).toBe(true);
-    expect(view.agencies.find((item) => item.id === "afd")?.connection).toBe("airs_room");
+    expect(view.agencies.find((item) => item.id === "afd")?.informationPath).toBe("command_post");
     expect(view.agencies.find((item) => item.id === "apd")?.status).toBe("active");
   });
-  it("represents non-AIRS agencies through external coordination paths", () => {
+  it("represents organizations through information paths without implying agency connectivity", () => {
     const view = buildOperationalProjection(scenario, 18 * 60);
-    expect(view.agencies.find((item) => item.id === "uscg")?.connection).toBe("external_liaison");
-    expect(view.agencies.find((item) => item.id === "ncis")?.connection).toBe("external_liaison");
-    expect(view.agencies.find((item) => item.id === "faa")?.connection).toBe("external_liaison");
+    expect(view.agencies.find((item) => item.id === "uscg")?.informationPath).toBe("command_post_liaison");
+    expect(view.agencies.find((item) => item.id === "ncis")?.informationPath).toBe("command_post_liaison");
+    expect(view.agencies.find((item) => item.id === "faa")?.informationPath).toBe("command_post_liaison");
     expect(view.actions.some((item) => item.id === "uscg-liaison")).toBe(true);
   });
 

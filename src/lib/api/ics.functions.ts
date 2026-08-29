@@ -94,7 +94,7 @@ export const addCoordinationPartnerFn = createServerFn({ method: "POST" })
   .validator((d: any) => z.object({
     incidentId: uuid, orgId, partnerOrgId: uuid.nullish(), organizationName: z.string().min(1).max(240),
     operationalRole: z.string().max(500).optional(), commandPostRole: z.string().max(300).optional(),
-    connectionMode: z.enum(["airs","external_liaison","emergency_communications","radio","phone","email","other"]).optional(),
+    informationPath: z.enum(["system_integration","command_post_liaison","dispatch","radio","phone","email","manual_entry","mutual_aid_coordination","other"]).optional(),
     participationState: z.enum(["planned","invited","confirmed","on_scene","active","released","cancelled"]).optional(),
     primaryContact: z.string().max(240).optional(), notes: z.string().max(2000).optional(),
     plannedFrom: z.string().max(64).nullish(), plannedTo: z.string().max(64).nullish(),

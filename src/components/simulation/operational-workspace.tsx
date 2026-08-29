@@ -149,7 +149,7 @@ function DesktopCommandPanel({ projection }: { projection: SimOperationalProject
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-mono text-[11px] text-muted-foreground">{clock(item.atSeconds)}</span>
               <StatusPill tone={item.status === "active" ? "active" : item.status === "pending" ? "caution" : "info"}>{item.status}</StatusPill>
-              <StatusPill tone={item.channel === "AIRS room" ? "active" : "neutral"}>{item.channel}</StatusPill>
+              <StatusPill tone={item.channel === "Incident workspace" ? "active" : "neutral"}>{item.channel}</StatusPill>
             </div>
             <p className="mt-1 text-sm font-semibold text-foreground">{item.action}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{item.actor} → {item.target}</p>
@@ -163,13 +163,13 @@ function DesktopCommandPanel({ projection }: { projection: SimOperationalProject
 
 function DesktopAgencyPanel({ projection }: { projection: SimOperationalProjection }) {
   return (
-    <DesktopPanel title="Agency Coordination" description="AIRS participants and external liaison paths.">
+    <DesktopPanel title="Agency Coordination" description="Organizations represented through their current operational information paths.">
       <div className="divide-y divide-border">
         {projection.agencies.map((item) => (
           <div key={item.id} className="py-2 first:pt-0">
             <div className="flex flex-wrap items-center gap-1.5">
               <p className="text-sm font-semibold text-foreground">{item.name}</p>
-              <StatusPill tone={item.connection === "airs_room" ? "active" : item.connection === "regional_mutual_aid" ? "info" : "neutral"}>{item.connection === "airs_room" ? "AIRS" : item.connection === "regional_mutual_aid" ? "Mutual aid" : "External"}</StatusPill>
+              <StatusPill tone={item.informationPath === "command_post" ? "active" : item.informationPath === "mutual_aid_coordination" ? "info" : "neutral"}>{item.informationPath === "command_post" ? "Command post" : item.informationPath === "mutual_aid_coordination" ? "Mutual aid" : "External"}</StatusPill>
               <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">{item.role}</p>
@@ -209,7 +209,7 @@ function DesktopDecisionPanel({ projection }: { projection: SimOperationalProjec
           <div key={item.id} className="py-2 first:pt-0">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-mono text-[11px] text-muted-foreground">{clock(item.atSeconds)}</span>
-              <StatusPill tone={item.channel === "AIRS room" ? "active" : item.channel === "System" ? "info" : "neutral"}>{item.channel}</StatusPill>
+              <StatusPill tone={item.channel === "Incident workspace" ? "active" : item.channel === "System" ? "info" : "neutral"}>{item.channel}</StatusPill>
             </div>
             <p className="mt-1 text-sm font-semibold text-foreground">{item.action}</p>
             <p className="mt-0.5 text-xs text-muted-foreground">{item.actor} → {item.target}</p>
@@ -285,7 +285,7 @@ function CommandView({ projection }: { projection: SimOperationalProjection }) {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-mono text-xs text-muted-foreground">{clock(item.atSeconds)}</span>
                 <StatusPill tone={item.status === "active" ? "active" : item.status === "pending" ? "caution" : "info"}>{item.status}</StatusPill>
-                <StatusPill tone={item.channel === "AIRS room" ? "active" : "neutral"}>{item.channel}</StatusPill>
+                <StatusPill tone={item.channel === "Incident workspace" ? "active" : "neutral"}>{item.channel}</StatusPill>
               </div>
               <p className="mt-2 text-sm font-semibold text-foreground">{item.action}</p>
               <p className="mt-1 text-sm text-muted-foreground">{item.actor} → {item.target}</p>
@@ -294,13 +294,13 @@ function CommandView({ projection }: { projection: SimOperationalProjection }) {
           {active.length === 0 ? <p className="text-sm text-muted-foreground">No command-post actions have been triggered yet.</p> : null}
         </div>
       </SectionCard>
-      <SectionCard title="Current Participants" description="AIRS-room participation is distinct from external coordination.">
+      <SectionCard title="Current Participants" description="Information path is distinct from incident workspace access and technical system integration.">
         <div className="space-y-2">
           {projection.agencies.slice(0, 8).map((item) => (
             <div key={item.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                <StatusPill tone={item.connection === "airs_room" ? "active" : "neutral"}>{item.connection === "airs_room" ? "AIRS room" : item.connection === "regional_mutual_aid" ? "Mutual aid" : "External"}</StatusPill>
+                <StatusPill tone={item.informationPath === "command_post" ? "active" : "neutral"}>{item.informationPath === "command_post" ? "Command post" : item.informationPath === "mutual_aid_coordination" ? "Mutual aid" : "External"}</StatusPill>
                 <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{item.role}</p>
@@ -315,13 +315,13 @@ function CommandView({ projection }: { projection: SimOperationalProjection }) {
 
 function AgencyView({ projection }: { projection: SimOperationalProjection }) {
   return (
-    <SectionCard title="Agency Coordination" description="Participating and non-participating organizations without pretending every organization has an AIRS account.">
+    <SectionCard title="Agency Coordination" description="Organizations are represented through information paths; workspace access and technical system integrations remain separate.">
       <div className="grid gap-3 md:grid-cols-2">
         {projection.agencies.map((item) => (
           <article key={item.id} className="rounded-md border border-border p-4">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-semibold text-foreground">{item.name}</h3>
-              <StatusPill tone={item.connection === "airs_room" ? "active" : item.connection === "regional_mutual_aid" ? "info" : "neutral"}>{item.connection.replaceAll("_", " ")}</StatusPill>
+              <StatusPill tone={item.informationPath === "command_post" ? "active" : item.informationPath === "mutual_aid_coordination" ? "info" : "neutral"}>{item.informationPath.replaceAll("_", " ")}</StatusPill>
               <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{item.role}</p>
@@ -369,7 +369,7 @@ function DecisionLog({ projection }: { projection: SimOperationalProjection }) {
           <li key={item.id} className="rounded-md border border-border p-3">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-mono text-xs text-muted-foreground">{clock(item.atSeconds)}</span>
-              <StatusPill tone={item.channel === "AIRS room" ? "active" : item.channel === "System" ? "info" : "neutral"}>{item.channel}</StatusPill>
+              <StatusPill tone={item.channel === "Incident workspace" ? "active" : item.channel === "System" ? "info" : "neutral"}>{item.channel}</StatusPill>
               <StatusPill tone={item.status === "active" ? "active" : item.status === "pending" ? "caution" : "info"}>{item.status}</StatusPill>
             </div>
             <p className="mt-2 text-sm font-semibold text-foreground">{item.action}</p>

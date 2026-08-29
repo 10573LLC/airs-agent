@@ -3,10 +3,11 @@ import { suggestThreatHypotheses, type ThreatHypothesisSuggestion } from "@/lib/
 export type SimSource =
   | "911/CAD" | "RTCC" | "Airspace/C-UAS" | "UAS" | "LMR"
   | "EMS/Fire" | "Maritime/USCG" | "Navy" | "Law Enforcement"
-  | "Emergency Management" | "EOD/CBRNE" | "Public Information" | "Exercise Control";
+  | "Emergency Management" | "EOD/CBRNE" | "Public Information" | "Exercise Control"
+  | "Agency Entry";
 export type SimConfidence = "confirmed" | "reported" | "unverified" | "conflicting";
 export type SimPillar = "Awareness" | "Intelligence" | "Response" | "Security";
-export type SimProvenance = "scenario_fact" | "controller_inject" | "airs_inference";
+export type SimProvenance = "scenario_fact" | "controller_inject" | "agency_entry" | "airs_inference";
 
 export interface SimulationEvent {
   id: string;
@@ -307,6 +308,9 @@ export function buildSimulationState(scenario: CompiledScenario, clockSeconds: n
 export function assessAirs(events: readonly SimulationEvent[], state?: SimulationState): AirsAssessment[] {
   const confirmed = events.filter((row) => row.confidence === "confirmed").length;
   const uncertain = events.length - confirmed;
+  const scenarioFacts = events.filter((row) => row.provenance === "scenario_fact").length;
+  const agencyEntries = events.filter((row) => row.provenance === "agency_entry").length;
+  const controllerInjects = events.filter((row) => row.provenance === "controller_inject").length;
   const sources = new Set(events.map((row) => row.source));
   const current = state ?? {
     events: [...events],
@@ -322,8 +326,8 @@ export function assessAirs(events: readonly SimulationEvent[], state?: Simulatio
   return [
     {
       pillar: "Awareness",
-      summary: events.length ? `${events.length} released scenario facts from ${sources.size} source domains.` : "No exercise facts have been released yet.",
-      items: [`${confirmed} confirmed; ${uncertain} reported, unverified, or conflicting.`, current.airspaceStatus, current.commandStatus],
+      summary: events.length ? `${events.length} released exercise inputs from ${sources.size} source domains.` : "No exercise inputs have been released yet.",
+      items: [`${scenarioFacts} scenario fact${scenarioFacts === 1 ? "" : "s"} · ${agencyEntries} agency entr${agencyEntries === 1 ? "y" : "ies"} · ${controllerInjects} controller inject${controllerInjects === 1 ? "" : "s"}.`, `${confirmed} confirmed; ${uncertain} reported, unverified, or conflicting.`, current.airspaceStatus, current.commandStatus],
     },
     {
       pillar: "Intelligence",
@@ -343,10 +347,10 @@ export function assessAirs(events: readonly SimulationEvent[], state?: Simulatio
     },
     {
       pillar: "Security",
-      summary: "Simulation facts, controller injects, and AIRS inferences remain explicitly separated from live operational data.",
+      summary: "Scenario facts, agency entries, controller injects, and AIRS inferences remain explicitly separated from live operational data.",
       items: [
-        "Scenario facts are never converted into credentials, connector authorization, or operational records.",
-        "Authority is derived only from released exercise facts; platform access does not become agency access.",
+        "Exercise inputs are never converted into credentials, connector authorization, or operational records.",
+        "Authority is derived only from released exercise information; platform access does not become agency access.",
       ],
     },
   ];

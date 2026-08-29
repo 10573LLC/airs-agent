@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
 import { PageHeading, PageShell, SectionCard, StatusPill } from "@/components/brand";
+import { AgencyWalkthrough } from "@/components/simulation/agency-walkthrough";
 import { OperationalWorkspace } from "@/components/simulation/operational-workspace";
 import { getMe, getOrganization } from "@/lib/api/auth.functions";
 import { canRunSimulation } from "@/lib/rbac/module-access";
@@ -21,6 +22,12 @@ import {
   type SimConfidence,
   type SimulationEvent,
 } from "@/lib/simulation/model";
+import {
+  applyWalkthroughEntries,
+  walkthroughEvents,
+  type SimWalkthroughEntry,
+  type SimWalkthroughRole,
+} from "@/lib/simulation/walkthrough";
 
 export const Route = createFileRoute("/simulation")({
   head: () => ({ meta: [{ title: "Simulation Lab — AIRS Agent" }] }),
@@ -100,6 +107,8 @@ function DesktopPlaybackBar({
   onFiveMinutes,
   onInject,
   onEdit,
+  walkthroughOpen,
+  onToggleWalkthrough,
 }: {
   scenario: CompiledScenario;
   nextAt: number | null;
@@ -110,6 +119,8 @@ function DesktopPlaybackBar({
   onFiveMinutes: () => void;
   onInject: () => void;
   onEdit: () => void;
+  walkthroughOpen: boolean;
+  onToggleWalkthrough: () => void;
 }) {
   return (
     <div className="hidden h-12 shrink-0 items-center gap-3 rounded-md border border-border bg-card px-3 shadow-panel xl:flex">
@@ -122,6 +133,7 @@ function DesktopPlaybackBar({
       <button type="button" onClick={onMinute} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">+1</button>
       <button type="button" onClick={onFiveMinutes} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">+5</button>
       <button type="button" onClick={onInject} className="rounded-md border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive">Inject conflict</button>
+      <button type="button" onClick={onToggleWalkthrough} className={walkthroughOpen ? "rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground" : "rounded-md border border-primary/40 px-2.5 py-1.5 text-xs font-semibold text-primary"}>{walkthroughOpen ? "Hide agency input" : "Agency input"}</button>
       <button type="button" onClick={onEdit} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">Edit</button>
     </div>
   );
@@ -140,14 +152,21 @@ function SimulationPage() {
   const [scenario, setScenario] = useState<CompiledScenario | null>(null);
   const [clockSeconds, setClockSeconds] = useState(0);
   const [editorOpen, setEditorOpen] = useState(true);
+  const [walkthroughOpen, setWalkthroughOpen] = useState(false);
+  const [walkthroughRole, setWalkthroughRole] = useState<SimWalkthroughRole>("incident_command");
+  const [walkthroughEntries, setWalkthroughEntries] = useState<SimWalkthroughEntry[]>([]);
 
+  const runtimeScenario = useMemo(() => scenario ? {
+    ...scenario,
+    events: [...scenario.events, ...walkthroughEvents(walkthroughEntries)].sort((a, b) => a.atSeconds - b.atSeconds),
+  } : null, [scenario, walkthroughEntries]);
   const visible = useMemo(
-    () => (scenario ? visibleEvents(scenario, clockSeconds) : []),
-    [scenario, clockSeconds],
+    () => (runtimeScenario ? visibleEvents(runtimeScenario, clockSeconds) : []),
+    [runtimeScenario, clockSeconds],
   );
-  const state = useMemo(() => scenario ? buildSimulationState(scenario, clockSeconds) : null, [scenario, clockSeconds]);
+  const state = useMemo(() => runtimeScenario ? buildSimulationState(runtimeScenario, clockSeconds) : null, [runtimeScenario, clockSeconds]);
   const assessments = useMemo(() => assessAirs(visible, state ?? undefined), [visible, state]);
-  const operational = useMemo(() => scenario ? buildOperationalProjection(scenario, clockSeconds) : null, [scenario, clockSeconds]);
+  const operational = useMemo(() => scenario ? applyWalkthroughEntries(buildOperationalProjection(scenario, clockSeconds), walkthroughEntries, clockSeconds) : null, [scenario, walkthroughEntries, clockSeconds]);
   const nextAt = scenario ? nextEventTime(scenario, clockSeconds) : null;
   const hasNext = nextAt !== null && nextAt > clockSeconds;
   const activeViewport = Boolean(scenario && !editorOpen);
@@ -156,12 +175,16 @@ function SimulationPage() {
     if (!scenarioText.trim()) return;
     setScenario(compileScenario(scenarioText));
     setClockSeconds(0);
+    setWalkthroughEntries([]);
+    setWalkthroughOpen(true);
     setEditorOpen(false);
   };
 
   const reset = () => {
     setScenario(null);
     setClockSeconds(0);
+    setWalkthroughEntries([]);
+    setWalkthroughOpen(false);
     setEditorOpen(true);
   };
   if (session.isLoading || (session.data?.ok === true && organization.isLoading)) {
@@ -221,6 +244,8 @@ function SimulationPage() {
           onFiveMinutes={() => setClockSeconds((value) => value + 300)}
           onInject={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)}
           onEdit={() => setEditorOpen(true)}
+          walkthroughOpen={walkthroughOpen}
+          onToggleWalkthrough={() => setWalkthroughOpen((value) => !value)}
         />
       ) : null}
 
@@ -264,12 +289,22 @@ function SimulationPage() {
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+1 min</button>
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+5 min</button>
               <button type="button" disabled={!scenario} onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)} className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-40">Inject conflicting report</button>
+              <button type="button" disabled={!scenario} onClick={() => setWalkthroughOpen((value) => !value)} className={walkthroughOpen ? "rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" : "rounded-md border border-primary/40 px-3 py-2 text-sm font-semibold text-primary disabled:opacity-40"}>{walkthroughOpen ? "Hide agency walkthrough" : "Open agency walkthrough"}</button>
             </div>
           </div>
         </SectionCard>
       </div>
 
-      <div className={activeViewport ? "xl:min-h-0 xl:flex-1" : ""}>
+      <div className={activeViewport ? (walkthroughOpen ? "xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-2" : "xl:min-h-0 xl:flex-1") : ""}>
+        {scenario && walkthroughOpen ? <AgencyWalkthrough
+          clockSeconds={clockSeconds}
+          entries={walkthroughEntries}
+          role={walkthroughRole}
+          onRoleChange={setWalkthroughRole}
+          onAdd={(entry) => setWalkthroughEntries((current) => [...current, entry])}
+          onClear={() => setWalkthroughEntries([])}
+          onClose={() => setWalkthroughOpen(false)}
+        /> : null}
         <OperationalWorkspace projection={operational} viewport={activeViewport} />
       </div>
 

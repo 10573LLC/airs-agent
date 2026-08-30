@@ -38,6 +38,15 @@ describe("agency walkthrough exercise input", () => {
     expect(projection.actions).toHaveLength(4);
   });
 
+  it("projects preview readiness only when an agency resource is committed to the operation", () => {
+    const readiness: SimWalkthroughEntry[] = [
+      { id: "ready", atSeconds: 60, role: "agency_admin", organizationName: "Demo Agency", kind: "resource_status", resourceName: "UAS Team 1", category: "aircraft", readinessStatus: "available", commitToOperation: false },
+      { id: "commit", atSeconds: 120, role: "incident_command", organizationName: "Demo Agency", kind: "resource_status", resourceName: "UAS Team 1", category: "aircraft", readinessStatus: "assigned", commitToOperation: true },
+    ];
+    expect(applyWalkthroughEntries(base, readiness, 60).resources).toHaveLength(0);
+    expect(applyWalkthroughEntries(base, readiness, 120).resources[0]).toMatchObject({ name: "UAS Team 1", owner: "Demo Agency", status: "active" });
+  });
+
   it("does not release future agency entries before their exercise time", () => {
     const entries: SimWalkthroughEntry[] = [{ id: "later", atSeconds: 300, role: "agency_admin", kind: "coordination", organizationName: "Partner", operationalRole: "Support", informationPath: "command_post_liaison" }];
     expect(applyWalkthroughEntries(base, entries, 299).agencies).toHaveLength(0);

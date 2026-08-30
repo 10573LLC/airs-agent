@@ -35,7 +35,7 @@ describe("operational simulation projection", () => {
     const view = buildOperationalProjection(scenario, 8 * 60);
     expect(view.incidentStatus).toMatch(/initial command/i);
     expect(view.actions.some((item) => item.id === "room-create")).toBe(true);
-    expect(view.agencies.find((item) => item.id === "afd")?.informationPath).toBe("command_post");
+    expect(view.agencies.find((item) => item.id === "afd")?.informationPath).toBe("manual_entry");
     expect(view.agencies.find((item) => item.id === "apd")?.status).toBe("active");
   });
   it("represents organizations through information paths without implying agency connectivity", () => {

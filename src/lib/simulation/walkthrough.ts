@@ -3,7 +3,7 @@ import type { SimulationEvent, SimConfidence, SimSource } from "./model";
 import type { SimAgencyInformationPath, SimOperationalProjection } from "./operational";
 
 export type SimWalkthroughRole = "agency_admin" | "incident_command" | "dispatch_rtcc" | "airspace_operator";
-export type SimWalkthroughEntryKind = "command_update" | "observation" | "resource_request" | "coordination" | "map_report";
+export type SimWalkthroughEntryKind = "command_update" | "observation" | "resource_status" | "resource_request" | "coordination" | "map_report";
 
 export const WALKTHROUGH_ROLE_LABELS: Record<SimWalkthroughRole, string> = {
   agency_admin: "Agency Administrator",
@@ -17,6 +17,7 @@ interface WalkthroughBase {
   atSeconds: number;
   role: SimWalkthroughRole;
   kind: SimWalkthroughEntryKind;
+  organizationName?: string;
 }
 
 export interface WalkthroughCommandUpdate extends WalkthroughBase {
@@ -31,6 +32,25 @@ export interface WalkthroughObservation extends WalkthroughBase {
   title: string;
   detail: string;
   confidence: SimConfidence;
+  observationType?: string;
+  sourceType?: string;
+  urgency?: string;
+  observedObject?: string;
+  observedBehavior?: string;
+  observedCount?: number;
+  observedAltitudeFt?: number;
+  latitude?: number;
+  longitude?: number;
+}
+
+export interface WalkthroughResourceStatus extends WalkthroughBase {
+  kind: "resource_status";
+  resourceName: string;
+  category: string;
+  readinessStatus: string;
+  callsign?: string;
+  commitToOperation: boolean;
+  location?: string;
 }
 
 export interface WalkthroughResourceRequest extends WalkthroughBase {
@@ -56,11 +76,12 @@ export interface WalkthroughMapReport extends WalkthroughBase {
   longitude: number;
 }
 
-export type SimWalkthroughEntry = WalkthroughCommandUpdate | WalkthroughObservation | WalkthroughResourceRequest | WalkthroughCoordination | WalkthroughMapReport;
+export type SimWalkthroughEntry = WalkthroughCommandUpdate | WalkthroughObservation | WalkthroughResourceStatus | WalkthroughResourceRequest | WalkthroughCoordination | WalkthroughMapReport;
 function entryHeadline(entry: SimWalkthroughEntry) {
   switch (entry.kind) {
     case "command_update": return "Agency command / situation update";
     case "observation": return entry.title;
+    case "resource_status": return `Readiness update: ${entry.resourceName}`;
     case "resource_request": return `Resource request: ${entry.quantity} × ${entry.resourceName}`;
     case "coordination": return `Coordination update: ${entry.organizationName}`;
     case "map_report": return `COP report: ${entry.label}`;
@@ -70,7 +91,8 @@ function entryHeadline(entry: SimWalkthroughEntry) {
 function entryDetail(entry: SimWalkthroughEntry) {
   switch (entry.kind) {
     case "command_update": return [entry.situation, entry.commandLead ? `Command lead: ${entry.commandLead}.` : "", entry.priority ? `Priority: ${entry.priority}.` : ""].filter(Boolean).join(" ");
-    case "observation": return entry.detail;
+    case "observation": return [entry.detail, entry.observationType ? `Type: ${entry.observationType.replaceAll("_", " ")}.` : "", entry.urgency ? `Urgency: ${entry.urgency}.` : "", entry.observedObject ? `Object: ${entry.observedObject}.` : "", entry.observedBehavior ? `Behavior: ${entry.observedBehavior}.` : ""].filter(Boolean).join(" ");
+    case "resource_status": return `${entry.resourceName}${entry.callsign ? ` (${entry.callsign})` : ""} · ${entry.category.replaceAll("_", " ")} · readiness ${entry.readinessStatus.replaceAll("_", " ")}.${entry.commitToOperation ? " Committed to the exercise operation." : " Remains agency-owned readiness information only."}`;
     case "resource_request": return `${entry.quantity} × ${entry.resourceName} requested from ${entry.requestedFrom || "any available organization"}. ${entry.location ? `Requested location/staging: ${entry.location}.` : "Location not reported."}`;
     case "coordination": return `${entry.organizationName} represented for ${entry.operationalRole || "operational coordination"} through ${entry.informationPath.replaceAll("_", " ")}.`;
     case "map_report": return `${entry.detail} Reported exercise position ${entry.latitude.toFixed(5)}, ${entry.longitude.toFixed(5)}.`;
@@ -78,6 +100,7 @@ function entryDetail(entry: SimWalkthroughEntry) {
 }
 
 function entryDomains(entry: SimWalkthroughEntry) {
+  if (entry.kind === "resource_status") return ["resources", "readiness"];
   if (entry.kind === "resource_request") return ["resources", "command"];
   if (entry.kind === "coordination") return ["command", "coordination"];
   if (entry.kind === "map_report") return ["common operating picture"];
@@ -118,7 +141,7 @@ export function applyWalkthroughEntries(
     actions: [...base.actions],
   };
   for (const entry of visible) {
-    const actor = WALKTHROUGH_ROLE_LABELS[entry.role];
+    const actor = entry.organizationName ? `${entry.organizationName} · ${WALKTHROUGH_ROLE_LABELS[entry.role]}` : WALKTHROUGH_ROLE_LABELS[entry.role];
     if (entry.kind === "command_update") {
       projection.incidentStatus = "Agency-entered operational update received";
       if (entry.commandLead?.trim()) projection.commandLead = entry.commandLead.trim();
@@ -127,6 +150,13 @@ export function applyWalkthroughEntries(
     }
     if (entry.kind === "observation") {
       projection.actions.push({ id: `walkthrough-${entry.id}`, atSeconds: entry.atSeconds, actor, action: "Submit agency observation", target: entry.title, channel: "Incident workspace", status: "completed" });
+      if (Number.isFinite(entry.latitude) && Number.isFinite(entry.longitude)) {
+        projection.mapItems.push({ id: `walkthrough-observation-${entry.id}`, label: entry.title, geometry: point(entry.longitude as number, entry.latitude as number), tone: "muted", detail: `${entry.detail} Agency-entered exercise observation.` });
+      }
+    }
+    if (entry.kind === "resource_status") {
+      projection.actions.push({ id: `walkthrough-${entry.id}`, atSeconds: entry.atSeconds, actor, action: "Update agency resource readiness", target: `${entry.resourceName} · ${entry.readinessStatus.replaceAll("_", " ")}`, channel: "Incident workspace", status: "completed" });
+      if (entry.commitToOperation) projection.resources.push({ id: `walkthrough-owned-resource-${entry.id}`, name: entry.resourceName, owner: entry.organizationName || "Preview agency", category: entry.category.replaceAll("_", " "), status: "active", sinceSeconds: entry.atSeconds, location: entry.location?.trim() || "Location not reported" });
     }
     if (entry.kind === "resource_request") {
       projection.resources.push({ id: `walkthrough-resource-${entry.id}`, name: `${entry.quantity} × ${entry.resourceName}`, owner: entry.requestedFrom || "Any available organization", category: "Agency-entered request", status: "requested", sinceSeconds: entry.atSeconds, location: entry.location?.trim() || "Location not reported" });

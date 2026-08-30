@@ -4,10 +4,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMemo, useState } from "react";
 
 import { PageHeading, PageShell, SectionCard, StatusPill } from "@/components/brand";
+import { AgencyPreviewEffect, AgencyPreviewSession } from "@/components/simulation/agency-preview-session";
 import { AgencyWalkthrough } from "@/components/simulation/agency-walkthrough";
 import { OperationalWorkspace } from "@/components/simulation/operational-workspace";
 import { getMe, getOrganization } from "@/lib/api/auth.functions";
 import { canRunSimulation } from "@/lib/rbac/module-access";
+import type { AgencyPreviewRole } from "@/lib/simulation/agency-preview";
 import { buildOperationalProjection } from "@/lib/simulation/operational";
 import {
   SIMULATION_BANNER,
@@ -109,6 +111,8 @@ function DesktopPlaybackBar({
   onEdit,
   walkthroughOpen,
   onToggleWalkthrough,
+  previewOpen,
+  onTogglePreview,
 }: {
   scenario: CompiledScenario;
   nextAt: number | null;
@@ -121,6 +125,8 @@ function DesktopPlaybackBar({
   onEdit: () => void;
   walkthroughOpen: boolean;
   onToggleWalkthrough: () => void;
+  previewOpen: boolean;
+  onTogglePreview: () => void;
 }) {
   return (
     <div className="hidden h-12 shrink-0 items-center gap-3 rounded-md border border-border bg-card px-3 shadow-panel xl:flex">
@@ -133,7 +139,8 @@ function DesktopPlaybackBar({
       <button type="button" onClick={onMinute} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">+1</button>
       <button type="button" onClick={onFiveMinutes} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">+5</button>
       <button type="button" onClick={onInject} className="rounded-md border border-destructive/40 px-2.5 py-1.5 text-xs font-semibold text-destructive">Inject conflict</button>
-      <button type="button" onClick={onToggleWalkthrough} className={walkthroughOpen ? "rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground" : "rounded-md border border-primary/40 px-2.5 py-1.5 text-xs font-semibold text-primary"}>{walkthroughOpen ? "Hide agency input" : "Agency input"}</button>
+      <button type="button" onClick={onTogglePreview} className={previewOpen ? "rounded-md bg-brand-navy px-2.5 py-1.5 text-xs font-semibold text-white" : "rounded-md border border-primary/40 px-2.5 py-1.5 text-xs font-semibold text-primary"}>{previewOpen ? "Exit agency preview" : "Agency preview"}</button>
+      <button type="button" onClick={onToggleWalkthrough} disabled={previewOpen} className={walkthroughOpen && !previewOpen ? "rounded-md bg-primary px-2.5 py-1.5 text-xs font-semibold text-primary-foreground" : "rounded-md border border-primary/40 px-2.5 py-1.5 text-xs font-semibold text-primary disabled:opacity-40"}>{walkthroughOpen ? "Hide quick input" : "Quick input"}</button>
       <button type="button" onClick={onEdit} className="rounded-md border border-border px-2.5 py-1.5 text-xs font-semibold">Edit</button>
     </div>
   );
@@ -155,6 +162,10 @@ function SimulationPage() {
   const [walkthroughOpen, setWalkthroughOpen] = useState(false);
   const [walkthroughRole, setWalkthroughRole] = useState<SimWalkthroughRole>("incident_command");
   const [walkthroughEntries, setWalkthroughEntries] = useState<SimWalkthroughEntry[]>([]);
+  const [agencyPreviewOpen, setAgencyPreviewOpen] = useState(false);
+  const [agencyPreviewSplit, setAgencyPreviewSplit] = useState(true);
+  const [agencyPreviewRole, setAgencyPreviewRole] = useState<AgencyPreviewRole>("incident_commander");
+  const [agencyPreviewName, setAgencyPreviewName] = useState("Demo Public Safety Agency");
 
   const runtimeScenario = useMemo(() => scenario ? {
     ...scenario,
@@ -177,6 +188,8 @@ function SimulationPage() {
     setClockSeconds(0);
     setWalkthroughEntries([]);
     setWalkthroughOpen(true);
+    setAgencyPreviewOpen(false);
+    setAgencyPreviewSplit(true);
     setEditorOpen(false);
   };
 
@@ -185,6 +198,8 @@ function SimulationPage() {
     setClockSeconds(0);
     setWalkthroughEntries([]);
     setWalkthroughOpen(false);
+    setAgencyPreviewOpen(false);
+    setAgencyPreviewSplit(true);
     setEditorOpen(true);
   };
   if (session.isLoading || (session.data?.ok === true && organization.isLoading)) {
@@ -246,6 +261,11 @@ function SimulationPage() {
           onEdit={() => setEditorOpen(true)}
           walkthroughOpen={walkthroughOpen}
           onToggleWalkthrough={() => setWalkthroughOpen((value) => !value)}
+          previewOpen={agencyPreviewOpen}
+          onTogglePreview={() => {
+            setAgencyPreviewOpen((value) => !value);
+            setWalkthroughOpen(false);
+          }}
         />
       ) : null}
 
@@ -289,24 +309,45 @@ function SimulationPage() {
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 60)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+1 min</button>
               <button type="button" disabled={!scenario} onClick={() => setClockSeconds((value) => value + 300)} className="rounded-md border border-border px-3 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-40">+5 min</button>
               <button type="button" disabled={!scenario} onClick={() => setScenario((current) => current ? injectFriction(current, clockSeconds) : current)} className="rounded-md border border-destructive/40 px-3 py-2 text-sm font-semibold text-destructive hover:bg-destructive/5 disabled:cursor-not-allowed disabled:opacity-40">Inject conflicting report</button>
-              <button type="button" disabled={!scenario} onClick={() => setWalkthroughOpen((value) => !value)} className={walkthroughOpen ? "rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" : "rounded-md border border-primary/40 px-3 py-2 text-sm font-semibold text-primary disabled:opacity-40"}>{walkthroughOpen ? "Hide agency walkthrough" : "Open agency walkthrough"}</button>
+              <button type="button" disabled={!scenario} onClick={() => { setAgencyPreviewOpen((value) => !value); setWalkthroughOpen(false); }} className={agencyPreviewOpen ? "rounded-md bg-brand-navy px-3 py-2 text-sm font-semibold text-white" : "rounded-md border border-primary/40 px-3 py-2 text-sm font-semibold text-primary disabled:opacity-40"}>{agencyPreviewOpen ? "Exit agency preview" : "Open agency preview"}</button>
+              <button type="button" disabled={!scenario || agencyPreviewOpen} onClick={() => setWalkthroughOpen((value) => !value)} className={walkthroughOpen && !agencyPreviewOpen ? "rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground" : "rounded-md border border-primary/40 px-3 py-2 text-sm font-semibold text-primary disabled:opacity-40"}>{walkthroughOpen ? "Hide quick input" : "Open quick input"}</button>
             </div>
           </div>
         </SectionCard>
       </div>
 
-      <div className={activeViewport ? (walkthroughOpen ? "xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-2" : "xl:min-h-0 xl:flex-1") : ""}>
-        {scenario && walkthroughOpen ? <AgencyWalkthrough
-          clockSeconds={clockSeconds}
-          entries={walkthroughEntries}
-          role={walkthroughRole}
-          onRoleChange={setWalkthroughRole}
-          onAdd={(entry) => setWalkthroughEntries((current) => [...current, entry])}
-          onClear={() => setWalkthroughEntries([])}
-          onClose={() => setWalkthroughOpen(false)}
-        /> : null}
-        <OperationalWorkspace projection={operational} viewport={activeViewport} />
-      </div>
+      {scenario && operational && agencyPreviewOpen ? (
+        <div className={activeViewport ? (agencyPreviewSplit ? "xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[minmax(480px,.95fr)_minmax(440px,1.05fr)] xl:gap-2" : "xl:min-h-0 xl:flex-1") : "grid gap-3"}>
+          <AgencyPreviewSession
+            scenarioTitle={scenario.title}
+            clockSeconds={clockSeconds}
+            agencyName={agencyPreviewName}
+            onAgencyNameChange={setAgencyPreviewName}
+            role={agencyPreviewRole}
+            onRoleChange={setAgencyPreviewRole}
+            entries={walkthroughEntries}
+            projection={operational}
+            onAdd={(entry) => setWalkthroughEntries((current) => [...current, entry])}
+            onClose={() => setAgencyPreviewOpen(false)}
+            splitView={agencyPreviewSplit}
+            onSplitViewChange={setAgencyPreviewSplit}
+          />
+          {agencyPreviewSplit ? <AgencyPreviewEffect projection={operational} /> : null}
+        </div>
+      ) : (
+        <div className={activeViewport ? (walkthroughOpen ? "xl:grid xl:min-h-0 xl:flex-1 xl:grid-cols-[360px_minmax(0,1fr)] xl:gap-2" : "xl:min-h-0 xl:flex-1") : ""}>
+          {scenario && walkthroughOpen ? <AgencyWalkthrough
+            clockSeconds={clockSeconds}
+            entries={walkthroughEntries}
+            role={walkthroughRole}
+            onRoleChange={setWalkthroughRole}
+            onAdd={(entry) => setWalkthroughEntries((current) => [...current, entry])}
+            onClear={() => setWalkthroughEntries([])}
+            onClose={() => setWalkthroughOpen(false)}
+          /> : null}
+          <OperationalWorkspace projection={operational} viewport={activeViewport} />
+        </div>
+      )}
 
       {activeViewport ? <DesktopAirsStrip assessments={assessments} /> : null}
       {activeViewport ? <SimulationTicker events={visible} /> : null}

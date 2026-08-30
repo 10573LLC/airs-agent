@@ -9,9 +9,10 @@ import {
   type SimWalkthroughRole,
 } from "@/lib/simulation/walkthrough";
 
+type QuickKind = Exclude<SimWalkthroughEntryKind, "resource_status">;
 const inputClass = "w-full rounded-md border border-input bg-background px-2.5 py-2 text-sm text-foreground";
 const labelClass = "block text-[11px] font-semibold uppercase tracking-wide text-muted-foreground";
-const kinds: { value: SimWalkthroughEntryKind; label: string }[] = [
+const kinds: { value: QuickKind; label: string }[] = [
   { value: "command_update", label: "Situation / command update" },
   { value: "observation", label: "Observation / field report" },
   { value: "resource_request", label: "Resource request" },
@@ -19,7 +20,7 @@ const kinds: { value: SimWalkthroughEntryKind; label: string }[] = [
   { value: "map_report", label: "COP position report" },
 ];
 const observationSources: SimSource[] = ["911/CAD", "RTCC", "Law Enforcement", "EMS/Fire", "Airspace/C-UAS", "UAS", "LMR", "Emergency Management"];
-const informationPaths: SimAgencyInformationPath[] = ["command_post", "command_post_liaison", "dispatch", "mutual_aid_coordination"];
+const informationPaths: SimAgencyInformationPath[] = ["system_integration", "command_post_liaison", "dispatch", "radio", "phone", "email", "manual_entry", "mutual_aid_coordination", "other"];
 
 function formatClock(seconds: number) {
   const hours = Math.floor(seconds / 3600);
@@ -43,7 +44,7 @@ export function AgencyWalkthrough({
   onClear: () => void;
   onClose: () => void;
 }) {
-  const [kind, setKind] = useState<SimWalkthroughEntryKind>("observation");
+  const [kind, setKind] = useState<QuickKind>("observation");
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [source, setSource] = useState<SimSource>("RTCC");
@@ -108,7 +109,7 @@ export function AgencyWalkthrough({
             </select>
           </label>
           <label className={labelClass}>Input workflow
-            <select value={kind} onChange={(e) => { setKind(e.target.value as SimWalkthroughEntryKind); setError(null); }} className={`${inputClass} mt-1`}>
+            <select value={kind} onChange={(e) => { setKind(e.target.value as QuickKind); setError(null); }} className={`${inputClass} mt-1`}>
               {kinds.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </label>
@@ -150,7 +151,7 @@ export function AgencyWalkthrough({
         <div className="mt-5 border-t border-border pt-3">
           <div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Agency entry history</p>{entries.length ? <button type="button" onClick={onClear} className="text-xs font-semibold text-destructive underline">Clear exercise entries</button> : null}</div>
           <div className="mt-2 space-y-2">
-            {entries.slice(-6).reverse().map((entry) => <div key={entry.id} className="rounded-md border border-border p-2 text-xs"><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-muted-foreground">{formatClock(entry.atSeconds)}</span><StatusPill tone="info">{WALKTHROUGH_ROLE_LABELS[entry.role]}</StatusPill></div><p className="mt-1 font-semibold text-foreground">{kinds.find((item) => item.value === entry.kind)?.label}</p></div>)}
+            {entries.slice(-6).reverse().map((entry) => <div key={entry.id} className="rounded-md border border-border p-2 text-xs"><div className="flex flex-wrap items-center gap-2"><span className="font-mono text-muted-foreground">{formatClock(entry.atSeconds)}</span><StatusPill tone="info">{WALKTHROUGH_ROLE_LABELS[entry.role]}</StatusPill></div><p className="mt-1 font-semibold text-foreground">{entry.kind === "resource_status" ? "Resource readiness update" : kinds.find((item) => item.value === entry.kind)?.label}</p></div>)}
             {!entries.length ? <p className="text-xs text-muted-foreground">Nothing has been entered by the simulated agency user yet.</p> : null}
           </div>
         </div>

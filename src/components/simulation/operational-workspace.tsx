@@ -21,6 +21,16 @@ const resourceTone: Record<string, StatusTone> = {
   requested: "caution",
   unknown_location: "neutral",
 };
+function informationPathLabel(value: string) {
+  if (value === "system_integration") return "System integration";
+  if (value === "command_post_liaison") return "Command-post liaison";
+  if (value === "mutual_aid_coordination") return "Mutual aid";
+  if (value === "manual_entry") return "Manual entry";
+  return value.replaceAll("_", " ");
+}
+function informationPathTone(value: string): StatusTone {
+  return value === "system_integration" ? "active" : ["command_post_liaison", "mutual_aid_coordination", "dispatch", "manual_entry"].includes(value) ? "info" : "neutral";
+}
 
 function clock(seconds: number) {
   const hours = Math.floor(seconds / 3600);
@@ -169,7 +179,7 @@ function DesktopAgencyPanel({ projection }: { projection: SimOperationalProjecti
           <div key={item.id} className="py-2 first:pt-0">
             <div className="flex flex-wrap items-center gap-1.5">
               <p className="text-sm font-semibold text-foreground">{item.name}</p>
-              <StatusPill tone={item.informationPath === "command_post" ? "active" : item.informationPath === "mutual_aid_coordination" ? "info" : "neutral"}>{item.informationPath === "command_post" ? "Command post" : item.informationPath === "mutual_aid_coordination" ? "Mutual aid" : "External"}</StatusPill>
+              <StatusPill tone={informationPathTone(item.informationPath)}>{informationPathLabel(item.informationPath)}</StatusPill>
               <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">{item.role}</p>
@@ -300,7 +310,7 @@ function CommandView({ projection }: { projection: SimOperationalProjection }) {
             <div key={item.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                <StatusPill tone={item.informationPath === "command_post" ? "active" : "neutral"}>{item.informationPath === "command_post" ? "Command post" : item.informationPath === "mutual_aid_coordination" ? "Mutual aid" : "External"}</StatusPill>
+                <StatusPill tone={informationPathTone(item.informationPath)}>{informationPathLabel(item.informationPath)}</StatusPill>
                 <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{item.role}</p>
@@ -321,7 +331,7 @@ function AgencyView({ projection }: { projection: SimOperationalProjection }) {
           <article key={item.id} className="rounded-md border border-border p-4">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-semibold text-foreground">{item.name}</h3>
-              <StatusPill tone={item.informationPath === "command_post" ? "active" : item.informationPath === "mutual_aid_coordination" ? "info" : "neutral"}>{item.informationPath.replaceAll("_", " ")}</StatusPill>
+              <StatusPill tone={informationPathTone(item.informationPath)}>{informationPathLabel(item.informationPath)}</StatusPill>
               <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{item.role}</p>

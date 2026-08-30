@@ -1,7 +1,7 @@
 import type { Geometry } from "@/lib/map/model";
 import type { CompiledScenario } from "./model";
 
-export type SimAgencyInformationPath = "command_post" | "command_post_liaison" | "dispatch" | "mutual_aid_coordination";
+export type SimAgencyInformationPath = "system_integration" | "command_post_liaison" | "dispatch" | "radio" | "phone" | "email" | "manual_entry" | "mutual_aid_coordination" | "other";
 export type SimAgencyStatus = "requested" | "invited" | "active" | "notified";
 
 export interface SimAgency {
@@ -92,8 +92,8 @@ function action(id: string, atSeconds: number, actor: string, actionText: string
 function buildAgencies(text: string): SimAgency[] {
   const rows: SimAgency[] = [];
   if (/Navy|ship/i.test(text)) rows.push(agency("navy", "U.S. Navy / Ship Command", "Shipboard force protection and damage control", "command_post_liaison", "active", 0, "On-scene ship command liaison; represented in the operational picture without implying workspace access or technical integration."));
-  if (/Albany Fire Department|Albany FD/i.test(text)) rows.push(agency("afd", "Albany Fire Department", "Fire, rescue, EMS/MCI life-safety functional operations", "command_post", "active", 8 * 60, "Represented through command-post operational entry; no technical integration is implied."));
-  if (/Albany PD/i.test(text)) rows.push(agency("apd", "Albany Police Department", "Law enforcement, perimeter, investigations", "command_post", "active", 8 * 60, "Represented through command-post operational entry; no technical integration is implied."));
+  if (/Albany Fire Department|Albany FD/i.test(text)) rows.push(agency("afd", "Albany Fire Department", "Fire, rescue, EMS/MCI life-safety functional operations", "manual_entry", "active", 8 * 60, "Represented through command-post operational entry; no technical integration is implied."));
+  if (/Albany PD/i.test(text)) rows.push(agency("apd", "Albany Police Department", "Law enforcement, perimeter, investigations", "manual_entry", "active", 8 * 60, "Represented through command-post operational entry; no technical integration is implied."));
   if (/Coast Guard|Captain of the Port/i.test(text)) rows.push(agency("uscg", "U.S. Coast Guard", "Waterway safety/security and marine traffic", "command_post_liaison", "active", 10 * 60, "External maritime liaison and interoperable communications; no incident-workspace access or technical integration assumed."));
   if (/Albany County Emergency Communications|Albany County 911/i.test(text)) rows.push(agency("acec", "Albany County 911 / Emergency Communications", "Dispatch and regional mutual aid coordination", "dispatch", "active", 6 * 60, "Represented through emergency-communications operational updates; no agency connectivity is implied."));
   if (/Rensselaer, Schenectady, and Saratoga counties/i.test(text)) rows.push(agency("regional-ems", "Regional EMS Mutual Aid", "Ambulance surge and patient movement", "mutual_aid_coordination", "requested", 12 * 60, "Brought in through county mutual-aid/ECC channels; individual providers need not have workspace access or direct system integrations."));
@@ -103,10 +103,10 @@ function buildAgencies(text: string): SimAgency[] {
   if (/FAA|naval-vessel security restriction/i.test(text)) rows.push(agency("faa", "FAA", "National airspace restriction and UAS enforcement coordination", "command_post_liaison", "active", /pre-existing FAA naval-vessel security restriction/i.test(text) ? 0 : 18 * 60, "Standing naval-vessel security restriction plus any incident-specific FAA restriction are represented separately from ground command."));
   return rows;
 }function addLaterAgencies(rows: SimAgency[], text: string) {
-  if (/State Police aviation|NY State Police Troop G|State Police Bomb Disposal/i.test(text)) rows.push(agency("nysp", "New York State Police", "Aviation, patrol, bomb disposal, counter terrorism", "command_post", /dispatched/i.test(text) ? "active" : "requested", 20 * 60, "State response represented through command-post coordination; specialized assets remain separately tracked."));
+  if (/State Police aviation|NY State Police Troop G|State Police Bomb Disposal/i.test(text)) rows.push(agency("nysp", "New York State Police", "Aviation, patrol, bomb disposal, counter terrorism", "manual_entry", /dispatched/i.test(text) ? "active" : "requested", 20 * 60, "State response represented through command-post coordination; specialized assets remain separately tracked."));
   if (/DHSES|State Emergency Operations Center/i.test(text)) rows.push(agency("dh-ses", "NYS DHSES / State EOC", "State resource coordination", "command_post_liaison", "notified", 25 * 60, "State EOC liaison represented through the current information path; workspace access remains a separate authorization decision."));
-  if (/Albany County Sheriff/i.test(text)) rows.push(agency("acso", "Albany County Sheriff's Office", "Marine, patrol, county support", "command_post", "active", 30 * 60, "Represented through command-post operational entry; no technical integration is implied."));
-  if (/Albany County Emergency Management/i.test(text)) rows.push(agency("acem", "Albany County Emergency Management", "County EOC, mutual aid, consequence management", "command_post", "active", 30 * 60, "Represented through command-post operational entry and the Unified Command/EOC coordination path; no technical integration is implied."));
+  if (/Albany County Sheriff/i.test(text)) rows.push(agency("acso", "Albany County Sheriff's Office", "Marine, patrol, county support", "manual_entry", "active", 30 * 60, "Represented through command-post operational entry; no technical integration is implied."));
+  if (/Albany County Emergency Management/i.test(text)) rows.push(agency("acem", "Albany County Emergency Management", "County EOC, mutual aid, consequence management", "manual_entry", "active", 30 * 60, "Represented through command-post operational entry and the Unified Command/EOC coordination path; no technical integration is implied."));
   if (/DEC Police/i.test(text)) rows.push(agency("dec", "NYS DEC Police", "Environmental spill/waterway response", "command_post_liaison", "requested", 35 * 60, "External agency request tracked by liaison/status update."));
   if (/WMD Civil Support Team/i.test(text)) rows.push(agency("wmd-cst", "New York National Guard WMD Civil Support Team", "Technical CBRNE assessment", "command_post_liaison", "requested", 35 * 60, "External military support request tracked as a capability dependency."));
   if (/ATF/i.test(text)) rows.push(agency("atf", "ATF", "Explosives/post-blast support if confirmed", "command_post_liaison", "notified", 120 * 60, "Conditional external investigative coordination."));

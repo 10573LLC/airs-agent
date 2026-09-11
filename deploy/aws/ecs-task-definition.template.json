@@ -1,0 +1,65 @@
+{
+  "family": "airs-agent-prod",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "<ECS_EXECUTION_ROLE_ARN>",
+  "taskRoleArn": "<AIRS_TASK_ROLE_ARN>",
+  "containerDefinitions": [
+    {
+      "name": "airs-agent",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/airs-agent:<IMMUTABLE_TAG>",
+      "essential": true,
+      "portMappings": [
+        {
+          "name": "http",
+          "containerPort": 3000,
+          "hostPort": 3000,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "environment": [
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "PORT", "value": "3000" },
+        { "name": "HOST", "value": "0.0.0.0" },
+        { "name": "AIRS_DB_ADAPTER", "value": "postgres" },
+        { "name": "AIRS_AUTH_ADAPTER", "value": "oidc" },
+        { "name": "AIRS_APP_RELEASE", "value": "<GIT_COMMIT_SHA>" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "<DATABASE_URL_SECRET_ARN>" },
+        { "name": "SESSION_SECRET", "valueFrom": "<SESSION_SECRET_ARN>" },
+        { "name": "OIDC_ISSUER", "valueFrom": "<OIDC_ISSUER_SECRET_ARN>" },
+        { "name": "OIDC_CLIENT_ID", "valueFrom": "<OIDC_CLIENT_ID_SECRET_ARN>" },
+        { "name": "OIDC_CLIENT_SECRET", "valueFrom": "<OIDC_CLIENT_SECRET_ARN>" }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "wget -qO- http://127.0.0.1:3000/api/public/health | grep -q '\"status\":\"ok\"' || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/airs-agent-prod",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "app"
+        }
+      },
+      "readonlyRootFilesystem": false,
+      "privileged": false,
+      "user": "node"
+    }
+  ]
+}

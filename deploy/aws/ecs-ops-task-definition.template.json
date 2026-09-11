@@ -1,0 +1,38 @@
+{
+  "family": "airs-agent-prod-ops",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "runtimePlatform": {
+    "cpuArchitecture": "ARM64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "executionRoleArn": "<ECS_EXECUTION_ROLE_ARN>",
+  "taskRoleArn": "<AIRS_OPS_TASK_ROLE_ARN>",
+  "containerDefinitions": [
+    {
+      "name": "airs-agent-ops",
+      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/airs-agent:<OPS_IMMUTABLE_TAG>",
+      "essential": true,
+      "command": ["npm", "run", "db:migrate"],
+      "environment": [
+        { "name": "AIRS_APP_RELEASE", "value": "<GIT_COMMIT_SHA>" }
+      ],
+      "secrets": [
+        { "name": "DATABASE_URL", "valueFrom": "<RDS_ADMIN_DATABASE_URL_SECRET_ARN>" }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/airs-agent-prod-ops",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "migration"
+        }
+      },
+      "readonlyRootFilesystem": false,
+      "privileged": false,
+      "user": "node"
+    }
+  ]
+}

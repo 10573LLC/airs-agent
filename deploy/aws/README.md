@@ -30,6 +30,28 @@ Retrieve the value from [Amazon Location → API keys → airs-agent-prod-maps](
 
 Key creation alone does not connect the application. Release image configuration, live map verification and the spending alert remain pending.
 
+The selected production style is AWS Standard. Supply this as `VITE_MAP_STYLE_URL` at release build time, substituting the retrieved browser map key without committing it:
+
+```text
+https://maps.geo.us-east-1.amazonaws.com/v2/styles/Standard/descriptor?key=<MAP_KEY>
+```
+
+Retain the style's built-in AWS/HERE attribution. MapLibre reads the attribution from the returned sources. Validate actual tile rendering from `https://app.airsagent.com` after HTTPS deployment; the production key deliberately does not authorize localhost.
+
+### Pending Location spending alert
+
+The reviewed configuration is [location-budget.json](location-budget.json): a recurring USD 50 monthly cost budget filtered to Amazon Location Service, with an email to `admin@airsagent.com` when actual costs exceed 100%. Credits and refunds are excluded so they do not mask service consumption. This is a delayed billing notification, not an automatic spending cap or shutdown action.
+
+As of 2026-09-12, the console's service filter returns no result for Location. CloudShell also refuses to create its environment because account verification is in progress (AWS states this can take up to two days for new accounts). No budget was created. Once an authenticated AWS CLI is available, check for an existing budget of this name before applying:
+
+```sh
+aws budgets create-budget --region us-east-1 --cli-input-json file://deploy/aws/location-budget.json
+aws budgets describe-budget --region us-east-1 --account-id 854465560193 --budget-name airs-agent-prod-location-monthly
+aws budgets describe-notifications-for-budget --region us-east-1 --account-id 854465560193 --budget-name airs-agent-prod-location-monthly
+```
+
+Verify the service filter, subscriber and threshold after creation. The configuration above is prepared, not deployed.
+
 ## Production topology
 
 ```text

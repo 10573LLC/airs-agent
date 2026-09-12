@@ -1,0 +1,22 @@
+{
+  "AccountId": "854465560193",
+  "Budget": {
+    "BudgetName": "airs-agent-prod-location-monthly",
+    "BudgetLimit": { "Amount": "50", "Unit": "USD" },
+    "TimeUnit": "MONTHLY",
+    "BudgetType": "COST",
+    "CostFilters": { "Service": ["Amazon Location Service"] },
+    "CostTypes": { "UseBlended": false, "IncludeCredit": false, "IncludeRefund": false }
+  },
+  "NotificationsWithSubscribers": [
+    {
+      "Notification": {
+        "NotificationType": "ACTUAL",
+        "ComparisonOperator": "GREATER_THAN",
+        "Threshold": 100,
+        "ThresholdType": "PERCENTAGE"
+      },
+      "Subscribers": [{ "SubscriptionType": "EMAIL", "Address": "admin@airsagent.com" }]
+    }
+  ]
+}

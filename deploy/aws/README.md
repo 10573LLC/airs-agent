@@ -14,6 +14,22 @@ This directory documents the AWS deployment contract for the existing AIRS Agent
 - Database migrations are ledger-backed and run through `npm run db:migrate`.
 - The production app image runs as the unprivileged `node` user.
 
+## Amazon Location map key
+
+Created and verified active on 2026-09-12 in `us-east-1`:
+
+- Name: `airs-agent-prod-maps`
+- ARN: `arn:aws:geo:us-east-1:854465560193:api-key/airs-agent-prod-maps`
+- Allowed action: `geo-maps:GetTile` only
+- Resource: `arn:aws:geo-maps:us-east-1::provider/default`
+- Allowed referer: `https://app.airsagent.com/*`
+- Expiration: never (deactivate or rotate through the console when needed)
+- Tag: `Project=AIRS`
+
+Retrieve the value from [Amazon Location → API keys → airs-agent-prod-maps](https://us-east-1.console.aws.amazon.com/location/api-keys/home?region=us-east-1#/describe/airs-agent-prod-maps), then choose **Show API key value**. AWS retains the key; its value is not stored in this repository. The browser map key is visible to app users when included in the release bundle, so its map-only scope and website restriction must remain in place. It grants no access to AIRS application records.
+
+Key creation alone does not connect the application. Release image configuration, live map verification and the spending alert remain pending.
+
 ## Production topology
 
 ```text

@@ -1,8 +1,8 @@
 # Portable production image. No builder-hosted service is required at build or run time.
 FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json* bun.lock* ./
-RUN npm install --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
 COPY . .
 # Vite inlines VITE_* variables at build time, so the operator's map style must
 # be present during `npm run build`. Passed explicitly as build args — .env is
@@ -13,6 +13,7 @@ ENV VITE_MAP_STYLE_URL=$VITE_MAP_STYLE_URL \
     VITE_MAP_ATTRIBUTION=$VITE_MAP_ATTRIBUTION
 ENV NITRO_PRESET=node-server
 RUN npm run build
+RUN npm prune --omit=dev --legacy-peer-deps
 
 # Shared production filesystem. Keeping this separate lets AWS build a normal
 # runtime image and an operator-only image without putting psql in the app image.
@@ -24,6 +25,7 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /app/.output ./.output
 COPY --from=build --chown=node:node /app/db ./db
 COPY --from=build --chown=node:node /app/scripts ./scripts
+COPY --from=build --chown=node:node /app/deploy/aws/us-east-1-bundle.pem ./certs/rds-us-east-1.pem
 COPY --from=build --chown=node:node /app/package.json ./package.json
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 

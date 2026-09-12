@@ -28,15 +28,17 @@
         { "name": "NODE_ENV", "value": "production" },
         { "name": "PORT", "value": "3000" },
         { "name": "HOST", "value": "0.0.0.0" },
-        { "name": "AIRS_DB_ADAPTER", "value": "postgres" },
-        { "name": "AIRS_AUTH_ADAPTER", "value": "oidc" },
+        { "name": "DB_DRIVER", "value": "postgres" },
+        { "name": "AUTH_DRIVER", "value": "oidc" },
+        { "name": "AIRS_PUBLIC_BASE_URL", "value": "https://app.airsagent.com" },
+        { "name": "OIDC_ISSUER", "value": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Z2QQLpc1v" },
+        { "name": "OIDC_DOMAIN", "value": "https://us-east-1z2qqlpc1v.auth.us-east-1.amazoncognito.com" },
+        { "name": "OIDC_CLIENT_ID", "value": "dfjqhlc2dc498nfu95hjeojpi" },
         { "name": "AIRS_APP_RELEASE", "value": "<GIT_COMMIT_SHA>" }
       ],
       "secrets": [
         { "name": "DATABASE_URL", "valueFrom": "<DATABASE_URL_SECRET_ARN>" },
         { "name": "SESSION_SECRET", "valueFrom": "<SESSION_SECRET_ARN>" },
-        { "name": "OIDC_ISSUER", "valueFrom": "<OIDC_ISSUER_SECRET_ARN>" },
-        { "name": "OIDC_CLIENT_ID", "valueFrom": "<OIDC_CLIENT_ID_SECRET_ARN>" },
         { "name": "OIDC_CLIENT_SECRET", "valueFrom": "<OIDC_CLIENT_SECRET_ARN>" }
       ],
       "healthCheck": {

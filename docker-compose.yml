@@ -50,6 +50,7 @@ services:
       # row-level security is enforced (owners and superusers would bypass it).
       DATABASE_URL: postgres://airs_app:${APP_DB_PASSWORD:?set APP_DB_PASSWORD in .env}@db:5432/airs
       DB_DRIVER: postgres
+      AUTH_DRIVER: local
       NODE_ENV: production
       PORT: "3000"
       # The optional HTTP maintenance trigger is off by default; the scheduler

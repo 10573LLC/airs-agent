@@ -32,7 +32,11 @@ function isSectionActive(pathname: string, to: string) {
 const linkBase =
   "relative block rounded-sm px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.06em] leading-tight transition-colors focus-visible:brand-focus-ring xl:px-2.5 xl:text-[12px]";
 
-export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: "horizontal" | "vertical" }) {
+export function PrimaryNavLinks({
+  orientation = "horizontal",
+}: {
+  orientation?: "horizontal" | "vertical";
+}) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const org = useServerFn(getOrganization);
   const orgQuery = useQuery({ queryKey: ["org"], queryFn: () => org({ data: {} }) });
@@ -46,9 +50,7 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
     <ul
       className={cn(
         "flex gap-0.5 xl:gap-1",
-        orientation === "vertical"
-          ? "flex-col items-stretch"
-          : "flex-row items-center",
+        orientation === "vertical" ? "flex-col items-stretch" : "flex-row items-center",
       )}
     >
       {visibleNav.map((item) => {
@@ -66,7 +68,9 @@ export function PrimaryNavLinks({ orientation = "horizontal" }: { orientation?: 
                   : "text-current/85 hover:bg-white/10 hover:text-current",
               )}
             >
-              {item.module === "console" && roleKey === "platform_admin" ? "Platform Console" : item.label}
+              {item.module === "console" && roleKey === "platform_admin"
+                ? "Platform Console"
+                : item.label}
             </Link>
           </li>
         );
@@ -110,10 +114,13 @@ export function AccountArea({ compact = false }: { compact?: boolean }) {
 
   return (
     <div className={cn("flex items-center gap-2.5", compact && "w-full flex-wrap")}>
-      <div className={cn("min-w-0 max-w-[11rem] text-right leading-tight", compact && "max-w-none text-left")}>
-        <p className="truncate text-xs font-semibold">
-          {displayPersonName(account.displayName)}
-        </p>
+      <div
+        className={cn(
+          "min-w-0 max-w-[11rem] text-right leading-tight",
+          compact && "max-w-none text-left",
+        )}
+      >
+        <p className="truncate text-xs font-semibold">{displayPersonName(account.displayName)}</p>
         <p className="truncate text-[11px] opacity-75">{contextLine}</p>
       </div>
 
@@ -144,8 +151,13 @@ export function AccountArea({ compact = false }: { compact?: boolean }) {
       <button
         type="button"
         onClick={async () => {
-          await doSignOut();
+          const result = await doSignOut();
+          if (!result.ok) return;
           qc.clear();
+          if (result.data.logoutUrl) {
+            window.location.assign(result.data.logoutUrl);
+            return;
+          }
           await navigate({ to: "/auth" });
         }}
         className="shrink-0 rounded-md border border-white/25 px-2.5 py-1.5 text-[11px] font-semibold uppercase tracking-wider transition-colors hover:bg-white/10"

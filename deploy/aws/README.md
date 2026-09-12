@@ -8,7 +8,7 @@ This directory documents the AWS deployment contract for the existing AIRS Agent
 - Container port: `3000`.
 - Public ALB health endpoint: `GET /api/public/health`.
 - PostgreSQL is required at runtime through `DATABASE_URL`.
-- The health endpoint returns HTTP 200 only when PostgreSQL is reachable.
+- The health endpoint returns HTTP 200 only when the runtime role, required schema and authentication configuration pass readiness checks.
 - Runtime secrets include `DATABASE_URL` and `SESSION_SECRET`.
 - Map style/attribution are Vite build-time values, not runtime secrets.
 - Database migrations are ledger-backed and run through `npm run db:migrate`.
@@ -36,27 +36,27 @@ The RDS instance must remain `Public access: No`.
 
 ## Security groups
 
-Create three dedicated groups in `airs-agent-prod-vpc`:
+Use these groups in `airs-agent-prod-vpc`:
 
 1. `airs-agent-prod-alb-sg`
    - inbound TCP 443 from `0.0.0.0/0`
    - optional TCP 80 only for HTTP -> HTTPS redirect
-   - outbound TCP 3000 to `airs-agent-prod-app-sg`
+   - outbound TCP 3000 to `airs-agent-prod-ecs-sg`
 
-2. `airs-agent-prod-app-sg`
+2. existing `airs-agent-prod-ecs-sg` (`sg-07a78a461afe48931`)
    - inbound TCP 3000 from `airs-agent-prod-alb-sg` only
    - outbound TCP 5432 to `airs-agent-prod-db-sg`
    - outbound HTTPS 443 as required for AWS service endpoints and external integrations
 
 3. existing `airs-agent-prod-db-sg`
-   - inbound TCP 5432 from `airs-agent-prod-app-sg` only
-   - remove workstation/public CIDR ingress after ECS connectivity is established
+   - add inbound TCP 5432 from `airs-agent-prod-ecs-sg`
+   - review existing rules separately; do not delete unrelated rules
 
 Do not expose PostgreSQL to the Internet.
 
 ## Private subnet egress
 
-This VPC intentionally has no NAT Gateway. Fargate tasks therefore need VPC endpoints for AWS control-plane dependencies used by the task:
+The two private subnets have same-zone public NAT gateways for the Cognito OAuth token exchange. AWS service traffic continues to use these existing endpoints:
 
 - `com.amazonaws.us-east-1.ecr.api` (Interface)
 - `com.amazonaws.us-east-1.ecr.dkr` (Interface)
@@ -64,9 +64,9 @@ This VPC intentionally has no NAT Gateway. Fargate tasks therefore need VPC endp
 - `com.amazonaws.us-east-1.secretsmanager` (Interface)
 - S3 Gateway endpoint (already present; ECR image layers depend on S3)
 
-Attach an endpoint security group allowing TCP 443 from `airs-agent-prod-app-sg`. Enable private DNS on the interface endpoints.
+The interface endpoints use `airs-agent-prod-vpce-sg` (`sg-015b957cf8d311ba7`), allowing TCP 443 only from `airs-agent-prod-ecs-sg`, with private DNS enabled in both private subnets.
 
-If AIRS requires arbitrary outbound Internet integrations in production, add a controlled egress design (for example NAT Gateway) rather than making application tasks public.
+NAT `nat-068125ce423f7e283` serves private subnet `subnet-00d0b10ff5a2e6f99` in us-east-1a through route table `rtb-098da863fe02296e4`. NAT `nat-0b87da52dccfee65a` serves `subnet-0ac15025453fee47d` in us-east-1b through `rtb-0d2bd5c6386d724ce`. Both default routes were verified Active. Preserve the S3 endpoint routes. Tasks still have public IP assignment disabled.
 
 ## Load balancer / target group
 
@@ -82,7 +82,7 @@ If AIRS requires arbitrary outbound Internet integrations in production, add a c
 - HTTPS listener: 443 with ACM certificate for `app.airsagent.com`.
 - Redirect port 80 to 443 if port 80 is enabled.
 
-Because the health route checks PostgreSQL, an app task is not put into service when its database is unreachable.
+Readiness also checks that the connection uses `airs_app` without superuser/BYPASSRLS privileges, the latest required schema is present, and the selected authentication driver is configured. It does not call Cognito on every probe.
 
 ## ECS service
 
@@ -104,17 +104,43 @@ Non-secret environment:
 - `NODE_ENV=production`
 - `PORT=3000`
 - `HOST=0.0.0.0`
-- `AIRS_DB_ADAPTER=postgres`
-- `AIRS_AUTH_ADAPTER=oidc` when the production identity provider is configured
+- `DB_DRIVER=postgres`
+- `AUTH_DRIVER=oidc` (required explicitly in production; no implicit local fallback)
+- `AIRS_PUBLIC_BASE_URL=https://app.airsagent.com`
+- `OIDC_ISSUER=https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Z2QQLpc1v`
+- `OIDC_DOMAIN=https://us-east-1z2qqlpc1v.auth.us-east-1.amazoncognito.com`
+- `OIDC_CLIENT_ID=dfjqhlc2dc498nfu95hjeojpi`
 - `AIRS_APP_RELEASE=<immutable image/commit identifier>`
 
 Secrets must come from AWS Secrets Manager through the ECS task definition; never put them in the image or GitHub:
 
-- `DATABASE_URL`: application-role PostgreSQL URL (use `airs_app`, not the RDS master user)
-- `SESSION_SECRET`: production session signing secret
+- `DATABASE_URL`: application-role PostgreSQL URL (use `airs_app`, not the RDS master user), with `?sslmode=verify-full&sslrootcert=/app/certs/rds-us-east-1.pem`
+- `SESSION_SECRET`: randomly generated secret of at least 32 characters for encrypted OIDC transaction cookies; use the same secret on both tasks
 - OIDC client secret when OIDC is enabled
 
 The RDS-managed master credential is for administration/migration/bootstrap only. The application should not run as the RDS master user.
+
+The image includes the public [AWS RDS us-east-1 CA bundle](https://truststore.pki.rds.amazonaws.com/us-east-1/us-east-1-bundle.pem), downloaded 2026-09-12, SHA-256 `b1711d12bae51838581281e23b6cb97b1074016873b4dafc80ed14002462dd77`. Refresh and rebuild it when AWS rotates trust roots. Use the same verification parameters in the ops and maintenance connection URLs. Never use `rejectUnauthorized=false` or `sslmode=no-verify`. See [AWS PostgreSQL TLS guidance](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.SSL.html).
+
+## Cognito login and invitations
+
+The application now implements Cognito authorization-code login with S256 PKCE, state and nonce, encrypted ten-minute transaction cookies and RS256 signature/issuer/audience/expiry verification. The design follows [Cognito authorization](https://docs.aws.amazon.com/cognito/latest/developerguide/authorization-endpoint.html) and [token exchange](https://docs.aws.amazon.com/cognito/latest/developerguide/token-endpoint.html). Secrets and OAuth tokens stay on the server. Sessions use existing hashed opaque tokens in PostgreSQL, expire at the ID-token expiry (at most one hour), and can be revoked through the existing session controls. Refresh tokens are discarded. Cognito sign-out also clears the managed-login session in the browser.
+
+Keep the pool invitation-only, with required TOTP MFA, email sign-in and authorization-code grant only. These pool controls are deployment requirements; an ID token does not itself prove that the pool still requires TOTP. `mfa_enrolled` in the legacy account model is not inferred from token claims. Disabling an AIRS account revokes access on the next request; disabling only a Cognito account does not invalidate an already-issued AIRS session before its expiry. Disable in both systems when immediate removal is required.
+
+- Allowed callback: `https://app.airsagent.com/auth/callback`.
+- Allowed logout: `https://app.airsagent.com/auth`.
+- `/auth/login` starts login; `/auth/callback` verifies it and creates the AIRS session.
+- Local password login, local recovery and local activation are disabled with `AUTH_DRIVER=oidc`.
+- A Cognito account alone grants no organization membership. An AIRS invitation must match the authenticated, verified email and is consumed once. Roles come from the stored invitation, never from OIDC groups or request parameters.
+- Existing accounts are matched by email for RLS lookup but must already have the exact same issuer and immutable subject. Email collisions with local accounts, changed subjects, and changed emails fail closed; linking/migration is an operator procedure, not automatic.
+- Operators create invited users in Cognito and issue their AIRS agency invitations. Automatic Cognito user provisioning/email delivery is not implemented by the app. Temporary credentials and TOTP enrollment are handled on the managed login page. Ensure the Cognito account has a verified email; never mark an unverified recipient verified merely to bypass the check.
+
+For the first administrator, use `admin@airsagent.com` in Cognito and run `npm run platform-admin:setup -- --email admin@airsagent.com` with the separate bootstrap connection. This creates the existing platform invitation, not a password or automatic privilege based on the email. Its activation page sends the recipient through Cognito and then the normal invitation acceptance. Run this operator command in a secure terminal: it prints a one-time URL, so do not run it with the standard ECS CloudWatch logging configuration. No production user, invitation or account has been created by this code change.
+
+## Local validation
+
+`npm ci --legacy-peer-deps`, `npm run typecheck`, `npm run build` and `npm run test:isolated` validate the checkout. The last command starts a uniquely named, disposable PostGIS 16 database on a loopback-only random port, applies the canonical ledger migrations, runs the SQL security suites and all unit/integration tests, then removes only its own container and volumes. It ignores operator database URLs. Docker must be running. Tests include Cognito claim/state/nonce/PKCE checks, account collision refusal, local-login bypass prevention, and invitation acceptance under forced RLS. These tests do not substitute for a live Cognito/TOTP acceptance test over the final HTTPS hostname.
 
 ## Database bootstrap
 
@@ -124,7 +150,9 @@ The existing schema creates `airs_app` as `NOLOGIN`, and local Docker bootstrap 
 2. run the canonical ledger-backed migrations (`npm run db:migrate`);
 3. set a generated production password on `airs_app` and grant LOGIN;
 4. create/update the `DATABASE_URL` secret using `airs_app`;
-5. run `npm run db:migrate:status` and the repository validation suite before starting the ECS service.
+5. run `npm run db:migrate:status` and readiness checks before starting the ECS service. Run fixture-based validation suites only against the disposable test database, never the production database.
+
+Enable PostGIS on RDS using the migration operator. Do not run `db/seed/demo_orgs.sql` in production. Configure the separate `airs_maintenance` LOGIN credential and a scheduled maintenance task for incident expiry; do not use the RDS master account for that scheduler.
 
 The Dockerfile has an explicit `ops` target containing `psql` for one-off ECS migration/bootstrap tasks. The default `runtime` target remains the smaller production application image.
 
@@ -156,9 +184,9 @@ Keep Cloudflare authoritative DNS. For the operational application, create `app.
 
 ## Deployment order
 
-1. Create the four required interface VPC endpoints and endpoint SG.
-2. Create ALB and application security groups.
-3. Change DB SG ingress to app-SG-only after connectivity is available.
+1. Verify the existing interface endpoints, S3 endpoint and same-zone NAT gateways.
+2. Create the ALB security group and add its TCP 3000 reference to the existing ECS group.
+3. Add DB SG ingress from the ECS group.
 4. Request/validate ACM certificate for `app.airsagent.com`.
 5. Create ALB, target group, and HTTPS listener.
 6. Create ECS task execution role and application task role with least privilege.

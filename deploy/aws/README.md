@@ -182,6 +182,10 @@ For the first administrator, use `admin@airsagent.com` in Cognito and run `npm r
 
 ## Database bootstrap
 
+Console inspection on 2026-09-12 confirmed `airs-agent-prod-db` is available, PostgreSQL 16.15, database `airs_agent`, master username `postgres`, with endpoint `airs-agent-prod-db.c81w4m2mglk7.us-east-1.rds.amazonaws.com:5432`. Storage encryption and deletion protection are enabled; automated backups retain seven days. The instance is `db.t4g.small`, single-AZ in `us-east-1b` (no automatic standby). Storage is 20 GiB gp3 with autoscaling to 100 GiB. The master credential remains in RDS-managed Secrets Manager secret `arn:aws:secretsmanager:us-east-1:854465560193:secret:rds!db-78a6cd80-b871-4262-b25b-bd847cc34cc3-czSCeB`; its value was not retrieved during this inspection.
+
+The DB security group currently has an existing PostgreSQL rule from `216.59.94.50/32`, but no ECS source rule. The required addition is TCP 5432 from `sg-07a78a461afe48931` (`airs-agent-prod-ecs-sg`) to `sg-05bda1b6f91881b21` (`airs-agent-prod-db-sg`). This inspection did not apply the rule or run production migrations. The Location budget is deferred at the user's request until the AWS account verification blocker is resolved.
+
 The existing schema creates `airs_app` as `NOLOGIN`, and local Docker bootstrap separately grants that role LOGIN with `APP_DB_PASSWORD`. RDS does not run `db/init/*.sh`, so production bootstrap must explicitly:
 
 1. connect with the RDS managed master credential;

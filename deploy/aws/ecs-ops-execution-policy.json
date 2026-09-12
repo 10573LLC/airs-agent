@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "EcrAuthentication",
+      "Effect": "Allow",
+      "Action": "ecr:GetAuthorizationToken",
+      "Resource": "*"
+    },
+    {
+      "Sid": "PullAirsImage",
+      "Effect": "Allow",
+      "Action": ["ecr:BatchCheckLayerAvailability", "ecr:GetDownloadUrlForLayer", "ecr:BatchGetImage"],
+      "Resource": "arn:aws:ecr:us-east-1:854465560193:repository/airs-agent"
+    },
+    {
+      "Sid": "WriteMigrationLogs",
+      "Effect": "Allow",
+      "Action": ["logs:CreateLogStream", "logs:PutLogEvents"],
+      "Resource": "arn:aws:logs:us-east-1:854465560193:log-group:/ecs/airs-agent-prod-ops:log-stream:*"
+    },
+    {
+      "Sid": "InjectRdsAdminPassword",
+      "Effect": "Allow",
+      "Action": "secretsmanager:GetSecretValue",
+      "Resource": "arn:aws:secretsmanager:us-east-1:854465560193:secret:rds!db-78a6cd80-b871-4262-b25b-bd847cc34cc3-czSCeB"
+    }
+  ]
+}

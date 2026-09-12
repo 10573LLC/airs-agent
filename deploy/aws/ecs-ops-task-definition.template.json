@@ -8,19 +8,19 @@
     "cpuArchitecture": "ARM64",
     "operatingSystemFamily": "LINUX"
   },
-  "executionRoleArn": "<ECS_EXECUTION_ROLE_ARN>",
-  "taskRoleArn": "<AIRS_OPS_TASK_ROLE_ARN>",
+  "executionRoleArn": "arn:aws:iam::854465560193:role/airs-agent-prod-ops-execution-role",
   "containerDefinitions": [
     {
       "name": "airs-agent-ops",
-      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/airs-agent:<OPS_IMMUTABLE_TAG>",
+      "image": "854465560193.dkr.ecr.us-east-1.amazonaws.com/airs-agent:<OPS_IMMUTABLE_TAG>",
       "essential": true,
       "command": ["npm", "run", "db:migrate"],
       "environment": [
+        { "name": "DATABASE_URL", "value": "postgresql://postgres@airs-agent-prod-db.c81w4m2mglk7.us-east-1.rds.amazonaws.com:5432/airs_agent?sslmode=verify-full&sslrootcert=/app/certs/rds-us-east-1.pem" },
         { "name": "AIRS_APP_RELEASE", "value": "<GIT_COMMIT_SHA>" }
       ],
       "secrets": [
-        { "name": "DATABASE_URL", "valueFrom": "<RDS_ADMIN_DATABASE_URL_SECRET_ARN>" }
+        { "name": "PGPASSWORD", "valueFrom": "arn:aws:secretsmanager:us-east-1:854465560193:secret:rds!db-78a6cd80-b871-4262-b25b-bd847cc34cc3-czSCeB:password::" }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",

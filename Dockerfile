@@ -1,5 +1,5 @@
 # Portable production image. No builder-hosted service is required at build or run time.
-FROM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --legacy-peer-deps
@@ -13,7 +13,13 @@ ENV VITE_MAP_STYLE_URL=$VITE_MAP_STYLE_URL \
     VITE_MAP_ATTRIBUTION=$VITE_MAP_ATTRIBUTION
 ENV NITRO_PRESET=node-server
 RUN npm run build
-RUN npm prune --omit=dev --legacy-peer-deps
+
+# Install runtime dependencies on the target architecture. Vite/Nitro compilation
+# runs natively above; target-native dependencies must not come from that stage.
+FROM node:22-alpine AS production-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --legacy-peer-deps
 
 # Shared production filesystem. Keeping this separate lets AWS build a normal
 # runtime image and an operator-only image without putting psql in the app image.
@@ -27,7 +33,7 @@ COPY --from=build --chown=node:node /app/db ./db
 COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/deploy/aws/us-east-1-bundle.pem ./certs/rds-us-east-1.pem
 COPY --from=build --chown=node:node /app/package.json ./package.json
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
+COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
 
 # Operator image for one-off database migration/bootstrap tasks. The existing
 # migration runner intentionally requires psql when Docker Compose is absent;

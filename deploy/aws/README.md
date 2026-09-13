@@ -28,7 +28,7 @@ Created and verified active on 2026-09-12 in `us-east-1`:
 
 Retrieve the value from [Amazon Location → API keys → airs-agent-prod-maps](https://us-east-1.console.aws.amazon.com/location/api-keys/home?region=us-east-1#/describe/airs-agent-prod-maps), then choose **Show API key value**. AWS retains the key; its value is not stored in this repository. The browser map key is visible to app users when included in the release bundle, so its map-only scope and website restriction must remain in place. It grants no access to AIRS application records.
 
-Key creation alone does not connect the application. Release image configuration, live map verification and the spending alert remain pending.
+On 2026-09-13 the production style, vector tile, sprite JSON/PNG and glyph endpoints returned HTTP 200 using the approved AIRS referer. The same vector tile returned HTTP 403 for an unrelated referer. AWS/HERE attribution is supplied by the style. Actual browser rendering at app.airsagent.com remains a post-HTTPS-deployment check.
 
 The selected production style is AWS Standard. Supply this as `VITE_MAP_STYLE_URL` at release build time, substituting the retrieved browser map key without committing it:
 
@@ -38,19 +38,11 @@ https://maps.geo.us-east-1.amazonaws.com/v2/styles/Standard/descriptor?key=<MAP_
 
 Retain the style's built-in AWS/HERE attribution. MapLibre reads the attribution from the returned sources. Validate actual tile rendering from `https://app.airsagent.com` after HTTPS deployment; the production key deliberately does not authorize localhost.
 
-### Pending Location spending alert
+### Verified Location spending alert
 
 The reviewed configuration is [location-budget.json](location-budget.json): a recurring USD 50 monthly cost budget filtered to Amazon Location Service, with an email to `admin@airsagent.com` when actual costs exceed 100%. Credits and refunds are excluded so they do not mask service consumption. This is a delayed billing notification, not an automatic spending cap or shutdown action.
 
-As of 2026-09-12, the console's service filter returns no result for Location. CloudShell also refuses to create its environment because account verification is in progress (AWS states this can take up to two days for new accounts). No budget was created. Once an authenticated AWS CLI is available, check for an existing budget of this name before applying:
-
-```sh
-aws budgets create-budget --region us-east-1 --cli-input-json file://deploy/aws/location-budget.json
-aws budgets describe-budget --region us-east-1 --account-id 854465560193 --budget-name airs-agent-prod-location-monthly
-aws budgets describe-notifications-for-budget --region us-east-1 --account-id 854465560193 --budget-name airs-agent-prod-location-monthly
-```
-
-Verify the service filter, subscriber and threshold after creation. The configuration above is prepared, not deployed.
+Created and verified on 2026-09-13: `airs-agent-prod-location-monthly`. AWS reports HEALTHY, USD 50 monthly, filtered to Amazon Location Service, excluding credits/refunds. The notification is ACTUAL greater than 100 percent and the verified subscriber is `admin@airsagent.com`. This is an alert, not a spending cap.
 
 ## Production topology
 

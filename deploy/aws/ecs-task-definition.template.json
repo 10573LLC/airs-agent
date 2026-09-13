@@ -13,7 +13,7 @@
   "containerDefinitions": [
     {
       "name": "airs-agent",
-      "image": "<AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/airs-agent:<IMMUTABLE_TAG>",
+      "image": "854465560193.dkr.ecr.us-east-1.amazonaws.com/airs-agent@sha256:e9cd96cc4805fdcf1b89332f98e1e129735750c2bf9aac13bfe9d57d71dee676",
       "essential": true,
       "portMappings": [
         {
@@ -34,7 +34,7 @@
         { "name": "OIDC_ISSUER", "value": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Z2QQLpc1v" },
         { "name": "OIDC_DOMAIN", "value": "https://us-east-1z2qqlpc1v.auth.us-east-1.amazoncognito.com" },
         { "name": "OIDC_CLIENT_ID", "value": "dfjqhlc2dc498nfu95hjeojpi" },
-        { "name": "AIRS_APP_RELEASE", "value": "<GIT_COMMIT_SHA>" }
+        { "name": "AIRS_APP_RELEASE", "value": "7bf2ef4bc8712dddd1a14035c6821594f7d81fdd" }
       ],
       "secrets": [
         { "name": "DATABASE_URL", "valueFrom": "<DATABASE_URL_SECRET_ARN>" },

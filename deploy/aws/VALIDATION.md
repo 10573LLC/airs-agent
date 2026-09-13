@@ -27,7 +27,7 @@ Changed application files pass lint. Repository-wide lint still has a pre-existi
 
 ## Required before launch
 
-1. Select the production map provider and attribution, then supply the build arguments for the release images.
+1. Map build configuration is complete in the 2026-09-13 web release (see README). Verify actual rendering and attribution from the production HTTPS origin after launch.
 2. Configure production Secrets Manager values, least-privilege ECS roles, database access and the separate migration/maintenance credentials.
 3. Apply migrations to RDS and verify the application connects as `airs_app` with TLS certificate verification. Do not load demo fixtures into production.
 4. Configure the load balancer, certificate and DNS for `app.airsagent.com`, then publish immutable images and start ECS.

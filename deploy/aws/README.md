@@ -180,7 +180,7 @@ Created and verified on 2026-09-12 after user approval: `airs-agent-prod-ops-exe
 
 The [ops task template](ecs-ops-task-definition.template.json) injects the secret's `password` field as `PGPASSWORD` and uses a password-free `DATABASE_URL` with `sslmode=verify-full`. No duplicate administrator URL secret is required. The container has no task IAM role, since the migration process itself needs no AWS API calls. Use Fargate Linux platform `1.4.0` or later for JSON-key secret injection. CloudWatch log group `/ecs/airs-agent-prod-ops` was created and verified on 2026-09-12 in `us-east-1`, using Standard class and 30-day retention. This execution role cannot create log groups.
 
-Published and verified on 2026-09-12: `854465560193.dkr.ecr.us-east-1.amazonaws.com/airs-agent:ops-20260912-31c15b9429df`, active in the immutable ECR repository. ECR digest `sha256:31c15b9429dfed47b780d9fe9fd41374b26033cab3d6e867657a0c3e215106d5` matches the tested local ARM64 ops image; compressed size is 114,540,703 bytes. The ops task template pins this digest. This is the migration image; the final web image still needs the production map configuration. No ECS task or production migration was run during publication.
+Published and verified on 2026-09-12: `854465560193.dkr.ecr.us-east-1.amazonaws.com/airs-agent:ops-20260912-31c15b9429df`, active in the immutable ECR repository. ECR digest `sha256:31c15b9429dfed47b780d9fe9fd41374b26033cab3d6e867657a0c3e215106d5` matches the tested local ARM64 ops image; compressed size is 114,540,703 bytes. The ops task template pins this digest. This is the migration image; the production web image is recorded below. No ECS task or production migration was run during publication.
 
 Before running, replace the release placeholder with the verified source revision. Place the task in the two AIRS private subnets with `sg-07a78a461afe48931`, public IP disabled. First run `node scripts/db-migrate.mjs --status`, inspect the result, then run the normal migration command. Confirm successful exit and zero pending/checksum-conflicting migrations. The fresh local test on 2026-09-12 verified password injection via `PGPASSWORD`, all 436 tests, the SQL suites and both container checks. Production execution remains pending.
 
@@ -220,7 +220,7 @@ docker buildx build --platform linux/arm64 --target runtime -t <ECR>/airs-agent:
 docker buildx build --platform linux/arm64 --target ops -t <ECR>/airs-agent:ops-sha-<commit> .
 ```
 
-Pass `VITE_MAP_STYLE_URL` and `VITE_MAP_ATTRIBUTION` as build args when the production map provider is selected.
+Pass the AWS Standard descriptor URL with the restricted browser key as `VITE_MAP_STYLE_URL`; leave `VITE_MAP_ATTRIBUTION` empty to retain AWS/HERE source attribution. These are build-time values. Retrieve the key from the existing AWS Location key record; never commit its value.
 
 ## DNS
 
@@ -248,3 +248,16 @@ Keep Cloudflare authoritative DNS. For the operational application, create `app.
 Created Fargate-only cluster `airs-agent-prod`. The initial cluster attempt reported an unavailable service-linked role; IAM then showed `AWSServiceRoleForECS`, and retry succeeded. Registered `arn:aws:ecs:us-east-1:854465560193:task-definition/airs-agent-prod-ops:1` from [the read-only preflight definition](ecs-ops-preflight-task-definition.json). Revision 1 is a read-only connectivity/status check, not the migration command. It uses the published digest, existing execution role, RDS password injection, verified TLS, a 15-second connection timeout, and read-only database sessions with a 30-second statement timeout.
 
 Attempted one Fargate task in `airs-agent-prod-vpc` using private subnets `subnet-00d0b10ff5a2e6f99` and `subnet-0ac15025453fee47d`, only security group `sg-07a78a461afe48931`, and public IP disabled. AWS rejected launch with HTTP 400: **Your account is currently blocked.** No database connectivity or migration result was obtained. Resolve the account restriction with AWS Support before retrying. Do not interpret successful registration as a successful task run. Production migrations remain pending.
+
+## Production web release — 2026-09-13
+
+- Source: `7bf2ef4bc8712dddd1a14035c6821594f7d81fdd`.
+- ECR tag: `854465560193.dkr.ecr.us-east-1.amazonaws.com/airs-agent:web-20260913-7bf2ef4`.
+- Pinned image: `854465560193.dkr.ecr.us-east-1.amazonaws.com/airs-agent@sha256:e9cd96cc4805fdcf1b89332f98e1e129735750c2bf9aac13bfe9d57d71dee676`.
+- ECR reports ACTIVE, 111,727,024 compressed bytes. The registry digest matches the tested local image.
+- Linux ARM64, user `node`, AWS Standard style configured in the map, incident command and simulation bundles; MapLibre worker included. Local environment files are excluded from the image and Git.
+- Native-platform compilation avoids an ARM-emulation compiler stall; runtime dependencies are installed for ARM64 and pruned separately. Build downloads are cached with bounded concurrency.
+- Validation: type checking, all 436 tests in 35 files, all 17 migrations and 11 SQL suites in a disposable database, plus container readiness, login rendering, PKCE, secure cookies and invalid-callback rejection. The existing ops image also passed its migration-ledger check.
+- Map API checks: style, tile, glyphs, sprite metadata and sprite image succeeded with the production referer; an unrelated referer was denied HTTP 403. Source attribution remains AWS/HERE.
+
+The task template now pins this image and its source release. Remaining placeholders are deliberately unresolved production roles/secrets. No ECS service or production database migration was started. Actual map rendering and Cognito sign-in from `https://app.airsagent.com` remain launch acceptance checks after HTTPS and database setup. The earlier account-blocked task launch has not been retried as part of this release.

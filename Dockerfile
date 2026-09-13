@@ -2,7 +2,7 @@
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps --no-audit --maxsockets=10
 COPY . .
 # Vite inlines VITE_* variables at build time, so the operator's map style must
 # be present during `npm run build`. Passed explicitly as build args — .env is
@@ -19,7 +19,8 @@ RUN npm run build
 FROM node:22-alpine AS production-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
+RUN npm prune --omit=dev --legacy-peer-deps --no-audit --offline
 
 # Shared production filesystem. Keeping this separate lets AWS build a normal
 # runtime image and an operator-only image without putting psql in the app image.

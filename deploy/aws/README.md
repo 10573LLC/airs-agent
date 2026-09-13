@@ -249,3 +249,10 @@ Keep Cloudflare authoritative DNS. For the operational application, create `app.
 11. Confirm ALB health checks, logs, database access, and application acceptance tests.
 12. Create the Cloudflare DNS record for `app.airsagent.com`.
 13. Run the Onondaga mutual-aid scenario end-to-end before production approval.
+
+
+### ECS preflight launch status (2026-09-12)
+
+Created Fargate-only cluster `airs-agent-prod`. The initial cluster attempt reported an unavailable service-linked role; IAM then showed `AWSServiceRoleForECS`, and retry succeeded. Registered `arn:aws:ecs:us-east-1:854465560193:task-definition/airs-agent-prod-ops:1` from [the read-only preflight definition](ecs-ops-preflight-task-definition.json). Revision 1 is a read-only connectivity/status check, not the migration command. It uses the published digest, existing execution role, RDS password injection, verified TLS, a 15-second connection timeout, and read-only database sessions with a 30-second statement timeout.
+
+Attempted one Fargate task in `airs-agent-prod-vpc` using private subnets `subnet-00d0b10ff5a2e6f99` and `subnet-0ac15025453fee47d`, only security group `sg-07a78a461afe48931`, and public IP disabled. AWS rejected launch with HTTP 400: **Your account is currently blocked.** No database connectivity or migration result was obtained. Resolve the account restriction with AWS Support before retrying. Do not interpret successful registration as a successful task run. Production migrations remain pending.

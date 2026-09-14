@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 
-import { PageHeading, PageShell } from "@/components/brand";
+import { PageHeading, PageShell, SectionCard } from "@/components/brand";
 import { getMe, getOrganization } from "@/lib/api/auth.functions";
 import { AgencySystemsIntegrationsPanel } from "@/lib/resources/agency-systems-integrations-panel";
 
@@ -83,6 +83,26 @@ function AgencySystemsPage() {
         title="Systems & Integrations"
         description="Define what technology your agency actually uses, distinguish installed systems from AIRS suggestions, and see exactly what is and is not connected to AIRS."
       />
+
+      <div className="mt-6">
+        <SectionCard
+          title="C-UAS / SAFER SKIES"
+          description="Optional capability. Agencies without C-UAS personnel, equipment, or authority continue to use AIRS normally; mutual-aid-only posture is supported."
+          actions={
+            <Link
+              to="/agency/cuas"
+              className="rounded-md border border-input px-3 py-2 text-xs font-semibold hover:bg-muted"
+            >
+              Open C-UAS Readiness
+            </Link>
+          }
+        >
+          <p className="text-sm text-muted-foreground">
+            Record agency participation, current certified personnel, authorized equipment, reporting deadlines, and mutual-aid posture without turning C-UAS into a prerequisite for incident operations.
+          </p>
+        </SectionCard>
+      </div>
+
       <div className="mt-8">
         <AgencySystemsIntegrationsPanel canManage={canManage} />
       </div>

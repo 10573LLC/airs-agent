@@ -266,7 +266,7 @@ The task template now pins this image and its source release. Remaining placehol
 ACM certificate requested in us-east-1 for `app.airsagent.com`:
 `arn:aws:acm:us-east-1:854465560193:certificate/58a0fe11-f306-49d2-9f49-cc06aa4f9692`.
 
-RSA 2048, DNS validation, private-key export disabled, Project=AIRS. Status at request: Pending validation; not attached to a load balancer.
+RSA 2048, DNS validation, private-key export disabled, Project=AIRS. Status verified: Issued on 2026-09-17 at 15:38:20 Eastern; domain validation Success. Not yet attached to a load balancer.
 
 Cloudflare remains authoritative (ian.ns.cloudflare.com and bella.ns.cloudflare.com). Add this validation record to the existing airsagent.com zone:
 

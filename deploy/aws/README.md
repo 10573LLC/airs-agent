@@ -276,6 +276,6 @@ Cloudflare remains authoritative (ian.ns.cloudflare.com and bella.ns.cloudflare.
 - Proxy: DNS only
 - TTL: Auto
 
-Keep this record for renewal. It validates the certificate; it does not route application traffic. DNS entry is awaiting Cloudflare sign-in. No application routing record or nameserver change was made.
+Keep this record for renewal. It validates the certificate; it does not route application traffic. The validation CNAME was added to Cloudflare on 2026-09-17 with proxy disabled and Auto TTL. Public DNS resolution was verified against 1.1.1.1 (TTL 300). No application routing record or nameserver change was made.
 
 The September 17 read-only Fargate preflight retry still returned `BlockedException: Your account is currently blocked`; no task or database operation started. Support case provided by the user: `178918648400720`.

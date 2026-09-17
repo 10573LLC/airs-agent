@@ -261,3 +261,21 @@ Attempted one Fargate task in `airs-agent-prod-vpc` using private subnets `subne
 - Map API checks: style, tile, glyphs, sprite metadata and sprite image succeeded with the production referer; an unrelated referer was denied HTTP 403. Source attribution remains AWS/HERE.
 
 The task template now pins this image and its source release. Remaining placeholders are deliberately unresolved production roles/secrets. No ECS service or production database migration was started. Actual map rendering and Cognito sign-in from `https://app.airsagent.com` remain launch acceptance checks after HTTPS and database setup. The earlier account-blocked task launch has not been retried as part of this release.
+## HTTPS certificate preparation — 2026-09-17
+
+ACM certificate requested in us-east-1 for `app.airsagent.com`:
+`arn:aws:acm:us-east-1:854465560193:certificate/58a0fe11-f306-49d2-9f49-cc06aa4f9692`.
+
+RSA 2048, DNS validation, private-key export disabled, Project=AIRS. Status at request: Pending validation; not attached to a load balancer.
+
+Cloudflare remains authoritative (ian.ns.cloudflare.com and bella.ns.cloudflare.com). Add this validation record to the existing airsagent.com zone:
+
+- Type: CNAME
+- Name: `_ada4e1e5ba979d8c6d7cf2fab9bd79e1.app`
+- Target: `_76468845a356be0dc9c2cec38854cfc6.wzccmgtwzk.acm-validations.aws`
+- Proxy: DNS only
+- TTL: Auto
+
+Keep this record for renewal. It validates the certificate; it does not route application traffic. DNS entry is awaiting Cloudflare sign-in. No application routing record or nameserver change was made.
+
+The September 17 read-only Fargate preflight retry still returned `BlockedException: Your account is currently blocked`; no task or database operation started. Support case provided by the user: `178918648400720`.

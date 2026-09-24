@@ -4,12 +4,14 @@ expected_account_id = "123456789012"
 aws_region         = "us-east-2"
 app_name           = "airs-agent-prod"
 vpc_cidr           = "10.73.0.0/16"
-db_instance_class  = "db.t4g.small"
-db_multi_az        = true
-desired_count      = 2
+db_instance_class  = "db.t4g.micro"
+db_multi_az        = false
+desired_count      = 1
+task_cpu           = 256
+task_memory        = 1024
 domain_name        = "app.airsagent.com"
 public_base_url    = "https://app.airsagent.com"
-monthly_budget_usd = 100
+monthly_budget_usd = 75
 budget_email       = "developer@10573llc.com"
 
 # Deliberately false for the first foundation pass. Do not enable until the

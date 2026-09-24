@@ -44,7 +44,7 @@ resource "aws_cognito_user_pool" "app" {
 }
 
 resource "aws_cognito_user_pool_domain" "app" {
-  domain       = var.cognito_domain_prefix
+  domain       = local.cognito_domain_prefix
   user_pool_id = aws_cognito_user_pool.app.id
 }
 

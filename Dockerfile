@@ -15,6 +15,9 @@ ENV NITRO_PRESET=node-server
 RUN npm run build
 
 FROM node:22-alpine AS runtime
+# Production migrations run as an explicit one-off ECS task. The canonical
+# migration runner requires psql; install only the PostgreSQL client, never a server.
+RUN apk add --no-cache postgresql16-client
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000 \

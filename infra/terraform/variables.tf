@@ -15,12 +15,12 @@ variable "app_name" {
 
 variable "vpc_cidr" {
   type    = string
-  default = "10.73.0.0/16"
+  default = "10.20.0.0/16"
 }
 
 variable "db_instance_class" {
   type    = string
-  default = "db.t4g.micro"
+  default = "db.t4g.small"
 }
 
 variable "db_multi_az" {
@@ -41,7 +41,7 @@ variable "ops_image" {
 variable "deploy_services" {
   type        = bool
   default     = false
-  description = "Enable AIRS only after database bootstrap succeeds."
+  description = "Enable app and maintenance services only after database bootstrap succeeds."
 }
 
 variable "enable_https" {
@@ -52,12 +52,12 @@ variable "enable_https" {
 
 variable "desired_count" {
   type    = number
-  default = 1
+  default = 2
 }
 
 variable "task_cpu" {
   type    = number
-  default = 256
+  default = 512
 }
 
 variable "task_memory" {

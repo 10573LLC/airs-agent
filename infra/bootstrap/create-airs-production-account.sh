@@ -27,7 +27,7 @@ if [ "$OU_ID" = "None" ] || [ -z "$OU_ID" ]; then
 fi
 
 ACCOUNT_ID=$(aws organizations list-accounts \
-  --query "Accounts[?Name=='$ACCOUNT_NAME' && Status=='ACTIVE'].Id | [0]" \
+  --query "Accounts[?Name=='$ACCOUNT_NAME' && State=='ACTIVE'].Id | [0]" \
   --output text)
 
 if [ "$ACCOUNT_ID" = "None" ] || [ -z "$ACCOUNT_ID" ]; then

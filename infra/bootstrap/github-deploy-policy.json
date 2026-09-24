@@ -6,7 +6,8 @@
       "Effect": "Allow",
       "Action": [
         "s3:ListBucket",
-        "s3:GetBucketVersioning"
+        "s3:GetBucketVersioning",
+        "s3:GetBucketLocation"
       ],
       "Resource": "arn:aws:s3:::airs-agent-tfstate-__ACCOUNT_ID__"
     },
@@ -78,7 +79,13 @@
         "logs:*",
         "acm:*",
         "cognito-idp:*",
-        "budgets:*"
+        "budgets:*",
+        "rds:Describe*",
+        "rds:CreateDBSnapshot",
+        "rds:DeleteDBSnapshot",
+        "tag:GetResources",
+        "tag:TagResources",
+        "tag:UntagResources"
       ],
       "Resource": "*"
     },

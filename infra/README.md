@@ -8,30 +8,21 @@ AIRS production workloads do **not** run in the AWS Organizations management acc
 
 ## Account bootstrap
 
-From the 10573 LLC Organizations management account, run:
+This AWS organization was created through the new AWS **projects** experience. A project already contains one AWS account, and AWS manages the organization management account and the human-access controls for that organization. Do not create the AIRS account with `organizations create-account` or try to create an OU from a project account.
+
+Create a new project named `AIRSProduction` in **AWS Settings → Project → Create project**. For a U.S. owner, AWS creates project Regional resources in `us-east-2` by default.
+
+Open the new `AIRSProduction` project in the AWS Management Console, start CloudShell, clone/check out this branch, and run:
 
 ```sh
-bash infra/bootstrap/create-airs-production-account.sh
+aws sts get-caller-identity --query Account --output text
+export AIRS_AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+bash infra/bootstrap/aws-bootstrap.sh
 ```
 
-The default member-account root email is `developer+airs-prod@10573llc.com`. You may pass another unique mailbox/address as the first argument.
+The bootstrap runs entirely inside the AIRS project account. It creates that account's private Terraform state bucket, GitHub OIDC provider, repository/main-branch-scoped deployment role, and AIRS deployment policy. It does not create RDS, ECS, ALB, Cognito, NAT gateways, or any other workload resources.
 
-The script is idempotent. It:
-
-1. verifies that the caller is in management account `509581811007`;
-2. creates/reuses a **Production** OU;
-3. creates/reuses the **AIRS Production** member account;
-4. moves the member account into the Production OU;
-5. assumes `OrganizationAccountAccessRole` in that member account; and
-6. runs `aws-bootstrap.sh` there.
-
-The member-account bootstrap creates its own private Terraform-state bucket, GitHub OIDC provider, repository-scoped deployment role, and AIRS deployment policy. No long-lived AWS keys are stored in GitHub.
-
-The script prints:
-
-`AIRS_PRODUCTION_ACCOUNT_READY=<12-digit-account-id>`
-
-That member account ID is the value supplied to the GitHub production deployment workflow.
+Keep the printed 12-digit account ID. It is supplied to the GitHub production deployment workflow and is also checked by Terraform before provisioning.
 
 ## Production topology
 

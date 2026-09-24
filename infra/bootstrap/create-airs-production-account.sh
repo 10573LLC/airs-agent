@@ -77,7 +77,7 @@ echo "AIRS Production account: $ACCOUNT_ID"
 echo "Root email: $ACCOUNT_EMAIL"
 echo "Production OU: $OU_ID"
 
-for attempt in $(seq 1 18); do
+for attempt in $(seq 1 60); do
   if CREDS=$(aws sts assume-role \
     --role-arn "arn:aws:iam::${ACCOUNT_ID}:role/${MEMBER_ROLE}" \
     --role-session-name airs-bootstrap \

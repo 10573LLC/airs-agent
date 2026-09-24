@@ -1,3 +1,8 @@
+variable "expected_account_id" {
+  type        = string
+  description = "Dedicated AIRS production member account ID."
+}
+
 variable "aws_region" {
   type    = string
   default = "us-east-2"

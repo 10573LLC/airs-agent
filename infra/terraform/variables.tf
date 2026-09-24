@@ -74,5 +74,5 @@ variable "budget_email" {
 
 variable "monthly_budget_usd" {
   type    = number
-  default = 75
+  default = 275
 }

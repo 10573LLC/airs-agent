@@ -7,7 +7,6 @@ output "database_endpoint" { value = aws_db_instance.main.address }
 output "app_security_group_id" { value = aws_security_group.app.id }
 output "migration_task_definition_arn" { value = aws_ecs_task_definition.migration.arn }
 output "app_service_name" { value = try(aws_ecs_service.app[0].name, "") }
-output "maintenance_service_name" { value = try(aws_ecs_service.maintenance[0].name, "") }
 output "alb_dns_name" { value = aws_lb.app.dns_name }
 output "acm_certificate_arn" { value = aws_acm_certificate.app.arn }
 output "acm_dns_validation" {

@@ -141,8 +141,8 @@ resource "aws_ecs_task_definition" "app" {
   family                   = var.app_name
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = "512"
-  memory                   = "1024"
+  cpu                      = tostring(var.task_cpu)
+  memory                   = tostring(var.task_memory)
   execution_role_arn       = aws_iam_role.execution.arn
   task_role_arn            = aws_iam_role.task.arn
 
@@ -189,6 +189,22 @@ resource "aws_ecs_task_definition" "app" {
         "awslogs-stream-prefix" = "app"
       }
     }
+  },
+  {
+    name      = "maintenance"
+    image     = var.container_image
+    essential = false
+    user      = "node"
+    command   = ["/bin/sh", "-c", "while true; do node scripts/expire-incident-state.mjs || echo sweep-failed; sleep 60; done"]
+    secrets   = [{ name = "AIRS_MAINTENANCE_DATABASE_URL", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:AIRS_MAINTENANCE_DATABASE_URL::" }]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        "awslogs-group"         = aws_cloudwatch_log_group.app.name
+        "awslogs-region"        = var.aws_region
+        "awslogs-stream-prefix" = "maintenance"
+      }
+    }
   }])
 }
 
@@ -231,38 +247,6 @@ resource "aws_ecs_task_definition" "migration" {
   }])
 }
 
-resource "aws_ecs_task_definition" "maintenance" {
-  family                   = "${var.app_name}-maintenance"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
-
-  runtime_platform {
-    cpu_architecture        = "X86_64"
-    operating_system_family = "LINUX"
-  }
-
-  container_definitions = jsonencode([{
-    name      = "maintenance"
-    image     = var.container_image
-    essential = true
-    user      = "node"
-    command   = ["/bin/sh", "-c", "while true; do node scripts/expire-incident-state.mjs || echo sweep-failed; sleep 60; done"]
-    secrets   = [{ name = "AIRS_MAINTENANCE_DATABASE_URL", valueFrom = "${aws_secretsmanager_secret.runtime.arn}:AIRS_MAINTENANCE_DATABASE_URL::" }]
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.app.name
-        "awslogs-region"        = var.aws_region
-        "awslogs-stream-prefix" = "maintenance"
-      }
-    }
-  }])
-}
-
 resource "aws_ecs_service" "app" {
   count = var.enable_https ? 1 : 0
 
@@ -281,9 +265,9 @@ resource "aws_ecs_service" "app" {
   }
 
   network_configuration {
-    subnets          = aws_subnet.private[*].id
+    subnets          = aws_subnet.public[*].id
     security_groups  = [aws_security_group.app.id]
-    assign_public_ip = false
+    assign_public_ip = true
   }
 
   load_balancer {
@@ -295,23 +279,3 @@ resource "aws_ecs_service" "app" {
   depends_on = [aws_lb_listener.https]
 }
 
-resource "aws_ecs_service" "maintenance" {
-  count = var.enable_https ? 1 : 0
-
-  name            = "${var.app_name}-maintenance"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.maintenance.arn
-  desired_count   = var.deploy_services ? 1 : 0
-  launch_type     = "FARGATE"
-
-  deployment_circuit_breaker {
-    enable   = true
-    rollback = true
-  }
-
-  network_configuration {
-    subnets          = aws_subnet.private[*].id
-    security_groups  = [aws_security_group.app.id]
-    assign_public_ip = false
-  }
-}

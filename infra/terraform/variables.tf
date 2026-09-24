@@ -65,10 +65,6 @@ variable "public_base_url" {
   default = "https://app.airsagent.com"
 }
 
-variable "cognito_domain_prefix" {
-  type    = string
-  default = "airs-agent-prod-509581811007"
-}
 
 variable "budget_email" {
   type    = string

@@ -20,12 +20,12 @@ variable "vpc_cidr" {
 
 variable "db_instance_class" {
   type    = string
-  default = "db.t4g.small"
+  default = "db.t4g.micro"
 }
 
 variable "db_multi_az" {
   type    = bool
-  default = true
+  default = false
 }
 
 variable "container_image" {
@@ -41,7 +41,7 @@ variable "ops_image" {
 variable "deploy_services" {
   type        = bool
   default     = false
-  description = "Enable app and maintenance services only after database bootstrap succeeds."
+  description = "Enable AIRS only after database bootstrap succeeds."
 }
 
 variable "enable_https" {
@@ -52,7 +52,17 @@ variable "enable_https" {
 
 variable "desired_count" {
   type    = number
-  default = 2
+  default = 1
+}
+
+variable "task_cpu" {
+  type    = number
+  default = 256
+}
+
+variable "task_memory" {
+  type    = number
+  default = 1024
 }
 
 variable "domain_name" {
@@ -65,7 +75,6 @@ variable "public_base_url" {
   default = "https://app.airsagent.com"
 }
 
-
 variable "budget_email" {
   type    = string
   default = "developer@10573llc.com"
@@ -73,5 +82,5 @@ variable "budget_email" {
 
 variable "monthly_budget_usd" {
   type    = number
-  default = 100
+  default = 75
 }

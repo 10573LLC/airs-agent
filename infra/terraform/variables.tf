@@ -12,3 +12,6 @@ variable "certificate_arn" {
   default     = ""
 }
 variable "desired_count" { type = number; default = 1 }
+
+variable "budget_email" { type = string; default = "developer@10573llc.com" }
+variable "monthly_budget_usd" { type = number; default = 100 }

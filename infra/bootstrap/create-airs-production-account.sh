@@ -1,15 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MANAGEMENT_ACCOUNT_ID="509581811007"
 ACCOUNT_NAME="AIRS Production"
 ACCOUNT_EMAIL="${1:-developer+airs-prod@10573llc.com}"
 MEMBER_ROLE="OrganizationAccountAccessRole"
 
-test "$(aws sts get-caller-identity --query Account --output text)" = "$MANAGEMENT_ACCOUNT_ID" || {
-  echo "Run this only from the 10573 LLC Organizations management account." >&2
+CURRENT_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+MANAGEMENT_ACCOUNT_ID=$(aws organizations describe-organization --query 'Organization.MasterAccountId' --output text)
+
+if [ -z "$MANAGEMENT_ACCOUNT_ID" ] || [ "$MANAGEMENT_ACCOUNT_ID" = "None" ]; then
+  echo "Could not determine the AWS Organizations management account." >&2
   exit 2
-}
+fi
+
+if [ "$CURRENT_ACCOUNT_ID" != "$MANAGEMENT_ACCOUNT_ID" ]; then
+  echo "Refusing: this command must run from the AWS Organizations management account." >&2
+  echo "Current account:    $CURRENT_ACCOUNT_ID" >&2
+  echo "Management account: $MANAGEMENT_ACCOUNT_ID" >&2
+  exit 2
+fi
 
 ROOT_ID=$(aws organizations list-roots --query 'Roots[0].Id' --output text)
 OU_ID=$(aws organizations list-organizational-units-for-parent \

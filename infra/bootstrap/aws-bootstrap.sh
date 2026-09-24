@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ACCOUNT_ID="${AIRS_AWS_ACCOUNT_ID:?set AIRS_AWS_ACCOUNT_ID to the dedicated AIRS member account}"
+ACCOUNT_ID="${AIRS_AWS_ACCOUNT_ID:-$(aws sts get-caller-identity --query Account --output text)}"
 REGION="us-east-2"
 ROLE_NAME="AIRSAgentGitHubDeployRole"
 STATE_BUCKET="airs-agent-tfstate-${ACCOUNT_ID}"
 OIDC_ARN="arn:aws:iam::${ACCOUNT_ID}:oidc-provider/token.actions.githubusercontent.com"
 
 test "$(aws sts get-caller-identity --query Account --output text)" = "$ACCOUNT_ID" || {
-  echo "Refusing: authenticated AWS account is not AIRS member account $ACCOUNT_ID" >&2
+  echo "Refusing: authenticated AWS account does not match AIRS_AWS_ACCOUNT_ID=$ACCOUNT_ID" >&2
   exit 2
 }
 
@@ -83,7 +83,7 @@ fi
 
 aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn "$POLICY_ARN"
 
-echo "AIRS member-account bootstrap complete"
+echo "AIRS AWS bootstrap complete"
 echo "Account: $ACCOUNT_ID"
 echo "State: s3://$STATE_BUCKET"
 echo "Role: arn:aws:iam::${ACCOUNT_ID}:role/$ROLE_NAME"

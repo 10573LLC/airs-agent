@@ -1,6 +1,17 @@
-resource "random_password" "app_db" { length = 32; special = false }
-resource "random_password" "maintenance_db" { length = 32; special = false }
-resource "random_password" "session" { length = 64; special = false }
+resource "random_password" "app_db" {
+  length  = 32
+  special = false
+}
+
+resource "random_password" "maintenance_db" {
+  length  = 32
+  special = false
+}
+
+resource "random_password" "session" {
+  length  = 64
+  special = false
+}
 
 locals {
   rds_ssl_query   = "?sslmode=verify-full&sslrootcert=/app/certs/rds-global.pem"

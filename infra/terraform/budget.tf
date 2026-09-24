@@ -7,7 +7,7 @@ resource "aws_budgets_budget" "airs" {
 
   notification {
     comparison_operator        = "GREATER_THAN"
-    threshold                  = 40
+    threshold                  = 75
     threshold_type             = "PERCENTAGE"
     notification_type          = "FORECASTED"
     subscriber_email_addresses = [var.budget_email]
@@ -15,7 +15,7 @@ resource "aws_budgets_budget" "airs" {
 
   notification {
     comparison_operator        = "GREATER_THAN"
-    threshold                  = 80
+    threshold                  = 90
     threshold_type             = "PERCENTAGE"
     notification_type          = "ACTUAL"
     subscriber_email_addresses = [var.budget_email]

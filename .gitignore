@@ -43,5 +43,4 @@ pgdata/
 .terraform/
 *.tfstate
 *.tfstate.*
-.terraform.lock.hcl
 infra/aws-account-id.txt

@@ -42,14 +42,33 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
+resource "aws_eip" "nat" {
+  count  = 2
+  domain = "vpc"
+  tags   = { Name = "${var.app_name}-nat-eip-${count.index + 1}" }
+}
+
+resource "aws_nat_gateway" "main" {
+  count         = 2
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+  depends_on    = [aws_internet_gateway.main]
+  tags          = { Name = "${var.app_name}-nat-${count.index + 1}" }
+}
+
 resource "aws_route_table" "private" {
+  count  = 2
   vpc_id = aws_vpc.main.id
-  tags = { Name = "${var.app_name}-private-rt" }
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main[count.index].id
+  }
+  tags = { Name = "${var.app_name}-private-rt-${count.index + 1}" }
 }
 resource "aws_route_table_association" "private" {
-  count = 2
-  subnet_id = aws_subnet.private[count.index].id
-  route_table_id = aws_route_table.private.id
+  count          = 2
+  subnet_id      = aws_subnet.private[count.index].id
+  route_table_id = aws_route_table.private[count.index].id
 }
 
 resource "aws_security_group" "alb" {
@@ -76,35 +95,29 @@ resource "aws_security_group" "db" {
   lifecycle { create_before_destroy = true }
 }
 
-resource "aws_security_group" "vpce" {
-  name_prefix = "${var.app_name}-vpce-"
-  vpc_id = aws_vpc.main.id
-  ingress { from_port = 443; to_port = 443; protocol = "tcp"; security_groups = [aws_security_group.app.id] }
-  egress { from_port = 0; to_port = 0; protocol = "-1"; cidr_blocks = ["0.0.0.0/0"] }
-  lifecycle { create_before_destroy = true }
-}
-
 resource "aws_vpc_endpoint" "s3" {
   vpc_id = aws_vpc.main.id
   service_name = "com.amazonaws.${var.aws_region}.s3"
   vpc_endpoint_type = "Gateway"
-  route_table_ids = [aws_route_table.private.id]
+  route_table_ids = aws_route_table.private[*].id
 }
 
-resource "aws_vpc_endpoint" "interface" {
-  for_each = toset(["ecr.api", "ecr.dkr", "logs", "secretsmanager"])
-  vpc_id = aws_vpc.main.id
-  service_name = "com.amazonaws.${var.aws_region}.${each.value}"
-  vpc_endpoint_type = "Interface"
-  subnet_ids = aws_subnet.private[*].id
-  security_group_ids = [aws_security_group.vpce.id]
-  private_dns_enabled = true
-}
 
 resource "aws_ecr_repository" "app" {
-  name = "airs-agent"
+  name                 = "airs-agent"
   image_tag_mutability = "IMMUTABLE"
   image_scanning_configuration { scan_on_push = true }
+}
+resource "aws_ecr_lifecycle_policy" "app" {
+  repository = aws_ecr_repository.app.name
+  policy = jsonencode({
+    rules = [{
+      rulePriority = 1
+      description  = "Keep the newest 30 immutable AIRS images"
+      selection    = { tagStatus = "any", countType = "imageCountMoreThan", countNumber = 30 }
+      action       = { type = "expire" }
+    }]
+  })
 }
 
 resource "aws_cloudwatch_log_group" "app" {
@@ -128,6 +141,12 @@ resource "aws_secretsmanager_secret_version" "db_owner" {
   secret_string = random_password.db_owner.result
 }
 
+resource "aws_db_parameter_group" "main" {
+  name   = "${var.app_name}-postgres16"
+  family = "postgres16"
+  parameter { name = "rds.force_ssl"; value = "1"; apply_method = "pending-reboot" }
+}
+
 resource "aws_db_instance" "main" {
   identifier = "${var.app_name}-db"
   engine = "postgres"
@@ -139,9 +158,11 @@ resource "aws_db_instance" "main" {
   db_name = "airs"
   username = "airs_owner"
   password = random_password.db_owner.result
-  db_subnet_group_name = aws_db_subnet_group.main.name
+  db_subnet_group_name   = aws_db_subnet_group.main.name
+  parameter_group_name   = aws_db_parameter_group.main.name
   vpc_security_group_ids = [aws_security_group.db.id]
   publicly_accessible = false
+  multi_az            = var.db_multi_az
   storage_encrypted = true
   backup_retention_period = 14
   deletion_protection = true

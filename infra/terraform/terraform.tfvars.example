@@ -1,4 +1,6 @@
-# Non-secret example only. Real release image URIs are supplied by the deployment workflow.
+# Non-secret example only. Set this to the dedicated AIRS Production member account.
+expected_account_id = "123456789012"
+
 aws_region         = "us-east-2"
 app_name           = "airs-agent-prod"
 vpc_cidr           = "10.73.0.0/16"
@@ -11,9 +13,10 @@ monthly_budget_usd = 100
 budget_email       = "developer@10573llc.com"
 
 # Deliberately false for the first foundation pass. Do not enable until the
-# ACM validation CNAME exists in Cloudflare and the certificate status is ISSUED.
+# ACM validation CNAME exists in Cloudflare and the certificate is ISSUED.
 deploy_services = false
 enable_https    = false
 
+# Deployment workflow replaces these placeholders with immutable ECR images.
 container_image = "public.ecr.aws/amazonlinux/amazonlinux:2023"
 ops_image       = "public.ecr.aws/amazonlinux/amazonlinux:2023"

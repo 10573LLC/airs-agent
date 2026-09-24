@@ -23,6 +23,9 @@ if ! aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
   aws iam create-policy --policy-name AIRSAgentGitHubDeployPolicy     --policy-document file://infra/bootstrap/github-deploy-policy.json >/dev/null
 fi
 aws iam attach-role-policy --role-name "$ROLE_NAME" --policy-arn "$POLICY_ARN"
+aws iam update-assume-role-policy \
+  --role-name "$ROLE_NAME" \
+  --policy-document file://infra/bootstrap/github-oidc-trust.json
 
 echo "AIRS AWS bootstrap complete"
 echo "State: s3://$STATE_BUCKET"

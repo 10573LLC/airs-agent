@@ -64,6 +64,26 @@ jobs:
         run: |
           terraform apply -input=false -auto-approve             -var='container_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='ops_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='deploy_services=false'             -var='enable_https=false'
 
+      - name: Configure restricted AIRS map key
+        run: |
+          RESTRICTIONS='{"AllowActions":["geo-maps:*"],"AllowResources":["arn:aws:geo-maps:us-east-2::provider/default"],"AllowReferers":["https://app.airsagent.com/*"]}'
+          if aws location describe-key --region "$AWS_REGION" --key-name airs-agent-prod-maps >/dev/null 2>&1; then
+            aws location update-key \
+              --region "$AWS_REGION" \
+              --key-name airs-agent-prod-maps \
+              --restrictions "$RESTRICTIONS" \
+              --no-expiry \
+              --force-update >/dev/null
+          else
+            aws location create-key \
+              --region "$AWS_REGION" \
+              --key-name airs-agent-prod-maps \
+              --description "AIRS Agent production browser map key" \
+              --restrictions "$RESTRICTIONS" \
+              --no-expiry \
+              --tags Application=AIRS-Agent,Environment=Production,Owner=10573LLC >/dev/null
+          fi
+
       - name: Build and push immutable runtime and ops images
         id: image
         env:
@@ -77,8 +97,22 @@ jobs:
           RUNTIME="$REGISTRY/$REPOSITORY:sha-$SHA"
           OPS="$REGISTRY/$REPOSITORY:ops-sha-$SHA"
 
-          docker build --target runtime -t "$RUNTIME" .
-          docker build --target ops -t "$OPS" .
+          MAP_KEY=$(aws location describe-key \
+            --region "$AWS_REGION" \
+            --key-name airs-agent-prod-maps \
+            --query 'Key' \
+            --output text)
+          test -n "$MAP_KEY"
+          MAP_STYLE_URL="https://maps.geo.us-east-2.amazonaws.com/v2/styles/Standard/descriptor?key=$MAP_KEY"
+
+          docker build \
+            --target runtime \
+            --build-arg VITE_MAP_STYLE_URL="$MAP_STYLE_URL" \
+            -t "$RUNTIME" .
+          docker build \
+            --target ops \
+            --build-arg VITE_MAP_STYLE_URL="$MAP_STYLE_URL" \
+            -t "$OPS" .
           docker push "$RUNTIME"
           docker push "$OPS"
 

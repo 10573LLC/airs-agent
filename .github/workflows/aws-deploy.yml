@@ -25,6 +25,10 @@ jobs:
   deploy:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-2
+      TF_VAR_expected_account_id: ${{ inputs.aws_account_id }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -33,8 +37,9 @@ jobs:
           role-to-assume: arn:aws:iam::${{ inputs.aws_account_id }}:role/AIRSAgentGitHubDeployRole
           aws-region: us-east-2
 
-      - name: Verify target account
-        run: test "$(aws sts get-caller-identity --query Account --output text)" = "${{ inputs.aws_account_id }}"
+      - name: Verify dedicated AIRS account
+        run: |
+          test "$(aws sts get-caller-identity --query Account --output text)" = "${{ inputs.aws_account_id }}"
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -45,24 +50,19 @@ jobs:
           npm ci --legacy-peer-deps
           npm run typecheck
           npm test
+          npm run build
 
       - name: Terraform init and validate
         working-directory: infra/terraform
         run: |
-          terraform init \
-            -backend-config="bucket=airs-agent-tfstate-${{ inputs.aws_account_id }}" \
-            -backend-config="key=production/terraform.tfstate" \
-            -backend-config="region=us-east-2" \
-            -backend-config="encrypt=true" \
-            -backend-config="use_lockfile=true"
+          terraform init             -backend-config="bucket=airs-agent-tfstate-${{ inputs.aws_account_id }}"             -backend-config="key=production/terraform.tfstate"             -backend-config="region=us-east-2"             -backend-config="encrypt=true"             -backend-config="use_lockfile=true"
           terraform fmt -check -recursive
           terraform validate
 
       - name: Provision foundation with services stopped
         working-directory: infra/terraform
         run: |
-          terraform apply -input=false -auto-approve             -var='container_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='ops_image=public.ecr.aws/amazonlinux/amazonlinux:2023' \
-            -var="expected_account_id=${{ inputs.aws_account_id }}"             -var='deploy_services=false'             -var='enable_https=false'
+          terraform apply -input=false -auto-approve             -var='container_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='ops_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='deploy_services=false'             -var='enable_https=false'
 
       - name: Build and push immutable runtime and ops images
         id: image
@@ -71,17 +71,21 @@ jobs:
           REPOSITORY: airs-agent
           SHA: ${{ github.sha }}
         run: |
-          aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+          aws ecr get-login-password --region "$AWS_REGION" |
+            docker login --username AWS --password-stdin "$REGISTRY"
+
           RUNTIME="$REGISTRY/$REPOSITORY:sha-$SHA"
           OPS="$REGISTRY/$REPOSITORY:ops-sha-$SHA"
+
           docker build --target runtime -t "$RUNTIME" .
           docker build --target ops -t "$OPS" .
           docker push "$RUNTIME"
           docker push "$OPS"
+
           echo "runtime=$RUNTIME" >> "$GITHUB_OUTPUT"
           echo "ops=$OPS" >> "$GITHUB_OUTPUT"
 
-      - name: Register immutable AIRS images with services stopped
+      - name: Register immutable images with services stopped
         working-directory: infra/terraform
         env:
           RUNTIME_IMAGE: ${{ steps.image.outputs.runtime }}
@@ -96,12 +100,16 @@ jobs:
           SUBNETS=$(terraform output -json private_subnet_ids | jq -r 'join(",")')
           SG=$(terraform output -raw app_security_group_id)
           TASKDEF=$(terraform output -raw migration_task_definition_arn)
-          TASK=$(aws ecs run-task             --cluster "$CLUSTER"             --task-definition "$TASKDEF"             --launch-type FARGATE             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}"             --query 'tasks[0].taskArn' --output text)
+
+          TASK=$(aws ecs run-task             --region "$AWS_REGION"             --cluster "$CLUSTER"             --task-definition "$TASKDEF"             --launch-type FARGATE             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}"             --query 'tasks[0].taskArn'             --output text)
+
           test "$TASK" != "None"
-          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK"
-          EXIT=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK" --query 'tasks[0].containers[0].exitCode' --output text)
+          aws ecs wait tasks-stopped --region "$AWS_REGION" --cluster "$CLUSTER" --tasks "$TASK"
+
+          EXIT=$(aws ecs describe-tasks             --region "$AWS_REGION"             --cluster "$CLUSTER"             --tasks "$TASK"             --query 'tasks[0].containers[0].exitCode'             --output text)
+
           if [ "$EXIT" != "0" ]; then
-            aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK"               --query 'tasks[0].[stopCode,stoppedReason,containers[0].reason]' --output text
+            aws ecs describe-tasks               --region "$AWS_REGION"               --cluster "$CLUSTER"               --tasks "$TASK"               --query 'tasks[0].[stopCode,stoppedReason,containers[0].reason]'               --output text
             exit 1
           fi
 
@@ -110,7 +118,7 @@ jobs:
         working-directory: infra/terraform
         run: |
           CERT=$(terraform output -raw acm_certificate_arn)
-          STATUS=$(aws acm describe-certificate --certificate-arn "$CERT" --query 'Certificate.Status' --output text)
+          STATUS=$(aws acm describe-certificate             --region "$AWS_REGION"             --certificate-arn "$CERT"             --query 'Certificate.Status'             --output text)
           echo "ACM status: $STATUS"
           test "$STATUS" = "ISSUED"
 
@@ -128,16 +136,19 @@ jobs:
         working-directory: infra/terraform
         run: |
           CLUSTER=$(terraform output -raw ecs_cluster_name)
-          aws ecs wait services-stable --cluster "$CLUSTER" --services "$(terraform output -raw app_service_name)"
-          aws ecs wait services-stable --cluster "$CLUSTER" --services "$(terraform output -raw maintenance_service_name)"
+          aws ecs wait services-stable             --region "$AWS_REGION"             --cluster "$CLUSTER"             --services "$(terraform output -raw app_service_name)"
+          aws ecs wait services-stable             --region "$AWS_REGION"             --cluster "$CLUSTER"             --services "$(terraform output -raw maintenance_service_name)"
 
       - name: Deployment handoff
         working-directory: infra/terraform
         run: |
+          echo "AIRS account: ${{ inputs.aws_account_id }}"
           echo "ALB DNS: $(terraform output -raw alb_dns_name)"
           echo "ACM certificate: $(terraform output -raw acm_certificate_arn)"
           echo "ACM DNS validation records:"
           terraform output -json acm_dns_validation
           echo "Cognito user pool: $(terraform output -raw cognito_user_pool_id)"
+          echo "Cognito client: $(terraform output -raw cognito_client_id)"
+          echo "Cognito domain: $(terraform output -raw cognito_domain)"
           echo "Runtime image: ${{ steps.image.outputs.runtime }}"
           echo "Ops image: ${{ steps.image.outputs.ops }}"

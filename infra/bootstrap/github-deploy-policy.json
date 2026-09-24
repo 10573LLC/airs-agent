@@ -85,7 +85,13 @@
         "rds:DeleteDBSnapshot",
         "tag:GetResources",
         "tag:TagResources",
-        "tag:UntagResources"
+        "tag:UntagResources",
+        "geo:CreateKey",
+        "geo:DescribeKey",
+        "geo:UpdateKey",
+        "geo:ListKeys",
+        "geo:TagResource",
+        "geo:UntagResource"
       ],
       "Resource": "*"
     },

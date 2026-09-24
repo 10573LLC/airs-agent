@@ -43,9 +43,9 @@ resource "aws_iam_role" "execution" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "ecs-tasks.amazonaws.com" }
-      Action = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
@@ -56,13 +56,13 @@ resource "aws_iam_role_policy" "execution" {
     Statement = [
       { Effect = "Allow", Action = ["ecr:GetAuthorizationToken"], Resource = "*" },
       {
-        Effect = "Allow"
-        Action = ["ecr:BatchCheckLayerAvailability", "ecr:GetDownloadUrlForLayer", "ecr:BatchGetImage"]
+        Effect   = "Allow"
+        Action   = ["ecr:BatchCheckLayerAvailability", "ecr:GetDownloadUrlForLayer", "ecr:BatchGetImage"]
         Resource = aws_ecr_repository.app.arn
       },
       {
-        Effect = "Allow"
-        Action = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
         Resource = "${aws_cloudwatch_log_group.app.arn}:*"
       },
       {
@@ -162,10 +162,10 @@ resource "aws_ecs_task_definition" "app" {
   }
 
   container_definitions = jsonencode([{
-    name      = "app"
-    image     = var.container_image
-    essential = true
-    user      = "node"
+    name         = "app"
+    image        = var.container_image
+    essential    = true
+    user         = "node"
     portMappings = [{ containerPort = 3000, hostPort = 3000, protocol = "tcp", appProtocol = "http" }]
     environment = [
       { name = "NODE_ENV", value = "production" },

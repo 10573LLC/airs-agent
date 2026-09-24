@@ -109,17 +109,6 @@ resource "aws_lb_target_group" "app" {
   }
 }
 
-resource "aws_lb_listener" "http_forward" {
-  count             = var.enable_https ? 0 : 1
-  load_balancer_arn = aws_lb.app.arn
-  port              = 80
-  protocol          = "HTTP"
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
-  }
-}
-
 resource "aws_lb_listener" "http_redirect" {
   count             = var.enable_https ? 1 : 0
   load_balancer_arn = aws_lb.app.arn
@@ -275,10 +264,12 @@ resource "aws_ecs_task_definition" "maintenance" {
 }
 
 resource "aws_ecs_service" "app" {
+  count = var.enable_https ? 1 : 0
+
   name                               = "${var.app_name}-app"
   cluster                            = aws_ecs_cluster.main.id
   task_definition                    = aws_ecs_task_definition.app.arn
-  desired_count                      = var.deploy_services && var.enable_https ? var.desired_count : 0
+  desired_count                      = var.deploy_services ? var.desired_count : 0
   launch_type                        = "FARGATE"
   health_check_grace_period_seconds  = 90
   deployment_minimum_healthy_percent = 50
@@ -301,14 +292,16 @@ resource "aws_ecs_service" "app" {
     container_port   = 3000
   }
 
-  depends_on = [aws_lb_listener.http_forward, aws_lb_listener.http_redirect, aws_lb_listener.https]
+  depends_on = [aws_lb_listener.https]
 }
 
 resource "aws_ecs_service" "maintenance" {
+  count = var.enable_https ? 1 : 0
+
   name            = "${var.app_name}-maintenance"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.maintenance.arn
-  desired_count   = var.deploy_services && var.enable_https ? 1 : 0
+  desired_count   = var.deploy_services ? 1 : 0
   launch_type     = "FARGATE"
 
   deployment_circuit_breaker {

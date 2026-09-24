@@ -45,7 +45,7 @@ It prints:
 
 `AIRS_PRODUCTION_ACCOUNT_READY=<12-digit-account-id>`
 
-Creating the organization, OU, and member account does not itself create workload charges. citeturn863517search1
+Creating the organization, OU, and member account does not itself create workload charges.
 
 ## Production topology
 
@@ -58,7 +58,7 @@ The ECS task contains two containers:
 
 The task receives a public IPv4 address only for outbound internet/AWS API access. Its security group does not permit inbound internet traffic; port 3000 accepts traffic only from the ALB security group. RDS remains in private subnets and accepts PostgreSQL only from the ECS security group.
 
-Avoiding NAT gateways is deliberate: AWS charges NAT Gateway by the hour plus data processing, and the published Ohio example uses $0.045 per gateway-hour before data charges. citeturn914000search1
+Avoiding NAT gateways is deliberate: AWS charges NAT Gateway by the hour plus data processing.
 
 ## Deployment sequence
 
@@ -80,4 +80,4 @@ When AIRS has real production demand, increase availability deliberately:
 - move ECS back to private subnets and add per-AZ egress if the risk/cost tradeoff warrants it
 - enable Container Insights or other monitoring when the operational value justifies the telemetry cost
 
-Fargate has no upfront cost and bills requested CPU/memory while tasks run; 0.25 vCPU supports 0.5–2 GiB memory. citeturn582676view0
+Fargate has no upfront cost and bills requested CPU/memory while tasks run; 0.25 vCPU supports 0.5–2 GiB memory.

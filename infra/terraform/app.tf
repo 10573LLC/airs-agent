@@ -19,7 +19,8 @@ locals {
   app_url         = "postgresql://airs_app:${urlencode(random_password.app_db.result)}@${aws_db_instance.main.address}:5432/airs${local.rds_ssl_query}"
   maintenance_url = "postgresql://airs_maintenance:${urlencode(random_password.maintenance_db.result)}@${aws_db_instance.main.address}:5432/airs${local.rds_ssl_query}"
   cognito_issuer  = "https://cognito-idp.${var.aws_region}.amazonaws.com/${aws_cognito_user_pool.app.id}"
-  cognito_domain  = "https://${var.cognito_domain_prefix}.auth.${var.aws_region}.amazoncognito.com"
+  cognito_domain_prefix = "airs-agent-prod-${var.expected_account_id}"
+  cognito_domain        = "https://${local.cognito_domain_prefix}.auth.${var.aws_region}.amazoncognito.com"
 }
 
 resource "aws_secretsmanager_secret" "runtime" {

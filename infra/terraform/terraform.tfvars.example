@@ -9,7 +9,7 @@ db_multi_az        = false
 desired_count      = 2
 domain_name        = "app.airsagent.com"
 public_base_url    = "https://app.airsagent.com"
-monthly_budget_usd = 75
+monthly_budget_usd = 275
 budget_email       = "developer@10573llc.com"
 
 # Deliberately false for the first foundation pass. Do not enable until the

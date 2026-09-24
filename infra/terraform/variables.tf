@@ -3,6 +3,7 @@ variable "app_name" { type = string; default = "airs-agent-prod" }
 variable "vpc_cidr" { type = string; default = "10.73.0.0/16" }
 variable "db_instance_class" { type = string; default = "db.t4g.small" }
 variable "container_image" { type = string; description = "Immutable ECR image URI for AIRS." }
+variable "deploy_services" { type = bool; default = false; description = "Enable app and maintenance tasks only after DB bootstrap succeeds." }
 variable "public_base_url" { type = string; description = "Canonical HTTPS AIRS origin." }
 
 variable "certificate_arn" {

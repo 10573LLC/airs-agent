@@ -75,9 +75,9 @@ The deployment keeps the same operational model as the blocked account:
 
 This account does not rely on promotional credits. The architecture is monitored rather than silently redesigned.
 
-The default AWS Budget is USD 75/month. It sends a forecast alert at 40%, an actual-cost alert at 80%, and an actual-cost alert at 100%. The alerts never stop AIRS automatically.
+The default AWS Budget target is USD 275/month. It sends a forecast alert at 75%, an actual-cost alert at 90%, and an actual-cost alert at 100%. The alerts never stop AIRS automatically.
 
-The preserved topology has several always-on billable components, especially NAT gateways, interface endpoints, ALB, RDS, and Fargate. It can exceed USD 75/month depending on runtime and traffic. If spend starts moving outside the desired USD 30–75 management range, reductions will be proposed explicitly rather than changing the architecture without approval.
+The preserved topology has several always-on billable components, especially NAT gateways, interface endpoints, ALB, RDS, and Fargate. It can exceed USD 75/month depending on runtime and traffic. The USD 275 target is sized to the estimated steady-state production architecture with modest traffic and includes headroom above the expected baseline. Cost reductions will be proposed explicitly rather than changing the architecture without approval.
 
 ## Security groups
 

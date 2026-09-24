@@ -1,86 +1,83 @@
 # AIRS Agent AWS production infrastructure
 
-Organization management account: `509581811007`  
-Workload account: dedicated **AIRS Production** member account (created before deployment)  
 Primary region: `us-east-2` (Ohio)
 
-AIRS production workloads do **not** run in the AWS Organizations management account. The management account is used only to create/govern the dedicated member account. TRACE will receive a separate production member account and separate infrastructure.
+This deployment assumes the traditional AWS account model:
 
-## Account bootstrap
+- the new 10573 LLC account is the AWS Organizations **management account**
+- **AIRS Production** is a separate member account
+- TRACE will later receive its own member account
+- AWS Organizations itself has no additional charge; only resources running inside the accounts are billed
 
-This AWS organization was created through the new AWS **projects** experience. A project already contains one AWS account, and AWS manages the organization management account and the human-access controls for that organization. Do not create the AIRS account with `organizations create-account` or try to create an OU from a project account.
+## Cost-conscious launch profile
 
-Create a new project named `AIRSProduction` in **AWS Settings → Project → Create project**. For a U.S. owner, AWS creates project Regional resources in `us-east-2` by default.
+The initial AIRS production profile is intentionally lean because this account does not have promotional credits:
 
-Open the new `AIRSProduction` project in the AWS Management Console, start CloudShell, clone/check out this branch, and run:
+- one AIRS Fargate task, not two
+- 0.25 vCPU / 1 GiB task size
+- the maintenance runner is a sidecar in the same Fargate task instead of a second always-on service
+- ECS uses a public IPv4 address for outbound access, but its security group permits inbound port 3000 **only from the ALB**
+- no NAT gateways and no paid interface VPC endpoints
+- PostgreSQL 16 RDS starts as `db.t4g.micro`, Single-AZ, 20 GiB gp3, 7-day backups
+- RDS remains private, encrypted, TLS-only, and deletion-protected
+- CloudWatch log retention is 30 days and Container Insights is disabled initially
+- one public ALB provides HTTPS, health checks, and stable routing
+- monthly budget alert defaults to USD 75; it is an alert, not a shutdown mechanism
+
+The lean profile is appropriate for launch/validation and low traffic. Multi-AZ RDS, a second application task, private ECS subnets with NAT, and richer observability can be enabled later when availability requirements justify their cost.
+
+## Create the AIRS member account
+
+After the new traditional AWS account is fully activated, secure the management-account root user with MFA and create an AWS Organization with all features enabled.
+
+Create a unique, monitored root email alias such as `aws-airs@10573llc.com`, then from management-account CloudShell:
 
 ```sh
-aws sts get-caller-identity --query Account --output text
-export AIRS_AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-bash infra/bootstrap/aws-bootstrap.sh
+git clone https://github.com/10573LLC/airs-agent.git
+cd airs-agent
+git checkout task/aws-prod-us-east-2-20260923
+bash infra/bootstrap/create-airs-production-account.sh aws-airs@10573llc.com
 ```
 
-The bootstrap runs entirely inside the AIRS project account. It creates that account's private Terraform state bucket, GitHub OIDC provider, repository/main-branch-scoped deployment role, and AIRS deployment policy. It does not create RDS, ECS, ALB, Cognito, NAT gateways, or any other workload resources.
+The script creates/reuses a `Production` OU, creates/reuses the `AIRS Production` member account, assumes `OrganizationAccountAccessRole`, and bootstraps GitHub OIDC plus Terraform state inside the AIRS account.
 
-Keep the printed 12-digit account ID. It is supplied to the GitHub production deployment workflow and is also checked by Terraform before provisioning.
+It prints:
+
+`AIRS_PRODUCTION_ACCOUNT_READY=<12-digit-account-id>`
+
+Creating the organization, OU, and member account does not itself create workload charges. citeturn863517search1
 
 ## Production topology
 
-- two Availability Zones
-- public ALB subnets
-- private ECS/RDS subnets
-- same-AZ NAT gateways for private workload egress and Cognito OAuth/JWKS traffic
-- S3 gateway endpoint
-- ECS/Fargate web service and dedicated maintenance service
-- one-off Fargate ops task for ledger-backed migrations/database bootstrap
-- private PostgreSQL 16 RDS, Multi-AZ by default, forced TLS, encrypted storage, 14-day backups, and deletion protection
-- immutable ECR images with lifecycle cleanup
-- Secrets Manager for runtime credentials
-- Cognito user pool with invitation-only administration and required TOTP MFA
-- ACM certificate request for `app.airsagent.com`
-- CloudWatch logs with explicit retention
-- cost alerts only; no automatic production shutdown
+Internet → HTTPS ALB → one ECS/Fargate task → private RDS PostgreSQL.
 
-## GitHub authentication
+The ECS task contains two containers:
 
-GitHub Actions authenticates into the dedicated AIRS member account through AWS OIDC. The trust policy allows only:
+- `app`: AIRS Node/Nitro service on port 3000
+- `maintenance`: the incident-expiration runner using the dedicated `airs_maintenance` database role
 
-`repo:10573LLC/airs-agent:ref:refs/heads/main`
+The task receives a public IPv4 address only for outbound internet/AWS API access. Its security group does not permit inbound internet traffic; port 3000 accepts traffic only from the ALB security group. RDS remains in private subnets and accepts PostgreSQL only from the ECS security group.
 
-Pull-request checks never receive AWS credentials. The production workflow also verifies the STS account ID and Terraform has a second account-ID guard.
+Avoiding NAT gateways is deliberate: AWS charges NAT Gateway by the hour plus data processing, and the published Ohio example uses $0.045 per gateway-hour before data charges. citeturn914000search1
 
 ## Deployment sequence
 
-1. Review and merge PR #2 to `main` only after all pull-request checks pass.
+1. Review and merge PR #2 to `main` after checks pass.
 2. Run **AIRS Production Deploy** with the AIRS member account ID and `activate_services=false`.
-3. The workflow provisions the foundation, requests ACM, builds/pushes immutable runtime and ops images, and runs the one-off RDS migration/bootstrap task while the public services remain stopped.
-4. Read the workflow handoff for the ACM DNS-validation CNAME and ALB DNS hostname.
-5. Add the ACM validation CNAME in Cloudflare as DNS-only and wait for ACM status `ISSUED`.
-6. Add `app.airsagent.com` as a DNS-only CNAME to the ALB hostname.
-7. Run **AIRS Production Deploy** again with the same account ID and `activate_services=true`.
-8. The workflow refuses activation unless ACM is `ISSUED`, enables HTTPS plus HTTP-to-HTTPS redirect, starts the application and maintenance services, and waits for ECS stability.
-9. Validate `https://app.airsagent.com/api/public/health`, Cognito/TOTP login, tenant/RLS isolation, audit behavior, maintenance, mapping, and the operational acceptance scenarios before production approval.
+3. The workflow provisions the foundation, requests ACM, builds/pushes immutable images, and runs the database migration/bootstrap task while the live AIRS service remains stopped.
+4. Add the ACM validation CNAME in Cloudflare and wait for ACM to report `ISSUED`.
+5. Point `app.airsagent.com` to the ALB as DNS-only.
+6. Run **AIRS Production Deploy** again with `activate_services=true`.
+7. Validate health, Cognito/TOTP login, tenant/RLS isolation, audit behavior, maintenance, mapping, and the operational acceptance scenarios.
 
-## Database bootstrap
+## Scaling later
 
-The ops image contains `psql`; the normal runtime image does not. RDS manages the owner password in Secrets Manager. The migration task receives that password only as `PGPASSWORD`, uses a password-free owner URL with `sslmode=verify-full`, applies the canonical migration ledger, assigns independent generated passwords to `airs_app` and `airs_maintenance`, and verifies zero pending migrations.
+When AIRS has real production demand, increase availability deliberately:
 
-Production never runs `db/seed/demo_orgs.sql`.
+- `desired_count = 2`
+- `db_multi_az = true`
+- increase RDS class from `db.t4g.micro`
+- move ECS back to private subnets and add per-AZ egress if the risk/cost tradeoff warrants it
+- enable Container Insights or other monitoring when the operational value justifies the telemetry cost
 
-## TLS
-
-The image downloads the official AWS RDS global CA bundle at build time. Production PostgreSQL URLs use:
-
-`sslmode=verify-full&sslrootcert=/app/certs/rds-global.pem`
-
-The application service remains at desired count zero until HTTPS activation.
-
-## Cost posture
-
-The default Terraform budget is USD 100/month as an **alert threshold**, not a spending cap. Forecasted 50%, actual 80%, and actual 100% notifications go to `developer@10573llc.com` by default.
-
-Two NAT gateways and Multi-AZ RDS are deliberate production-resilience choices. Change those choices deliberately, not as an incidental cost workaround.
-
-## Management-account cleanup
-
-The earlier Fargate canary proved `us-east-2` works, and it was deleted. A temporary AIRS Terraform bucket/OIDC role/policy were also created in management account `509581811007` before the dedicated-member-account decision. Leave those untouched until the AIRS member account bootstrap is verified. They can then be removed in a separate, explicitly approved cleanup step.
+Fargate has no upfront cost and bills requested CPU/memory while tasks run; 0.25 vCPU supports 0.5–2 GiB memory. citeturn582676view0

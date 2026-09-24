@@ -13,13 +13,7 @@ terraform {
     }
   }
 
-  backend "s3" {
-    bucket       = "airs-agent-tfstate-509581811007"
-    key          = "production/terraform.tfstate"
-    region       = "us-east-2"
-    encrypt      = true
-    use_lockfile = true
-  }
+  backend "s3" {}
 }
 
 provider "aws" {
@@ -32,5 +26,14 @@ provider "aws" {
       ManagedBy   = "Terraform"
       Owner       = "10573LLC"
     }
+  }
+}
+
+data "aws_caller_identity" "current" {}
+
+check "target_account" {
+  assert {
+    condition     = data.aws_caller_identity.current.account_id == var.expected_account_id
+    error_message = "Refusing to deploy AIRS to an unexpected AWS account."
   }
 }

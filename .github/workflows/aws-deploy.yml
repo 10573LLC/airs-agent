@@ -3,10 +3,11 @@ name: AIRS Production Deploy
 on:
   workflow_dispatch:
     inputs:
-      certificate_arn:
-        description: "Validated us-east-2 ACM certificate ARN (optional until DNS/TLS cutover)"
-        required: false
-        type: string
+      activate_services:
+        description: "Start HTTPS AIRS services after ACM and Cloudflare DNS are ready"
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: read
@@ -18,8 +19,8 @@ concurrency:
 
 jobs:
   deploy:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: production
     steps:
       - uses: actions/checkout@v4
 
@@ -33,41 +34,52 @@ jobs:
 
       - uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.9.8"
+          terraform_version: "1.10.5"
 
-      - name: Terraform init
+      - name: Application checks
+        run: |
+          npm ci --legacy-peer-deps
+          npm run typecheck
+          npm test
+
+      - name: Terraform init and validate
         working-directory: infra/terraform
-        run: terraform init
+        run: |
+          terraform init
+          terraform fmt -check -recursive
+          terraform validate
 
       - name: Provision foundation with services stopped
         working-directory: infra/terraform
-        env:
-          CERT_ARN: ${{ inputs.certificate_arn }}
         run: |
-          terraform apply -input=false -auto-approve             -var='container_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='public_base_url=https://app.airsagent.com'             -var='deploy_services=false'             -var="certificate_arn=$CERT_ARN"
+          terraform apply -input=false -auto-approve             -var='container_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='ops_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='deploy_services=false'             -var='enable_https=false'
 
-      - name: Build and push immutable image
+      - name: Build and push immutable runtime and ops images
         id: image
         env:
           REGISTRY: 509581811007.dkr.ecr.us-east-2.amazonaws.com
           REPOSITORY: airs-agent
-          IMAGE_TAG: ${{ github.sha }}
+          SHA: ${{ github.sha }}
         run: |
           aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
-          docker build -t "$REGISTRY/$REPOSITORY:$IMAGE_TAG" .
-          docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
-          echo "uri=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+          RUNTIME="$REGISTRY/$REPOSITORY:sha-$SHA"
+          OPS="$REGISTRY/$REPOSITORY:ops-sha-$SHA"
+          docker build --target runtime -t "$RUNTIME" .
+          docker build --target ops -t "$OPS" .
+          docker push "$RUNTIME"
+          docker push "$OPS"
+          echo "runtime=$RUNTIME" >> "$GITHUB_OUTPUT"
+          echo "ops=$OPS" >> "$GITHUB_OUTPUT"
 
-      - name: Register AIRS image with services stopped
+      - name: Register immutable AIRS images with services stopped
         working-directory: infra/terraform
         env:
-          IMAGE_URI: ${{ steps.image.outputs.uri }}
-          CERT_ARN: ${{ inputs.certificate_arn }}
+          RUNTIME_IMAGE: ${{ steps.image.outputs.runtime }}
+          OPS_IMAGE: ${{ steps.image.outputs.ops }}
         run: |
-          terraform apply -input=false -auto-approve             -var="container_image=$IMAGE_URI"             -var='public_base_url=https://app.airsagent.com'             -var='deploy_services=false'             -var="certificate_arn=$CERT_ARN"
+          terraform apply -input=false -auto-approve             -var="container_image=$RUNTIME_IMAGE"             -var="ops_image=$OPS_IMAGE"             -var='deploy_services=false'             -var='enable_https=false'
 
-      - name: Run database bootstrap and migrations
-        id: migrate
+      - name: Run production database bootstrap and migrations
         working-directory: infra/terraform
         run: |
           CLUSTER=$(terraform output -raw ecs_cluster_name)
@@ -78,23 +90,44 @@ jobs:
           test "$TASK" != "None"
           aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK"
           EXIT=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK" --query 'tasks[0].containers[0].exitCode' --output text)
-          test "$EXIT" = "0"
+          if [ "$EXIT" != "0" ]; then
+            aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK"               --query 'tasks[0].[stopCode,stoppedReason,containers[0].reason]' --output text
+            exit 1
+          fi
 
-      - name: Start AIRS services
+      - name: Verify ACM certificate before activation
+        if: inputs.activate_services
+        working-directory: infra/terraform
+        run: |
+          CERT=$(terraform output -raw acm_certificate_arn)
+          STATUS=$(aws acm describe-certificate --certificate-arn "$CERT" --query 'Certificate.Status' --output text)
+          echo "ACM status: $STATUS"
+          test "$STATUS" = "ISSUED"
+
+      - name: Start HTTPS AIRS services
+        if: inputs.activate_services
         working-directory: infra/terraform
         env:
-          IMAGE_URI: ${{ steps.image.outputs.uri }}
-          CERT_ARN: ${{ inputs.certificate_arn }}
+          RUNTIME_IMAGE: ${{ steps.image.outputs.runtime }}
+          OPS_IMAGE: ${{ steps.image.outputs.ops }}
         run: |
-          terraform apply -input=false -auto-approve             -var="container_image=$IMAGE_URI"             -var='public_base_url=https://app.airsagent.com'             -var='deploy_services=true'             -var="certificate_arn=$CERT_ARN"
+          terraform apply -input=false -auto-approve             -var="container_image=$RUNTIME_IMAGE"             -var="ops_image=$OPS_IMAGE"             -var='deploy_services=true'             -var='enable_https=true'
 
-      - name: Wait for AIRS service stability
+      - name: Wait for AIRS services
+        if: inputs.activate_services
         working-directory: infra/terraform
         run: |
-          aws ecs wait services-stable             --cluster "$(terraform output -raw ecs_cluster_name)"             --services "$(terraform output -raw app_service_name)"
+          CLUSTER=$(terraform output -raw ecs_cluster_name)
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$(terraform output -raw app_service_name)"
+          aws ecs wait services-stable --cluster "$CLUSTER" --services "$(terraform output -raw maintenance_service_name)"
 
-      - name: Deployment summary
+      - name: Deployment handoff
         working-directory: infra/terraform
         run: |
-          echo "ALB: $(terraform output -raw alb_dns_name)"
-          echo "AIRS image: ${{ steps.image.outputs.uri }}"
+          echo "ALB DNS: $(terraform output -raw alb_dns_name)"
+          echo "ACM certificate: $(terraform output -raw acm_certificate_arn)"
+          echo "ACM DNS validation records:"
+          terraform output -json acm_dns_validation
+          echo "Cognito user pool: $(terraform output -raw cognito_user_pool_id)"
+          echo "Runtime image: ${{ steps.image.outputs.runtime }}"
+          echo "Ops image: ${{ steps.image.outputs.ops }}"

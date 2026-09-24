@@ -1,0 +1,22 @@
+# Non-secret example only. Set this to the dedicated AIRS Production member account.
+expected_account_id = "123456789012"
+
+aws_region         = "us-east-2"
+app_name           = "airs-agent-prod"
+vpc_cidr           = "10.20.0.0/16"
+db_instance_class  = "db.t4g.small"
+db_multi_az        = false
+desired_count      = 2
+domain_name        = "app.airsagent.com"
+public_base_url    = "https://app.airsagent.com"
+monthly_budget_usd = 275
+budget_email       = "developer@10573llc.com"
+
+# Deliberately false for the first foundation pass. Do not enable until the
+# ACM validation CNAME exists in Cloudflare and the certificate is ISSUED.
+deploy_services = false
+enable_https    = false
+
+# Deployment workflow replaces these placeholders with immutable ECR images.
+container_image = "public.ecr.aws/amazonlinux/amazonlinux:2023"
+ops_image       = "public.ecr.aws/amazonlinux/amazonlinux:2023"

@@ -38,3 +38,9 @@ dist-ssr
 
 # Local PostgreSQL data directories used for verification runs
 pgdata/
+
+# Terraform local state/cache and generated member-account handoff
+.terraform/
+*.tfstate
+*.tfstate.*
+infra/aws-account-id.txt

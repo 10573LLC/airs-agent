@@ -22,6 +22,8 @@ import { Route as AwarenessIndexRouteImport } from './routes/awareness.index'
 import { Route as InviteTokenRouteImport } from './routes/invite/$token'
 import { Route as IncidentsIncidentIdRouteImport } from './routes/incidents.$incidentId'
 import { Route as AwarenessObservationIdRouteImport } from './routes/awareness.$observationId'
+import { Route as AuthLoginRouteImport } from './routes/auth_/login'
+import { Route as AuthCallbackRouteImport } from './routes/auth_/callback'
 import { Route as AgencySystemsRouteImport } from './routes/agency.systems'
 import { Route as ActivateTokenRouteImport } from './routes/activate/$token'
 import { Route as IncidentsIncidentIdCommandRouteImport } from './routes/incidents.$incidentId.command'
@@ -93,6 +95,16 @@ const AwarenessObservationIdRoute = AwarenessObservationIdRouteImport.update({
   path: '/$observationId',
   getParentRoute: () => AwarenessRoute,
 } as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/auth_/login',
+  path: '/auth/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth_/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AgencySystemsRoute = AgencySystemsRouteImport.update({
   id: '/agency/systems',
   path: '/agency/systems',
@@ -132,6 +144,8 @@ export interface FileRoutesByFullPath {
   '/simulation': typeof SimulationRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/agency/systems': typeof AgencySystemsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/login': typeof AuthLoginRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
@@ -150,6 +164,8 @@ export interface FileRoutesByTo {
   '/simulation': typeof SimulationRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/agency/systems': typeof AgencySystemsRoute
+  '/auth/callback': typeof AuthCallbackRoute
+  '/auth/login': typeof AuthLoginRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
@@ -171,6 +187,8 @@ export interface FileRoutesById {
   '/simulation': typeof SimulationRoute
   '/activate/$token': typeof ActivateTokenRoute
   '/agency/systems': typeof AgencySystemsRoute
+  '/auth_/callback': typeof AuthCallbackRoute
+  '/auth_/login': typeof AuthLoginRoute
   '/awareness/$observationId': typeof AwarenessObservationIdRoute
   '/incidents/$incidentId': typeof IncidentsIncidentIdRouteWithChildren
   '/invite/$token': typeof InviteTokenRoute
@@ -193,6 +211,8 @@ export interface FileRouteTypes {
     | '/simulation'
     | '/activate/$token'
     | '/agency/systems'
+    | '/auth/callback'
+    | '/auth/login'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -211,6 +231,8 @@ export interface FileRouteTypes {
     | '/simulation'
     | '/activate/$token'
     | '/agency/systems'
+    | '/auth/callback'
+    | '/auth/login'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -231,6 +253,8 @@ export interface FileRouteTypes {
     | '/simulation'
     | '/activate/$token'
     | '/agency/systems'
+    | '/auth_/callback'
+    | '/auth_/login'
     | '/awareness/$observationId'
     | '/incidents/$incidentId'
     | '/invite/$token'
@@ -252,6 +276,8 @@ export interface RootRouteChildren {
   SimulationRoute: typeof SimulationRoute
   ActivateTokenRoute: typeof ActivateTokenRoute
   AgencySystemsRoute: typeof AgencySystemsRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
+  AuthLoginRoute: typeof AuthLoginRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiMaintenanceExpireIncidentsRoute: typeof ApiMaintenanceExpireIncidentsRoute
   ApiPublicHealthRoute: typeof ApiPublicHealthRoute
@@ -350,6 +376,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AwarenessObservationIdRouteImport
       parentRoute: typeof AwarenessRoute
     }
+    '/auth_/login': {
+      id: '/auth_/login'
+      path: '/auth/login'
+      fullPath: '/auth/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth_/callback': {
+      id: '/auth_/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/agency/systems': {
       id: '/agency/systems'
       path: '/agency/systems'
@@ -438,6 +478,8 @@ const rootRouteChildren: RootRouteChildren = {
   SimulationRoute: SimulationRoute,
   ActivateTokenRoute: ActivateTokenRoute,
   AgencySystemsRoute: AgencySystemsRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
+  AuthLoginRoute: AuthLoginRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiMaintenanceExpireIncidentsRoute: ApiMaintenanceExpireIncidentsRoute,
   ApiPublicHealthRoute: ApiPublicHealthRoute,

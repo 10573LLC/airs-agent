@@ -1,0 +1,70 @@
+name: AIRS Pull Request Checks
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - "Dockerfile"
+      - "package.json"
+      - "package-lock.json"
+      - "src/**"
+      - "scripts/**"
+      - "tests/**"
+      - ".github/workflows/aws-terraform.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: airs-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install application dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Bootstrap script and JSON syntax
+        run: |
+          bash -n infra/bootstrap/aws-bootstrap.sh
+          bash -n infra/bootstrap/create-airs-production-account.sh
+          bash -n scripts/aws-production-db-bootstrap.sh
+          jq empty infra/bootstrap/github-deploy-policy.json
+          jq empty infra/bootstrap/github-oidc-trust.json
+
+      - name: Runtime container build
+        run: docker build --target runtime -t airs-agent:ci-runtime .
+
+      - name: Ops container build
+        run: docker build --target ops -t airs-agent:ci-ops .
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+
+      - name: Terraform format
+        working-directory: infra/terraform
+        run: terraform fmt -check -diff -recursive
+
+      - name: Terraform init without remote backend
+        working-directory: infra/terraform
+        run: terraform init -backend=false
+
+      - name: Terraform validate
+        working-directory: infra/terraform
+        run: terraform validate

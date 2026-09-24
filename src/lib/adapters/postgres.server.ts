@@ -7,13 +7,19 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-
 const GUC = /^airs\.[a-z_]+$/;
 
 export function createPostgresAdapter(connectionString: string): DatabaseAdapter {
-  let poolPromise: Promise<any> | undefined;
+  let poolPromise: Promise<import("pg").Pool> | undefined;
 
   async function getPool() {
     if (!poolPromise) {
       poolPromise = import("pg").then((pg) => {
-        const Pool = (pg as any).default?.Pool ?? (pg as any).Pool;
-        return new Pool({ connectionString, max: 10 });
+        const Pool = pg.default?.Pool ?? pg.Pool;
+        return new Pool({
+          connectionString,
+          max: 10,
+          connectionTimeoutMillis: 3000,
+          statement_timeout: 15000,
+          idle_in_transaction_session_timeout: 15000,
+        });
       });
     }
     return poolPromise;

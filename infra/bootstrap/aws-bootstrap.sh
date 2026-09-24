@@ -54,15 +54,25 @@ fi
 
 POLICY_ARN="arn:aws:iam::${ACCOUNT_ID}:policy/AIRSAgentGitHubDeployPolicy"
 if aws iam get-policy --policy-arn "$POLICY_ARN" >/dev/null 2>&1; then
+  # IAM retains at most five managed-policy versions. Delete every old
+  # non-default version before creating the next version so repeated,
+  # idempotent bootstrap runs never hit that quota.
+  for OLD in $(aws iam list-policy-versions --policy-arn "$POLICY_ARN" \
+    --query "Versions[?IsDefaultVersion==\`false\`].VersionId" --output text); do
+    aws iam delete-policy-version --policy-arn "$POLICY_ARN" --version-id "$OLD"
+  done
+
   VERSION_ID=$(aws iam create-policy-version \
     --policy-arn "$POLICY_ARN" \
     --policy-document file:///tmp/airs-github-policy.json \
     --set-as-default \
     --query 'PolicyVersion.VersionId' \
     --output text)
+
+  # The prior default is now non-default; keep only the new default.
   for OLD in $(aws iam list-policy-versions --policy-arn "$POLICY_ARN" \
     --query "Versions[?IsDefaultVersion==\`false\`].VersionId" --output text); do
-    aws iam delete-policy-version --policy-arn "$POLICY_ARN" --version-id "$OLD" || true
+    aws iam delete-policy-version --policy-arn "$POLICY_ARN" --version-id "$OLD"
   done
   echo "Updated deployment policy to version $VERSION_ID"
 else

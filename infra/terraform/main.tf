@@ -69,9 +69,36 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_route_table" "private" {
+resource "aws_eip" "nat" {
   count  = 2
+  domain = "vpc"
+
+  tags = {
+    Name = "${var.app_name}-nat-eip-${count.index + 1}"
+  }
+}
+
+resource "aws_nat_gateway" "main" {
+  count = 2
+
+  allocation_id = aws_eip.nat[count.index].id
+  subnet_id     = aws_subnet.public[count.index].id
+  depends_on    = [aws_internet_gateway.main]
+
+  tags = {
+    Name = "${var.app_name}-nat-${count.index + 1}"
+  }
+}
+
+resource "aws_route_table" "private" {
+  count = 2
+
   vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.main[count.index].id
+  }
 
   tags = {
     Name = "${var.app_name}-private-rt-${count.index + 1}"
@@ -104,10 +131,10 @@ resource "aws_security_group" "alb" {
   }
 
   egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app.id]
   }
 
   lifecycle {
@@ -152,6 +179,52 @@ resource "aws_security_group" "db" {
   lifecycle {
     create_before_destroy = true
   }
+}
+
+resource "aws_security_group" "vpce" {
+  name_prefix = "${var.app_name}-vpce-"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    from_port       = 443
+    to_port         = 443
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${var.aws_region}.s3"
+  vpc_endpoint_type = "Gateway"
+  route_table_ids   = aws_route_table.private[*].id
+}
+
+resource "aws_vpc_endpoint" "interface" {
+  for_each = toset([
+    "ecr.api",
+    "ecr.dkr",
+    "logs",
+    "secretsmanager"
+  ])
+
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.aws_region}.${each.value}"
+  vpc_endpoint_type   = "Interface"
+  subnet_ids          = aws_subnet.private[*].id
+  security_group_ids  = [aws_security_group.vpce.id]
+  private_dns_enabled = true
 }
 
 resource "aws_ecr_repository" "app" {
@@ -212,7 +285,7 @@ resource "aws_db_instance" "main" {
   engine_version              = "16"
   instance_class              = var.db_instance_class
   allocated_storage           = 20
-  max_allocated_storage       = 50
+  max_allocated_storage       = 100
   storage_type                = "gp3"
   storage_encrypted           = true
   db_name                     = "airs"

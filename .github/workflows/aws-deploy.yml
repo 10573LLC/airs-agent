@@ -3,6 +3,10 @@ name: AIRS Production Deploy
 on:
   workflow_dispatch:
     inputs:
+      aws_account_id:
+        description: "Dedicated AIRS Production member account ID"
+        required: true
+        type: string
       activate_services:
         description: "Start HTTPS AIRS services after ACM and Cloudflare DNS are ready"
         required: true
@@ -26,11 +30,11 @@ jobs:
 
       - uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::509581811007:role/AIRSAgentGitHubDeployRole
+          role-to-assume: arn:aws:iam::${{ inputs.aws_account_id }}:role/AIRSAgentGitHubDeployRole
           aws-region: us-east-2
 
       - name: Verify target account
-        run: test "$(aws sts get-caller-identity --query Account --output text)" = "509581811007"
+        run: test "$(aws sts get-caller-identity --query Account --output text)" = "${{ inputs.aws_account_id }}"
 
       - uses: hashicorp/setup-terraform@v3
         with:
@@ -45,19 +49,25 @@ jobs:
       - name: Terraform init and validate
         working-directory: infra/terraform
         run: |
-          terraform init
+          terraform init \
+            -backend-config="bucket=airs-agent-tfstate-${{ inputs.aws_account_id }}" \
+            -backend-config="key=production/terraform.tfstate" \
+            -backend-config="region=us-east-2" \
+            -backend-config="encrypt=true" \
+            -backend-config="use_lockfile=true"
           terraform fmt -check -recursive
           terraform validate
 
       - name: Provision foundation with services stopped
         working-directory: infra/terraform
         run: |
-          terraform apply -input=false -auto-approve             -var='container_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='ops_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='deploy_services=false'             -var='enable_https=false'
+          terraform apply -input=false -auto-approve             -var='container_image=public.ecr.aws/amazonlinux/amazonlinux:2023'             -var='ops_image=public.ecr.aws/amazonlinux/amazonlinux:2023' \
+            -var="expected_account_id=${{ inputs.aws_account_id }}"             -var='deploy_services=false'             -var='enable_https=false'
 
       - name: Build and push immutable runtime and ops images
         id: image
         env:
-          REGISTRY: 509581811007.dkr.ecr.us-east-2.amazonaws.com
+          REGISTRY: ${{ inputs.aws_account_id }}.dkr.ecr.us-east-2.amazonaws.com
           REPOSITORY: airs-agent
           SHA: ${{ github.sha }}
         run: |

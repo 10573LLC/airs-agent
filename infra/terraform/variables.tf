@@ -55,15 +55,7 @@ variable "desired_count" {
   default = 2
 }
 
-variable "task_cpu" {
-  type    = number
-  default = 512
-}
 
-variable "task_memory" {
-  type    = number
-  default = 1024
-}
 
 variable "domain_name" {
   type    = string

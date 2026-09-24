@@ -198,7 +198,7 @@ resource "aws_ecs_service" "app" {
   name = "${var.app_name}-app"
   cluster = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
-  desired_count = var.desired_count
+  desired_count = var.deploy_services ? var.desired_count : 0
   launch_type = "FARGATE"
   health_check_grace_period_seconds = 60
   network_configuration {
@@ -218,7 +218,7 @@ resource "aws_ecs_service" "maintenance" {
   name = "${var.app_name}-maintenance"
   cluster = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.maintenance.arn
-  desired_count = 1
+  desired_count = var.deploy_services ? 1 : 0
   launch_type = "FARGATE"
   network_configuration {
     subnets = aws_subnet.private[*].id

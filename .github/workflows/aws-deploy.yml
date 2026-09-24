@@ -1,0 +1,94 @@
+name: AIRS Production Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      certificate_arn:
+        description: "Validated us-east-2 ACM certificate ARN (optional until DNS/TLS cutover)"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: airs-production-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::509581811007:role/AIRSAgentGitHubDeployRole
+          aws-region: us-east-2
+
+      - name: Verify target account
+        run: test "$(aws sts get-caller-identity --query Account --output text)" = "509581811007"
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Build and push immutable image
+        id: image
+        env:
+          REGISTRY: 509581811007.dkr.ecr.us-east-2.amazonaws.com
+          REPOSITORY: airs-agent
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          aws ecr describe-repositories --repository-names "$REPOSITORY" >/dev/null 2>&1 ||             aws ecr create-repository --repository-name "$REPOSITORY" --image-tag-mutability IMMUTABLE               --image-scanning-configuration scanOnPush=true >/dev/null
+          aws ecr get-login-password | docker login --username AWS --password-stdin "$REGISTRY"
+          docker build -t "$REGISTRY/$REPOSITORY:$IMAGE_TAG" .
+          docker push "$REGISTRY/$REPOSITORY:$IMAGE_TAG"
+          echo "uri=$REGISTRY/$REPOSITORY:$IMAGE_TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Terraform init
+        working-directory: infra/terraform
+        run: terraform init
+
+      - name: Provision infrastructure with services stopped
+        working-directory: infra/terraform
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+          CERT_ARN: ${{ inputs.certificate_arn }}
+        run: |
+          terraform apply -input=false -auto-approve             -var="container_image=$IMAGE_URI"             -var='public_base_url=https://app.airsagent.com'             -var='deploy_services=false'             -var="certificate_arn=$CERT_ARN"
+
+      - name: Run database bootstrap and migrations
+        id: migrate
+        working-directory: infra/terraform
+        run: |
+          CLUSTER=$(terraform output -raw ecs_cluster_name)
+          SUBNETS=$(terraform output -json private_subnet_ids | jq -r 'join(",")')
+          SG=$(terraform output -raw app_security_group_id)
+          TASKDEF=$(terraform output -raw migration_task_definition_arn)
+          TASK=$(aws ecs run-task             --cluster "$CLUSTER"             --task-definition "$TASKDEF"             --launch-type FARGATE             --network-configuration "awsvpcConfiguration={subnets=[$SUBNETS],securityGroups=[$SG],assignPublicIp=DISABLED}"             --query 'tasks[0].taskArn' --output text)
+          test "$TASK" != "None"
+          aws ecs wait tasks-stopped --cluster "$CLUSTER" --tasks "$TASK"
+          EXIT=$(aws ecs describe-tasks --cluster "$CLUSTER" --tasks "$TASK" --query 'tasks[0].containers[0].exitCode' --output text)
+          test "$EXIT" = "0"
+
+      - name: Start AIRS services
+        working-directory: infra/terraform
+        env:
+          IMAGE_URI: ${{ steps.image.outputs.uri }}
+          CERT_ARN: ${{ inputs.certificate_arn }}
+        run: |
+          terraform apply -input=false -auto-approve             -var="container_image=$IMAGE_URI"             -var='public_base_url=https://app.airsagent.com'             -var='deploy_services=true'             -var="certificate_arn=$CERT_ARN"
+
+      - name: Wait for AIRS service stability
+        working-directory: infra/terraform
+        run: |
+          aws ecs wait services-stable             --cluster "$(terraform output -raw ecs_cluster_name)"             --services "$(terraform output -raw app_service_name)"
+
+      - name: Deployment summary
+        working-directory: infra/terraform
+        run: |
+          echo "ALB: $(terraform output -raw alb_dns_name)"
+          echo "AIRS image: ${{ steps.image.outputs.uri }}"

@@ -1,9 +1,15 @@
-name: AIRS Terraform Checks
+name: AIRS Pull Request Checks
 
 on:
   pull_request:
     paths:
       - "infra/**"
+      - "Dockerfile"
+      - "package.json"
+      - "package-lock.json"
+      - "src/**"
+      - "scripts/**"
+      - "tests/**"
       - ".github/workflows/aws-terraform.yml"
   workflow_dispatch:
 
@@ -13,21 +19,34 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: infra/terraform
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install application dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build
+        run: npm run build
 
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: "1.10.5"
 
       - name: Terraform format
+        working-directory: infra/terraform
         run: terraform fmt -check -recursive
 
       - name: Terraform init without remote backend
+        working-directory: infra/terraform
         run: terraform init -backend=false
 
       - name: Terraform validate
+        working-directory: infra/terraform
         run: terraform validate

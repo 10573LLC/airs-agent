@@ -69,37 +69,9 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-resource "aws_eip" "nat" {
-  count  = 2
-  domain = "vpc"
-
-  tags = {
-    Name = "${var.app_name}-nat-eip-${count.index + 1}"
-  }
-}
-
-resource "aws_nat_gateway" "main" {
-  count = 2
-
-  allocation_id = aws_eip.nat[count.index].id
-  subnet_id     = aws_subnet.public[count.index].id
-
-  depends_on = [aws_internet_gateway.main]
-
-  tags = {
-    Name = "${var.app_name}-nat-${count.index + 1}"
-  }
-}
-
 resource "aws_route_table" "private" {
-  count = 2
-
+  count  = 2
   vpc_id = aws_vpc.main.id
-
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.main[count.index].id
-  }
 
   tags = {
     Name = "${var.app_name}-private-rt-${count.index + 1}"
@@ -182,13 +154,6 @@ resource "aws_security_group" "db" {
   }
 }
 
-resource "aws_vpc_endpoint" "s3" {
-  vpc_id            = aws_vpc.main.id
-  service_name      = "com.amazonaws.${var.aws_region}.s3"
-  vpc_endpoint_type = "Gateway"
-  route_table_ids   = aws_route_table.private[*].id
-}
-
 resource "aws_ecr_repository" "app" {
   name                 = "airs-agent"
   image_tag_mutability = "IMMUTABLE"
@@ -221,7 +186,7 @@ resource "aws_ecr_lifecycle_policy" "app" {
 
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/ecs/${var.app_name}"
-  retention_in_days = 90
+  retention_in_days = 30
 }
 
 resource "aws_db_subnet_group" "main" {
@@ -246,8 +211,8 @@ resource "aws_db_instance" "main" {
   engine                      = "postgres"
   engine_version              = "16"
   instance_class              = var.db_instance_class
-  allocated_storage           = 30
-  max_allocated_storage       = 100
+  allocated_storage           = 20
+  max_allocated_storage       = 50
   storage_type                = "gp3"
   storage_encrypted           = true
   db_name                     = "airs"
@@ -260,7 +225,7 @@ resource "aws_db_instance" "main" {
   publicly_accessible    = false
   multi_az               = var.db_multi_az
 
-  backup_retention_period    = 14
+  backup_retention_period    = 7
   copy_tags_to_snapshot      = true
   auto_minor_version_upgrade = true
   deletion_protection        = true
@@ -273,6 +238,6 @@ resource "aws_ecs_cluster" "main" {
 
   setting {
     name  = "containerInsights"
-    value = "enhanced"
+    value = "disabled"
   }
 }

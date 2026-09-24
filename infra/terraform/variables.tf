@@ -2,16 +2,32 @@ variable "aws_region" { type = string; default = "us-east-2" }
 variable "app_name" { type = string; default = "airs-agent-prod" }
 variable "vpc_cidr" { type = string; default = "10.73.0.0/16" }
 variable "db_instance_class" { type = string; default = "db.t4g.small" }
-variable "container_image" { type = string; description = "Immutable ECR image URI for AIRS." }
-variable "deploy_services" { type = bool; default = false; description = "Enable app and maintenance tasks only after DB bootstrap succeeds." }
-variable "public_base_url" { type = string; description = "Canonical HTTPS AIRS origin." }
+variable "db_multi_az" { type = bool; default = true }
 
-variable "certificate_arn" {
+variable "container_image" {
   type        = string
-  description = "ACM certificate ARN for app.airsagent.com in us-east-2."
-  default     = ""
+  description = "Immutable runtime ECR image URI for AIRS."
 }
-variable "desired_count" { type = number; default = 1 }
-
+variable "ops_image" {
+  type        = string
+  description = "Immutable ops ECR image URI for migrations/bootstrap."
+}
+variable "deploy_services" {
+  type        = bool
+  default     = false
+  description = "Enable app and maintenance services only after database bootstrap succeeds."
+}
+variable "enable_https" {
+  type        = bool
+  default     = false
+  description = "Enable HTTPS listener and AIRS service only after ACM DNS validation is complete."
+}
+variable "desired_count" { type = number; default = 2 }
+variable "domain_name" { type = string; default = "app.airsagent.com" }
+variable "public_base_url" { type = string; default = "https://app.airsagent.com" }
+variable "cognito_domain_prefix" {
+  type    = string
+  default = "airs-agent-prod-509581811007"
+}
 variable "budget_email" { type = string; default = "developer@10573llc.com" }
 variable "monthly_budget_usd" { type = number; default = 100 }

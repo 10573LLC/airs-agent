@@ -33,6 +33,7 @@ COPY --from=build --chown=node:node /app/.output ./.output
 COPY --from=build --chown=node:node /app/db ./db
 COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/deploy/aws/us-east-1-bundle.pem ./certs/rds-us-east-1.pem
+COPY --from=build --chown=node:node /app/deploy/aws/us-east-2-bundle.pem ./certs/rds-us-east-2.pem
 COPY --from=build --chown=node:node /app/package.json ./package.json
 COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
 
@@ -41,7 +42,10 @@ COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
 # ECS has no Docker daemon, so psql is present only in this explicit target.
 FROM runtime-base AS ops
 USER root
-RUN apk add --no-cache postgresql-client
+RUN --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then \
+      SSL_CERT_FILE=/run/secrets/build_ca apk add --no-cache postgresql-client; \
+    else apk add --no-cache postgresql-client; fi
 USER node
 
 # Default production application image remains minimal and does not contain

@@ -1,0 +1,1144 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AIRS isolated production foundation: two AZs, two NATs, private RDS/ECS and invitation-only Cognito.",
+  "Resources": {
+    "Vpc": {
+      "Type": "AWS::EC2::VPC",
+      "Properties": {
+        "CidrBlock": "10.20.0.0/16",
+        "EnableDnsSupport": true,
+        "EnableDnsHostnames": true,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-vpc"
+          }
+        ]
+      }
+    },
+    "InternetGateway": {
+      "Type": "AWS::EC2::InternetGateway",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-igw"
+          }
+        ]
+      }
+    },
+    "GatewayAttachment": {
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "InternetGatewayId": {
+          "Ref": "InternetGateway"
+        }
+      }
+    },
+    "PublicRoutes": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-public"
+          }
+        ]
+      }
+    },
+    "PublicDefaultRoute": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PublicRoutes"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "InternetGateway"
+        }
+      },
+      "DependsOn": "GatewayAttachment"
+    },
+    "PublicA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}a"
+        },
+        "CidrBlock": "10.20.0.0/20",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-public-a"
+          }
+        ]
+      }
+    },
+    "PrivateA": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}a"
+        },
+        "CidrBlock": "10.20.128.0/20",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-private-a"
+          }
+        ]
+      }
+    },
+    "PublicAssociationA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicA"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRoutes"
+        }
+      }
+    },
+    "EipA": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-nat-a"
+          }
+        ]
+      },
+      "DependsOn": "GatewayAttachment"
+    },
+    "NatA": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "EipA",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "PublicA"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-nat-a"
+          }
+        ]
+      }
+    },
+    "PrivateRoutesA": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-private-a"
+          }
+        ]
+      }
+    },
+    "PrivateDefaultA": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRoutesA"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "NatA"
+        }
+      }
+    },
+    "PrivateAssociationA": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateA"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRoutesA"
+        }
+      }
+    },
+    "PublicB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}b"
+        },
+        "CidrBlock": "10.20.16.0/20",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-public-b"
+          }
+        ]
+      }
+    },
+    "PrivateB": {
+      "Type": "AWS::EC2::Subnet",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}b"
+        },
+        "CidrBlock": "10.20.144.0/20",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-private-b"
+          }
+        ]
+      }
+    },
+    "PublicAssociationB": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PublicB"
+        },
+        "RouteTableId": {
+          "Ref": "PublicRoutes"
+        }
+      }
+    },
+    "EipB": {
+      "Type": "AWS::EC2::EIP",
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-nat-b"
+          }
+        ]
+      },
+      "DependsOn": "GatewayAttachment"
+    },
+    "NatB": {
+      "Type": "AWS::EC2::NatGateway",
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "EipB",
+            "AllocationId"
+          ]
+        },
+        "SubnetId": {
+          "Ref": "PublicB"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-nat-b"
+          }
+        ]
+      }
+    },
+    "PrivateRoutesB": {
+      "Type": "AWS::EC2::RouteTable",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-private-b"
+          }
+        ]
+      }
+    },
+    "PrivateDefaultB": {
+      "Type": "AWS::EC2::Route",
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "PrivateRoutesB"
+        },
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "NatB"
+        }
+      }
+    },
+    "PrivateAssociationB": {
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+      "Properties": {
+        "SubnetId": {
+          "Ref": "PrivateB"
+        },
+        "RouteTableId": {
+          "Ref": "PrivateRoutesB"
+        }
+      }
+    },
+    "EcsSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "AIRS private ECS tasks",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "-1",
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-ecs-sg"
+          }
+        ]
+      }
+    },
+    "EndpointSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "HTTPS only from AIRS ECS tasks",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "SourceSecurityGroupId": {
+              "Ref": "EcsSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-vpce-sg"
+          }
+        ]
+      }
+    },
+    "DatabaseSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "PostgreSQL only from AIRS ECS tasks",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 5432,
+            "ToPort": 5432,
+            "SourceSecurityGroupId": {
+              "Ref": "EcsSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-db-sg"
+          }
+        ]
+      }
+    },
+    "AlbSecurityGroup": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Public AIRS HTTPS load balancer",
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "SecurityGroupIngress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 443,
+            "ToPort": 443,
+            "CidrIp": "0.0.0.0/0"
+          },
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 80,
+            "ToPort": 80,
+            "CidrIp": "0.0.0.0/0"
+          }
+        ],
+        "SecurityGroupEgress": [
+          {
+            "IpProtocol": "tcp",
+            "FromPort": 3000,
+            "ToPort": 3000,
+            "DestinationSecurityGroupId": {
+              "Ref": "EcsSecurityGroup"
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          },
+          {
+            "Key": "Name",
+            "Value": "airs-agent-prod-alb-sg"
+          }
+        ]
+      }
+    },
+    "EcsAlbIngress": {
+      "Type": "AWS::EC2::SecurityGroupIngress",
+      "Properties": {
+        "GroupId": {
+          "Ref": "EcsSecurityGroup"
+        },
+        "IpProtocol": "tcp",
+        "FromPort": 3000,
+        "ToPort": 3000,
+        "SourceSecurityGroupId": {
+          "Ref": "AlbSecurityGroup"
+        }
+      }
+    },
+    "EcrApi": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.ecr.api"
+        },
+        "PrivateDnsEnabled": true,
+        "SubnetIds": [
+          {
+            "Ref": "PrivateA"
+          },
+          {
+            "Ref": "PrivateB"
+          }
+        ],
+        "SecurityGroupIds": [
+          {
+            "Ref": "EndpointSecurityGroup"
+          }
+        ]
+      }
+    },
+    "EcrDkr": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.ecr.dkr"
+        },
+        "PrivateDnsEnabled": true,
+        "SubnetIds": [
+          {
+            "Ref": "PrivateA"
+          },
+          {
+            "Ref": "PrivateB"
+          }
+        ],
+        "SecurityGroupIds": [
+          {
+            "Ref": "EndpointSecurityGroup"
+          }
+        ]
+      }
+    },
+    "LogsEndpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.logs"
+        },
+        "PrivateDnsEnabled": true,
+        "SubnetIds": [
+          {
+            "Ref": "PrivateA"
+          },
+          {
+            "Ref": "PrivateB"
+          }
+        ],
+        "SecurityGroupIds": [
+          {
+            "Ref": "EndpointSecurityGroup"
+          }
+        ]
+      }
+    },
+    "SecretsEndpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "VpcEndpointType": "Interface",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.secretsmanager"
+        },
+        "PrivateDnsEnabled": true,
+        "SubnetIds": [
+          {
+            "Ref": "PrivateA"
+          },
+          {
+            "Ref": "PrivateB"
+          }
+        ],
+        "SecurityGroupIds": [
+          {
+            "Ref": "EndpointSecurityGroup"
+          }
+        ]
+      }
+    },
+    "S3Endpoint": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "VpcId": {
+          "Ref": "Vpc"
+        },
+        "VpcEndpointType": "Gateway",
+        "ServiceName": {
+          "Fn::Sub": "com.amazonaws.${AWS::Region}.s3"
+        },
+        "RouteTableIds": [
+          {
+            "Ref": "PrivateRoutesA"
+          },
+          {
+            "Ref": "PrivateRoutesB"
+          }
+        ]
+      }
+    },
+    "DatabaseSubnets": {
+      "Type": "AWS::RDS::DBSubnetGroup",
+      "Properties": {
+        "DBSubnetGroupDescription": "AIRS private database subnets",
+        "SubnetIds": [
+          {
+            "Ref": "PrivateA"
+          },
+          {
+            "Ref": "PrivateB"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "Database": {
+      "Type": "AWS::RDS::DBInstance",
+      "Properties": {
+        "DBInstanceIdentifier": "airs-agent-prod-db",
+        "Engine": "postgres",
+        "EngineVersion": "16.15",
+        "DBInstanceClass": "db.t4g.small",
+        "DBName": "airs_agent",
+        "MasterUsername": "postgres",
+        "ManageMasterUserPassword": true,
+        "AllocatedStorage": "20",
+        "MaxAllocatedStorage": 100,
+        "StorageType": "gp3",
+        "StorageEncrypted": true,
+        "BackupRetentionPeriod": 7,
+        "DeletionProtection": true,
+        "PubliclyAccessible": false,
+        "MultiAZ": false,
+        "AvailabilityZone": {
+          "Fn::Sub": "${AWS::Region}b"
+        },
+        "DBSubnetGroupName": {
+          "Ref": "DatabaseSubnets"
+        },
+        "VPCSecurityGroups": [
+          {
+            "Ref": "DatabaseSecurityGroup"
+          }
+        ],
+        "AutoMinorVersionUpgrade": true,
+        "CopyTagsToSnapshot": true,
+        "EnableCloudwatchLogsExports": [
+          "postgresql"
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Snapshot",
+      "UpdateReplacePolicy": "Snapshot"
+    },
+    "Repository": {
+      "Type": "AWS::ECR::Repository",
+      "Properties": {
+        "RepositoryName": "airs-agent",
+        "ImageTagMutability": "IMMUTABLE",
+        "ImageScanningConfiguration": {
+          "ScanOnPush": true
+        },
+        "EncryptionConfiguration": {
+          "EncryptionType": "AES256"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "Cluster": {
+      "Type": "AWS::ECS::Cluster",
+      "Properties": {
+        "ClusterName": "airs-agent-prod",
+        "CapacityProviders": [
+          "FARGATE"
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "AppLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/ecs/airs-agent-prod",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "OpsLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/ecs/airs-agent-prod-ops",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "MaintenanceLogs": {
+      "Type": "AWS::Logs::LogGroup",
+      "Properties": {
+        "LogGroupName": "/ecs/airs-agent-prod-maintenance",
+        "RetentionInDays": 30,
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "UserPool": {
+      "Type": "AWS::Cognito::UserPool",
+      "Properties": {
+        "UserPoolName": "airs-agent-prod",
+        "UsernameAttributes": [
+          "email"
+        ],
+        "UsernameConfiguration": {
+          "CaseSensitive": false
+        },
+        "AutoVerifiedAttributes": [
+          "email"
+        ],
+        "AdminCreateUserConfig": {
+          "AllowAdminCreateUserOnly": true
+        },
+        "MfaConfiguration": "ON",
+        "EnabledMfas": [
+          "SOFTWARE_TOKEN_MFA"
+        ],
+        "Policies": {
+          "PasswordPolicy": {
+            "MinimumLength": 12,
+            "RequireLowercase": true,
+            "RequireUppercase": true,
+            "RequireNumbers": true,
+            "RequireSymbols": true,
+            "TemporaryPasswordValidityDays": 7
+          }
+        },
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_email",
+              "Priority": 1
+            }
+          ]
+        },
+        "UserPoolTags": {
+          "Project": "AIRS",
+          "Environment": "Production"
+        }
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "UserPoolClient": {
+      "Type": "AWS::Cognito::UserPoolClient",
+      "Properties": {
+        "ClientName": "airs-agent-web",
+        "UserPoolId": {
+          "Ref": "UserPool"
+        },
+        "GenerateSecret": true,
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthFlows": [
+          "code"
+        ],
+        "AllowedOAuthScopes": [
+          "openid",
+          "email"
+        ],
+        "SupportedIdentityProviders": [
+          "COGNITO"
+        ],
+        "CallbackURLs": [
+          "https://app.airsagent.com/auth/callback"
+        ],
+        "LogoutURLs": [
+          "https://app.airsagent.com/auth"
+        ],
+        "PreventUserExistenceErrors": "ENABLED",
+        "EnableTokenRevocation": true,
+        "AccessTokenValidity": 1,
+        "IdTokenValidity": 1,
+        "RefreshTokenValidity": 1,
+        "TokenValidityUnits": {
+          "AccessToken": "hours",
+          "IdToken": "hours",
+          "RefreshToken": "days"
+        }
+      }
+    },
+    "UserPoolDomain": {
+      "Type": "AWS::Cognito::UserPoolDomain",
+      "Properties": {
+        "Domain": {
+          "Fn::Sub": "airs-agent-${AWS::AccountId}-${AWS::Region}"
+        },
+        "UserPoolId": {
+          "Ref": "UserPool"
+        }
+      }
+    },
+    "OpsExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "airs-agent-prod-ops-execution-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": {
+                    "Ref": "AWS::AccountId"
+                  }
+                },
+                "ArnLike": {
+                  "aws:SourceArn": {
+                    "Fn::Sub": "arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "AirsOpsExecution",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ecr:GetAuthorizationToken",
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Repository",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "OpsLogs",
+                      "Arn"
+                    ]
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "secretsmanager:GetSecretValue",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "Database",
+                      "MasterUserSecret.SecretArn"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "Vpc": {
+      "Value": {
+        "Ref": "Vpc"
+      }
+    },
+    "PublicA": {
+      "Value": {
+        "Ref": "PublicA"
+      }
+    },
+    "PublicB": {
+      "Value": {
+        "Ref": "PublicB"
+      }
+    },
+    "PrivateA": {
+      "Value": {
+        "Ref": "PrivateA"
+      }
+    },
+    "PrivateB": {
+      "Value": {
+        "Ref": "PrivateB"
+      }
+    },
+    "EcsSecurityGroup": {
+      "Value": {
+        "Ref": "EcsSecurityGroup"
+      }
+    },
+    "DatabaseSecurityGroup": {
+      "Value": {
+        "Ref": "DatabaseSecurityGroup"
+      }
+    },
+    "AlbSecurityGroup": {
+      "Value": {
+        "Ref": "AlbSecurityGroup"
+      }
+    },
+    "Cluster": {
+      "Value": {
+        "Ref": "Cluster"
+      }
+    },
+    "UserPool": {
+      "Value": {
+        "Ref": "UserPool"
+      }
+    },
+    "UserPoolClient": {
+      "Value": {
+        "Ref": "UserPoolClient"
+      }
+    },
+    "UserPoolDomain": {
+      "Value": {
+        "Ref": "UserPoolDomain"
+      }
+    },
+    "DatabaseEndpoint": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "Endpoint.Address"
+        ]
+      }
+    },
+    "MasterSecretArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Database",
+          "MasterUserSecret.SecretArn"
+        ]
+      }
+    },
+    "RepositoryUri": {
+      "Value": {
+        "Fn::GetAtt": [
+          "Repository",
+          "RepositoryUri"
+        ]
+      }
+    },
+    "OpsExecutionRoleArn": {
+      "Value": {
+        "Fn::GetAtt": [
+          "OpsExecutionRole",
+          "Arn"
+        ]
+      }
+    }
+  }
+}

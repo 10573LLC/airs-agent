@@ -1,0 +1,1146 @@
+{
+  "AWSTemplateFormatVersion": "2010-09-09",
+  "Description": "AIRS Ohio runtime; start desired count at zero until database bootstrap passes.",
+  "Parameters": {
+    "DesiredCount": {
+      "Type": "Number",
+      "Default": 0,
+      "AllowedValues": [
+        0,
+        1,
+        2
+      ]
+    },
+    "ScheduleState": {
+      "Type": "String",
+      "Default": "DISABLED",
+      "AllowedValues": [
+        "ENABLED",
+        "DISABLED"
+      ]
+    }
+  },
+  "Resources": {
+    "AppPassword": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": "airs-agent-prod/app-db-password",
+        "GenerateSecretString": {
+          "PasswordLength": 48,
+          "ExcludePunctuation": true
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "MaintenancePassword": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": "airs-agent-prod/maintenance-db-password",
+        "GenerateSecretString": {
+          "PasswordLength": 48,
+          "ExcludePunctuation": true
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "SessionSecret": {
+      "Type": "AWS::SecretsManager::Secret",
+      "Properties": {
+        "Name": "airs-agent-prod/session",
+        "GenerateSecretString": {
+          "PasswordLength": 48,
+          "ExcludePunctuation": true
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DeletionPolicy": "Retain",
+      "UpdateReplacePolicy": "Retain"
+    },
+    "WebExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "airs-agent-prod-web-execution-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": "578856792953"
+                },
+                "ArnLike": {
+                  "aws:SourceArn": "arn:aws:ecs:us-east-2:578856792953:*"
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "ScopedExecution",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ecr:GetAuthorizationToken",
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": "arn:aws:ecr:us-east-2:578856792953:repository/airs-agent"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:us-east-2:578856792953:log-group:/ecs/airs-agent-prod:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "secretsmanager:GetSecretValue",
+                  "Resource": [
+                    {
+                      "Ref": "AppPassword"
+                    },
+                    {
+                      "Ref": "SessionSecret"
+                    },
+                    "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-prod/oidc-client-nkrLpu"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "BootstrapExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "airs-agent-prod-bootstrap-execution-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": "578856792953"
+                },
+                "ArnLike": {
+                  "aws:SourceArn": "arn:aws:ecs:us-east-2:578856792953:*"
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "ScopedExecution",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ecr:GetAuthorizationToken",
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": "arn:aws:ecr:us-east-2:578856792953:repository/airs-agent"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:us-east-2:578856792953:log-group:/ecs/airs-agent-prod-ops:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "secretsmanager:GetSecretValue",
+                  "Resource": [
+                    "arn:aws:secretsmanager:us-east-2:578856792953:secret:rds!db-14d5fa96-95dc-49d4-a3a7-885b1c3dace3-1alt0v",
+                    {
+                      "Ref": "AppPassword"
+                    },
+                    {
+                      "Ref": "MaintenancePassword"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "MaintenanceExecutionRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "airs-agent-prod-maintenance-execution-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": "578856792953"
+                },
+                "ArnLike": {
+                  "aws:SourceArn": "arn:aws:ecs:us-east-2:578856792953:*"
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "ScopedExecution",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ecr:GetAuthorizationToken",
+                  "Resource": "*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "ecr:BatchCheckLayerAvailability",
+                    "ecr:GetDownloadUrlForLayer",
+                    "ecr:BatchGetImage"
+                  ],
+                  "Resource": "arn:aws:ecr:us-east-2:578856792953:repository/airs-agent"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                  ],
+                  "Resource": "arn:aws:logs:us-east-2:578856792953:log-group:/ecs/airs-agent-prod-maintenance:*"
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "secretsmanager:GetSecretValue",
+                  "Resource": [
+                    {
+                      "Ref": "MaintenancePassword"
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "WebTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "airs-agent-prod",
+        "Cpu": "512",
+        "Memory": "1024",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "ARM64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "WebExecutionRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "airs-agent",
+            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:62726a5e85369991147be677a8503bac3285fda44b48e710ddd544c741d9c747",
+            "Essential": true,
+            "User": "node",
+            "Environment": [
+              {
+                "Name": "NODE_ENV",
+                "Value": "production"
+              },
+              {
+                "Name": "PORT",
+                "Value": "3000"
+              },
+              {
+                "Name": "HOST",
+                "Value": "0.0.0.0"
+              },
+              {
+                "Name": "DB_DRIVER",
+                "Value": "postgres"
+              },
+              {
+                "Name": "AUTH_DRIVER",
+                "Value": "oidc"
+              },
+              {
+                "Name": "AIRS_PUBLIC_BASE_URL",
+                "Value": "https://app.airsagent.com"
+              },
+              {
+                "Name": "OIDC_ISSUER",
+                "Value": "https://cognito-idp.us-east-2.amazonaws.com/us-east-2_7G9mvWY4g"
+              },
+              {
+                "Name": "OIDC_DOMAIN",
+                "Value": "https://airs-agent-578856792953-us-east-2.auth.us-east-2.amazoncognito.com"
+              },
+              {
+                "Name": "OIDC_CLIENT_ID",
+                "Value": "4m7j4tbq76eb6afb8mr0jge7ji"
+              },
+              {
+                "Name": "AIRS_APP_RELEASE",
+                "Value": "ae77083-ohio-20261001"
+              },
+              {
+                "Name": "DATABASE_URL",
+                "Value": "postgresql://airs_app@airs-agent-prod-db.cp8c828kkueu.us-east-2.rds.amazonaws.com:5432/airs_agent?sslmode=verify-full&sslrootcert=/app/certs/rds-us-east-2.pem"
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": {
+                  "Ref": "AppPassword"
+                }
+              },
+              {
+                "Name": "SESSION_SECRET",
+                "ValueFrom": {
+                  "Ref": "SessionSecret"
+                }
+              },
+              {
+                "Name": "OIDC_CLIENT_SECRET",
+                "ValueFrom": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-prod/oidc-client-nkrLpu"
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": "/ecs/airs-agent-prod",
+                "awslogs-region": "us-east-2",
+                "awslogs-stream-prefix": "airs-agent"
+              }
+            },
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "Protocol": "tcp"
+              }
+            ],
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget -qO- http://127.0.0.1:3000/api/public/health | grep -q '\"status\":\"ok\"' || exit 1"
+              ],
+              "Interval": 30,
+              "Timeout": 5,
+              "Retries": 3,
+              "StartPeriod": 30
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "BootstrapTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "airs-agent-prod-bootstrap",
+        "Cpu": "512",
+        "Memory": "1024",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "ARM64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "BootstrapExecutionRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "bootstrap",
+            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:936ab8912e94cf6afb6ff2355d65ca1328463922be230cfcbbdc1df54e16d960",
+            "Essential": true,
+            "User": "node",
+            "Environment": [
+              {
+                "Name": "DATABASE_URL",
+                "Value": "postgresql://postgres@airs-agent-prod-db.cp8c828kkueu.us-east-2.rds.amazonaws.com:5432/airs_agent?sslmode=verify-full&sslrootcert=/app/certs/rds-us-east-2.pem"
+              },
+              {
+                "Name": "PGCONNECT_TIMEOUT",
+                "Value": "15"
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": "arn:aws:secretsmanager:us-east-2:578856792953:secret:rds!db-14d5fa96-95dc-49d4-a3a7-885b1c3dace3-1alt0v:password::"
+              },
+              {
+                "Name": "APP_DB_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "AppPassword"
+                }
+              },
+              {
+                "Name": "MAINT_DB_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "MaintenancePassword"
+                }
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": "/ecs/airs-agent-prod-ops",
+                "awslogs-region": "us-east-2",
+                "awslogs-stream-prefix": "bootstrap"
+              }
+            },
+            "Command": [
+              "node",
+              "-e",
+              "const {spawnSync}=require('node:child_process');const pg=require('pg');(async()=>{let p=spawnSync('node',['scripts/db-migrate.mjs'],{stdio:'inherit'});if(p.status!==0)process.exit(p.status||1);const c=new pg.Client({connectionString:process.env.DATABASE_URL});await c.connect();await c.query('BEGIN');for(const [role,key] of [['airs_app','APP_DB_PASSWORD'],['airs_maintenance','MAINT_DB_PASSWORD']]){const pw=process.env[key];if(!pw||pw.length<32)throw Error('Missing role credential');const r=await c.query('SELECT rolsuper,rolbypassrls,rolcreatedb,rolcreaterole,rolreplication FROM pg_roles WHERE rolname=$1',[role]);if(r.rows.length!==1||Object.values(r.rows[0]).some(Boolean))throw Error('Unsafe database role');await c.query('ALTER ROLE '+pg.escapeIdentifier(role)+' LOGIN PASSWORD '+pg.escapeLiteral(pw));}await c.query('COMMIT');await c.end();p=spawnSync('node',['scripts/db-migrate.mjs','--status'],{stdio:'inherit'});process.exit(p.status||0);})().catch(e=>{console.error('Bootstrap failed:',e.code||e.name);process.exit(1)});"
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "MaintenanceTask": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "Family": "airs-agent-prod-maintenance",
+        "Cpu": "512",
+        "Memory": "1024",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "ARM64",
+          "OperatingSystemFamily": "LINUX"
+        },
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "MaintenanceExecutionRole",
+            "Arn"
+          ]
+        },
+        "ContainerDefinitions": [
+          {
+            "Name": "maintenance",
+            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:936ab8912e94cf6afb6ff2355d65ca1328463922be230cfcbbdc1df54e16d960",
+            "Essential": true,
+            "User": "node",
+            "Environment": [
+              {
+                "Name": "AIRS_MAINTENANCE_DATABASE_URL",
+                "Value": "postgresql://airs_maintenance@airs-agent-prod-db.cp8c828kkueu.us-east-2.rds.amazonaws.com:5432/airs_agent?sslmode=verify-full&sslrootcert=/app/certs/rds-us-east-2.pem"
+              },
+              {
+                "Name": "PGCONNECT_TIMEOUT",
+                "Value": "15"
+              }
+            ],
+            "Secrets": [
+              {
+                "Name": "PGPASSWORD",
+                "ValueFrom": {
+                  "Ref": "MaintenancePassword"
+                }
+              }
+            ],
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": "/ecs/airs-agent-prod-maintenance",
+                "awslogs-region": "us-east-2",
+                "awslogs-stream-prefix": "maintenance"
+              }
+            },
+            "Command": [
+              "node",
+              "scripts/expire-incident-state.mjs"
+            ]
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "LoadBalancer": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Name": "airs-agent-prod-alb",
+        "Scheme": "internet-facing",
+        "Type": "application",
+        "Subnets": [
+          "subnet-0b00907e3d3d4198e",
+          "subnet-09de32da23d65ca56"
+        ],
+        "SecurityGroups": [
+          "sg-08afd21e5cbc9d779"
+        ],
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "true"
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "TargetGroup": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "Name": "airs-agent-prod-web",
+        "VpcId": "vpc-0363a653c82717957",
+        "Protocol": "HTTP",
+        "Port": 3000,
+        "TargetType": "ip",
+        "HealthCheckPath": "/api/public/health",
+        "HealthCheckIntervalSeconds": 30,
+        "HealthCheckTimeoutSeconds": 5,
+        "HealthyThresholdCount": 2,
+        "UnhealthyThresholdCount": 3,
+        "Matcher": {
+          "HttpCode": "200"
+        },
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "HttpsListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LoadBalancer"
+        },
+        "Port": 443,
+        "Protocol": "HTTPS",
+        "Certificates": [
+          {
+            "CertificateArn": "arn:aws:acm:us-east-2:578856792953:certificate/b8c80d75-26d9-425d-915d-4a571539c978"
+          }
+        ],
+        "SslPolicy": "ELBSecurityPolicy-TLS13-1-2-2021-06",
+        "DefaultActions": [
+          {
+            "Type": "forward",
+            "TargetGroupArn": {
+              "Ref": "TargetGroup"
+            }
+          }
+        ]
+      }
+    },
+    "HttpListener": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "LoadBalancerArn": {
+          "Ref": "LoadBalancer"
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+        "DefaultActions": [
+          {
+            "Type": "redirect",
+            "RedirectConfig": {
+              "Protocol": "HTTPS",
+              "Port": "443",
+              "StatusCode": "HTTP_301"
+            }
+          }
+        ]
+      }
+    },
+    "Service": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "ServiceName": "airs-agent-prod",
+        "Cluster": "airs-agent-prod",
+        "LaunchType": "FARGATE",
+        "PlatformVersion": "1.4.0",
+        "DesiredCount": {
+          "Ref": "DesiredCount"
+        },
+        "TaskDefinition": {
+          "Ref": "WebTask"
+        },
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "Subnets": [
+              "subnet-041eb62bd816d9a26",
+              "subnet-08ecbba0eda28ed91"
+            ],
+            "SecurityGroups": [
+              "sg-05b165d6a7397c557"
+            ]
+          }
+        },
+        "LoadBalancers": [
+          {
+            "ContainerName": "airs-agent",
+            "ContainerPort": 3000,
+            "TargetGroupArn": {
+              "Ref": "TargetGroup"
+            }
+          }
+        ],
+        "HealthCheckGracePeriodSeconds": 90,
+        "DeploymentConfiguration": {
+          "MinimumHealthyPercent": 100,
+          "MaximumPercent": 200,
+          "DeploymentCircuitBreaker": {
+            "Enable": true,
+            "Rollback": true
+          }
+        },
+        "EnableECSManagedTags": true,
+        "PropagateTags": "SERVICE",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      },
+      "DependsOn": "HttpsListener"
+    },
+    "SchedulerRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "RoleName": "airs-agent-prod-scheduler-role",
+        "AssumeRolePolicyDocument": {
+          "Version": "2012-10-17",
+          "Statement": [
+            {
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "events.amazonaws.com"
+              },
+              "Action": "sts:AssumeRole",
+              "Condition": {
+                "StringEquals": {
+                  "aws:SourceAccount": "578856792953"
+                },
+                "ArnLike": {
+                  "aws:SourceArn": "arn:aws:events:us-east-2:578856792953:rule/airs-agent-prod-expiration"
+                }
+              }
+            }
+          ]
+        },
+        "Policies": [
+          {
+            "PolicyName": "RunMaintenanceOnly",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Effect": "Allow",
+                  "Action": "ecs:RunTask",
+                  "Resource": {
+                    "Ref": "MaintenanceTask"
+                  },
+                  "Condition": {
+                    "ArnEquals": {
+                      "ecs:cluster": "arn:aws:ecs:us-east-2:578856792953:cluster/airs-agent-prod"
+                    }
+                  }
+                },
+                {
+                  "Effect": "Allow",
+                  "Action": "iam:PassRole",
+                  "Resource": {
+                    "Fn::GetAtt": [
+                      "MaintenanceExecutionRole",
+                      "Arn"
+                    ]
+                  },
+                  "Condition": {
+                    "StringEquals": {
+                      "iam:PassedToService": "ecs-tasks.amazonaws.com"
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        ],
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "ExpirationSchedule": {
+      "Type": "AWS::Events::Rule",
+      "Properties": {
+        "Name": "airs-agent-prod-expiration",
+        "ScheduleExpression": "rate(5 minutes)",
+        "State": {
+          "Ref": "ScheduleState"
+        },
+        "Targets": [
+          {
+            "Id": "maintenance",
+            "Arn": "arn:aws:ecs:us-east-2:578856792953:cluster/airs-agent-prod",
+            "RoleArn": {
+              "Fn::GetAtt": [
+                "SchedulerRole",
+                "Arn"
+              ]
+            },
+            "EcsParameters": {
+              "TaskDefinitionArn": {
+                "Ref": "MaintenanceTask"
+              },
+              "TaskCount": 1,
+              "LaunchType": "FARGATE",
+              "PlatformVersion": "1.4.0",
+              "NetworkConfiguration": {
+                "AwsVpcConfiguration": {
+                  "AssignPublicIp": "DISABLED",
+                  "Subnets": [
+                    "subnet-041eb62bd816d9a26",
+                    "subnet-08ecbba0eda28ed91"
+                  ],
+                  "SecurityGroups": [
+                    "sg-05b165d6a7397c557"
+                  ]
+                }
+              }
+            },
+            "RetryPolicy": {
+              "MaximumRetryAttempts": 2,
+              "MaximumEventAgeInSeconds": 240
+            }
+          }
+        ]
+      }
+    },
+    "HighCpu": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "airs-agent-prod-CPUUtilization",
+        "Namespace": "AWS/ECS",
+        "MetricName": "CPUUtilization",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": "airs-agent-prod"
+          },
+          {
+            "Name": "ServiceName",
+            "Value": "airs-agent-prod"
+          }
+        ],
+        "Statistic": "Average",
+        "Period": 60,
+        "EvaluationPeriods": 5,
+        "Threshold": 80,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ],
+        "OKActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ]
+      }
+    },
+    "HighMemory": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "airs-agent-prod-MemoryUtilization",
+        "Namespace": "AWS/ECS",
+        "MetricName": "MemoryUtilization",
+        "Dimensions": [
+          {
+            "Name": "ClusterName",
+            "Value": "airs-agent-prod"
+          },
+          {
+            "Name": "ServiceName",
+            "Value": "airs-agent-prod"
+          }
+        ],
+        "Statistic": "Average",
+        "Period": 60,
+        "EvaluationPeriods": 5,
+        "Threshold": 85,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ],
+        "OKActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ]
+      }
+    },
+    "UnhealthyTargets": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "airs-agent-prod-unhealthy-targets",
+        "Namespace": "AWS/ApplicationELB",
+        "MetricName": "UnHealthyHostCount",
+        "Dimensions": [
+          {
+            "Name": "LoadBalancer",
+            "Value": {
+              "Fn::GetAtt": [
+                "LoadBalancer",
+                "LoadBalancerFullName"
+              ]
+            }
+          },
+          {
+            "Name": "TargetGroup",
+            "Value": {
+              "Fn::GetAtt": [
+                "TargetGroup",
+                "TargetGroupFullName"
+              ]
+            }
+          }
+        ],
+        "Statistic": "Maximum",
+        "Period": 60,
+        "EvaluationPeriods": 3,
+        "Threshold": 0,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ],
+        "OKActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ]
+      }
+    },
+    "AlertsTopic": {
+      "Type": "AWS::SNS::Topic",
+      "Properties": {
+        "TopicName": "airs-agent-prod-alerts",
+        "Tags": [
+          {
+            "Key": "Project",
+            "Value": "AIRS"
+          },
+          {
+            "Key": "Environment",
+            "Value": "Production"
+          }
+        ]
+      }
+    },
+    "AlertsEmail": {
+      "Type": "AWS::SNS::Subscription",
+      "Properties": {
+        "TopicArn": {
+          "Ref": "AlertsTopic"
+        },
+        "Protocol": "email",
+        "Endpoint": "admin@airsagent.com"
+      }
+    },
+    "DatabaseLowStorage": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "airs-agent-prod-database-low-storage",
+        "Namespace": "AWS/RDS",
+        "MetricName": "FreeStorageSpace",
+        "Dimensions": [
+          {
+            "Name": "DBInstanceIdentifier",
+            "Value": "airs-agent-prod-db"
+          }
+        ],
+        "Statistic": "Minimum",
+        "Period": 300,
+        "EvaluationPeriods": 2,
+        "Threshold": 5368709120,
+        "ComparisonOperator": "LessThanThreshold",
+        "TreatMissingData": "missing",
+        "AlarmActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ],
+        "OKActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ]
+      }
+    },
+    "MaintenanceFailureMetric": {
+      "Type": "AWS::Logs::MetricFilter",
+      "Properties": {
+        "LogGroupName": "/ecs/airs-agent-prod-maintenance",
+        "FilterPattern": "{ $.event = \"maintenance.expiration_failed\" }",
+        "MetricTransformations": [
+          {
+            "MetricNamespace": "AIRS/Production",
+            "MetricName": "MaintenanceFailures",
+            "MetricValue": "1",
+            "DefaultValue": 0
+          }
+        ]
+      }
+    },
+    "MaintenanceFailures": {
+      "Type": "AWS::CloudWatch::Alarm",
+      "Properties": {
+        "AlarmName": "airs-agent-prod-maintenance-failures",
+        "Namespace": "AIRS/Production",
+        "MetricName": "MaintenanceFailures",
+        "Statistic": "Sum",
+        "Period": 300,
+        "EvaluationPeriods": 1,
+        "Threshold": 0,
+        "ComparisonOperator": "GreaterThanThreshold",
+        "TreatMissingData": "notBreaching",
+        "AlarmActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ],
+        "OKActions": [
+          {
+            "Ref": "AlertsTopic"
+          }
+        ]
+      }
+    }
+  },
+  "Outputs": {
+    "LoadBalancerDns": {
+      "Value": {
+        "Fn::GetAtt": [
+          "LoadBalancer",
+          "DNSName"
+        ]
+      }
+    },
+    "LoadBalancerArn": {
+      "Value": {
+        "Ref": "LoadBalancer"
+      }
+    },
+    "TargetGroupArn": {
+      "Value": {
+        "Ref": "TargetGroup"
+      }
+    },
+    "BootstrapTask": {
+      "Value": {
+        "Ref": "BootstrapTask"
+      }
+    },
+    "MaintenanceTask": {
+      "Value": {
+        "Ref": "MaintenanceTask"
+      }
+    },
+    "WebTask": {
+      "Value": {
+        "Ref": "WebTask"
+      }
+    },
+    "AppPassword": {
+      "Value": {
+        "Ref": "AppPassword"
+      }
+    },
+    "MaintenancePassword": {
+      "Value": {
+        "Ref": "MaintenancePassword"
+      }
+    },
+    "SessionSecret": {
+      "Value": {
+        "Ref": "SessionSecret"
+      }
+    }
+  }
+}

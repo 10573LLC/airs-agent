@@ -1,0 +1,27 @@
+{
+  "release": "ae77083-ohio-20261001",
+  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:62726a5e85369991147be677a8503bac3285fda44b48e710ddd544c741d9c747",
+  "account": "578856792953",
+  "oidcSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-prod/oidc-client-nkrLpu",
+  "certificateArn": "arn:aws:acm:us-east-2:578856792953:certificate/b8c80d75-26d9-425d-915d-4a571539c978",
+  "region": "us-east-2",
+  "opsImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:936ab8912e94cf6afb6ff2355d65ca1328463922be230cfcbbdc1df54e16d960",
+  "foundation": {
+    "Vpc": "vpc-0363a653c82717957",
+    "MasterSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:rds!db-14d5fa96-95dc-49d4-a3a7-885b1c3dace3-1alt0v",
+    "AlbSecurityGroup": "sg-08afd21e5cbc9d779",
+    "RepositoryUri": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent",
+    "UserPoolClient": "4m7j4tbq76eb6afb8mr0jge7ji",
+    "PublicA": "subnet-0b00907e3d3d4198e",
+    "EcsSecurityGroup": "sg-05b165d6a7397c557",
+    "PublicB": "subnet-09de32da23d65ca56",
+    "Cluster": "airs-agent-prod",
+    "DatabaseSecurityGroup": "sg-03d1d33e4f3b031a4",
+    "UserPoolDomain": "airs-agent-578856792953-us-east-2",
+    "PrivateA": "subnet-041eb62bd816d9a26",
+    "UserPool": "us-east-2_7G9mvWY4g",
+    "DatabaseEndpoint": "airs-agent-prod-db.cp8c828kkueu.us-east-2.rds.amazonaws.com",
+    "OpsExecutionRoleArn": "arn:aws:iam::578856792953:role/airs-agent-prod-ops-execution-role",
+    "PrivateB": "subnet-08ecbba0eda28ed91"
+  }
+}

@@ -1,5 +1,7 @@
 # AIRS Agent on AWS ECS/Fargate
 
+**Current deployment (2026-10-01): account 578856792953, us-east-2 (Ohio).** See [OHIO-DEPLOYMENT.md](OHIO-DEPLOYMENT.md) and `ohio-deployment.json` for the active resources and verification. The dated us-east-1 / 854465560193 entries below are historical; do not reuse those identifiers for the current deployment.
+
 This directory documents the AWS deployment contract for the existing AIRS Agent application. It does not replace local Docker Compose.
 
 ## Verified application contract

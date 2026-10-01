@@ -1,0 +1,48 @@
+// Reproducible AIRS foundation. Never embeds credentials or imports unrelated resources.
+import { writeFileSync } from 'node:fs';
+const ref = Ref => ({ Ref });
+const sub = value => ({ 'Fn::Sub': value });
+const att = (r, a) => ({ 'Fn::GetAtt': [r, a] });
+const tags = name => [{ Key: 'Project', Value: 'AIRS' }, { Key: 'Environment', Value: 'Production' }, ...(name ? [{ Key: 'Name', Value: name }] : [])];
+const Resources = {};
+const add = (id, Type, Properties, rest = {}) => Resources[id] = { Type, Properties, ...rest };
+add('Vpc', 'AWS::EC2::VPC', { CidrBlock: '10.20.0.0/16', EnableDnsSupport: true, EnableDnsHostnames: true, Tags: tags('airs-agent-prod-vpc') });
+add('InternetGateway', 'AWS::EC2::InternetGateway', { Tags: tags('airs-agent-prod-igw') });
+add('GatewayAttachment', 'AWS::EC2::VPCGatewayAttachment', { VpcId: ref('Vpc'), InternetGatewayId: ref('InternetGateway') });
+add('PublicRoutes', 'AWS::EC2::RouteTable', { VpcId: ref('Vpc'), Tags: tags('airs-agent-prod-public') });
+add('PublicDefaultRoute', 'AWS::EC2::Route', { RouteTableId: ref('PublicRoutes'), DestinationCidrBlock: '0.0.0.0/0', GatewayId: ref('InternetGateway') }, { DependsOn: 'GatewayAttachment' });
+for (const [letter, az, publicCidr, privateCidr] of [['A', 'a', '10.20.0.0/20', '10.20.128.0/20'], ['B', 'b', '10.20.16.0/20', '10.20.144.0/20']]) {
+  for (const [kind, cidr] of [['Public', publicCidr], ['Private', privateCidr]]) {
+    add(`${kind}${letter}`, 'AWS::EC2::Subnet', { VpcId: ref('Vpc'), AvailabilityZone: sub('${AWS::Region}' + az), CidrBlock: cidr, MapPublicIpOnLaunch: false, Tags: tags(`airs-agent-prod-${kind.toLowerCase()}-${az}`) });
+  }
+  add(`PublicAssociation${letter}`, 'AWS::EC2::SubnetRouteTableAssociation', { SubnetId: ref(`Public${letter}`), RouteTableId: ref('PublicRoutes') });
+  add(`Eip${letter}`, 'AWS::EC2::EIP', { Domain: 'vpc', Tags: tags(`airs-agent-prod-nat-${az}`) }, { DependsOn: 'GatewayAttachment' });
+  add(`Nat${letter}`, 'AWS::EC2::NatGateway', { AllocationId: att(`Eip${letter}`, 'AllocationId'), SubnetId: ref(`Public${letter}`), Tags: tags(`airs-agent-prod-nat-${az}`) });
+  add(`PrivateRoutes${letter}`, 'AWS::EC2::RouteTable', { VpcId: ref('Vpc'), Tags: tags(`airs-agent-prod-private-${az}`) });
+  add(`PrivateDefault${letter}`, 'AWS::EC2::Route', { RouteTableId: ref(`PrivateRoutes${letter}`), DestinationCidrBlock: '0.0.0.0/0', NatGatewayId: ref(`Nat${letter}`) });
+  add(`PrivateAssociation${letter}`, 'AWS::EC2::SubnetRouteTableAssociation', { SubnetId: ref(`Private${letter}`), RouteTableId: ref(`PrivateRoutes${letter}`) });
+}
+add('EcsSecurityGroup', 'AWS::EC2::SecurityGroup', { GroupDescription: 'AIRS private ECS tasks', VpcId: ref('Vpc'), SecurityGroupEgress: [{ IpProtocol: '-1', CidrIp: '0.0.0.0/0' }], Tags: tags('airs-agent-prod-ecs-sg') });
+add('EndpointSecurityGroup', 'AWS::EC2::SecurityGroup', { GroupDescription: 'HTTPS only from AIRS ECS tasks', VpcId: ref('Vpc'), SecurityGroupIngress: [{ IpProtocol: 'tcp', FromPort: 443, ToPort: 443, SourceSecurityGroupId: ref('EcsSecurityGroup') }], Tags: tags('airs-agent-prod-vpce-sg') });
+add('DatabaseSecurityGroup', 'AWS::EC2::SecurityGroup', { GroupDescription: 'PostgreSQL only from AIRS ECS tasks', VpcId: ref('Vpc'), SecurityGroupIngress: [{ IpProtocol: 'tcp', FromPort: 5432, ToPort: 5432, SourceSecurityGroupId: ref('EcsSecurityGroup') }], Tags: tags('airs-agent-prod-db-sg') });
+add('AlbSecurityGroup', 'AWS::EC2::SecurityGroup', { GroupDescription: 'Public AIRS HTTPS load balancer', VpcId: ref('Vpc'), SecurityGroupIngress: [{ IpProtocol: 'tcp', FromPort: 443, ToPort: 443, CidrIp: '0.0.0.0/0' }, { IpProtocol: 'tcp', FromPort: 80, ToPort: 80, CidrIp: '0.0.0.0/0' }], SecurityGroupEgress: [{ IpProtocol: 'tcp', FromPort: 3000, ToPort: 3000, DestinationSecurityGroupId: ref('EcsSecurityGroup') }], Tags: tags('airs-agent-prod-alb-sg') });
+add('EcsAlbIngress', 'AWS::EC2::SecurityGroupIngress', { GroupId: ref('EcsSecurityGroup'), IpProtocol: 'tcp', FromPort: 3000, ToPort: 3000, SourceSecurityGroupId: ref('AlbSecurityGroup') });
+for (const [id, svc] of [['EcrApi', 'ecr.api'], ['EcrDkr', 'ecr.dkr'], ['LogsEndpoint', 'logs'], ['SecretsEndpoint', 'secretsmanager']]) {
+  add(id, 'AWS::EC2::VPCEndpoint', { VpcId: ref('Vpc'), VpcEndpointType: 'Interface', ServiceName: sub('com.amazonaws.${AWS::Region}.' + svc), PrivateDnsEnabled: true, SubnetIds: [ref('PrivateA'), ref('PrivateB')], SecurityGroupIds: [ref('EndpointSecurityGroup')] });
+}
+add('S3Endpoint', 'AWS::EC2::VPCEndpoint', { VpcId: ref('Vpc'), VpcEndpointType: 'Gateway', ServiceName: sub('com.amazonaws.${AWS::Region}.s3'), RouteTableIds: [ref('PrivateRoutesA'), ref('PrivateRoutesB')] });
+add('DatabaseSubnets', 'AWS::RDS::DBSubnetGroup', { DBSubnetGroupDescription: 'AIRS private database subnets', SubnetIds: [ref('PrivateA'), ref('PrivateB')], Tags: tags() });
+add('Database', 'AWS::RDS::DBInstance', { DBInstanceIdentifier: 'airs-agent-prod-db', Engine: 'postgres', EngineVersion: '16.15', DBInstanceClass: 'db.t4g.small', DBName: 'airs_agent', MasterUsername: 'postgres', ManageMasterUserPassword: true, AllocatedStorage: '20', MaxAllocatedStorage: 100, StorageType: 'gp3', StorageEncrypted: true, BackupRetentionPeriod: 7, DeletionProtection: true, PubliclyAccessible: false, MultiAZ: false, AvailabilityZone: sub('${AWS::Region}b'), DBSubnetGroupName: ref('DatabaseSubnets'), VPCSecurityGroups: [ref('DatabaseSecurityGroup')], AutoMinorVersionUpgrade: true, CopyTagsToSnapshot: true, EnableCloudwatchLogsExports: ['postgresql'], Tags: tags() }, { DeletionPolicy: 'Snapshot', UpdateReplacePolicy: 'Snapshot' });
+add('Repository', 'AWS::ECR::Repository', { RepositoryName: 'airs-agent', ImageTagMutability: 'IMMUTABLE', ImageScanningConfiguration: { ScanOnPush: true }, EncryptionConfiguration: { EncryptionType: 'AES256' }, Tags: tags() }, { DeletionPolicy: 'Retain', UpdateReplacePolicy: 'Retain' });
+add('Cluster', 'AWS::ECS::Cluster', { ClusterName: 'airs-agent-prod', CapacityProviders: ['FARGATE'], Tags: tags() });
+for (const [id, suffix] of [['AppLogs', ''], ['OpsLogs', '-ops'], ['MaintenanceLogs', '-maintenance']]) add(id, 'AWS::Logs::LogGroup', { LogGroupName: '/ecs/airs-agent-prod' + suffix, RetentionInDays: 30, Tags: tags() }, { DeletionPolicy: 'Retain', UpdateReplacePolicy: 'Retain' });
+add('UserPool', 'AWS::Cognito::UserPool', { UserPoolName: 'airs-agent-prod', UsernameAttributes: ['email'], UsernameConfiguration: { CaseSensitive: false }, AutoVerifiedAttributes: ['email'], AdminCreateUserConfig: { AllowAdminCreateUserOnly: true }, MfaConfiguration: 'ON', EnabledMfas: ['SOFTWARE_TOKEN_MFA'], Policies: { PasswordPolicy: { MinimumLength: 12, RequireLowercase: true, RequireUppercase: true, RequireNumbers: true, RequireSymbols: true, TemporaryPasswordValidityDays: 7 } }, AccountRecoverySetting: { RecoveryMechanisms: [{ Name: 'verified_email', Priority: 1 }] }, UserPoolTags: { Project: 'AIRS', Environment: 'Production' } }, { DeletionPolicy: 'Retain', UpdateReplacePolicy: 'Retain' });
+add('UserPoolClient', 'AWS::Cognito::UserPoolClient', { ClientName: 'airs-agent-web', UserPoolId: ref('UserPool'), GenerateSecret: true, AllowedOAuthFlowsUserPoolClient: true, AllowedOAuthFlows: ['code'], AllowedOAuthScopes: ['openid', 'email'], SupportedIdentityProviders: ['COGNITO'], CallbackURLs: ['https://app.airsagent.com/auth/callback'], LogoutURLs: ['https://app.airsagent.com/auth'], PreventUserExistenceErrors: 'ENABLED', EnableTokenRevocation: true, AccessTokenValidity: 1, IdTokenValidity: 1, RefreshTokenValidity: 1, TokenValidityUnits: { AccessToken: 'hours', IdToken: 'hours', RefreshToken: 'days' } });
+add('UserPoolDomain', 'AWS::Cognito::UserPoolDomain', { Domain: sub('airs-agent-${AWS::AccountId}-${AWS::Region}'), UserPoolId: ref('UserPool') });
+const trust = { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Principal: { Service: 'ecs-tasks.amazonaws.com' }, Action: 'sts:AssumeRole', Condition: { StringEquals: { 'aws:SourceAccount': ref('AWS::AccountId') }, ArnLike: { 'aws:SourceArn': sub('arn:${AWS::Partition}:ecs:${AWS::Region}:${AWS::AccountId}:*') } } }] };
+add('OpsExecutionRole', 'AWS::IAM::Role', { RoleName: 'airs-agent-prod-ops-execution-role', AssumeRolePolicyDocument: trust, Policies: [{ PolicyName: 'AirsOpsExecution', PolicyDocument: { Version: '2012-10-17', Statement: [{ Effect: 'Allow', Action: 'ecr:GetAuthorizationToken', Resource: '*' }, { Effect: 'Allow', Action: ['ecr:BatchCheckLayerAvailability', 'ecr:GetDownloadUrlForLayer', 'ecr:BatchGetImage'], Resource: att('Repository', 'Arn') }, { Effect: 'Allow', Action: ['logs:CreateLogStream', 'logs:PutLogEvents'], Resource: att('OpsLogs', 'Arn') }, { Effect: 'Allow', Action: 'secretsmanager:GetSecretValue', Resource: att('Database', 'MasterUserSecret.SecretArn') }] } }], Tags: tags() });
+const Outputs = {};
+for (const id of ['Vpc', 'PublicA', 'PublicB', 'PrivateA', 'PrivateB', 'EcsSecurityGroup', 'DatabaseSecurityGroup', 'AlbSecurityGroup', 'Cluster', 'UserPool', 'UserPoolClient', 'UserPoolDomain']) Outputs[id] = { Value: ref(id) };
+for (const [id, resource, attribute] of [['DatabaseEndpoint', 'Database', 'Endpoint.Address'], ['MasterSecretArn', 'Database', 'MasterUserSecret.SecretArn'], ['RepositoryUri', 'Repository', 'RepositoryUri'], ['OpsExecutionRoleArn', 'OpsExecutionRole', 'Arn']]) Outputs[id] = { Value: att(resource, attribute) };
+const template = { AWSTemplateFormatVersion: '2010-09-09', Description: 'AIRS isolated production foundation: two AZs, two NATs, private RDS/ECS and invitation-only Cognito.', Resources, Outputs };
+writeFileSync(new URL('./foundation.cloudformation.json', import.meta.url), JSON.stringify(template, null, 2) + '\n');

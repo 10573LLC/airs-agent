@@ -55,7 +55,8 @@ USER node
 # Test-only operator image; never used by the web service. Tests run natively
 # on the builder architecture and refuse any non-staging database endpoint.
 FROM build AS staging-exercise
-RUN chown -R node:node /app
+RUN mkdir -p /app/node_modules/.vite-temp /app/node_modules/.vite \
+    && chown node:node /app/node_modules/.vite-temp /app/node_modules/.vite
 USER node
 ENV NODE_ENV=test
 CMD ["node", "scripts/staging-exercise.mjs"]

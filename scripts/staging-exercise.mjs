@@ -4,7 +4,8 @@ const host=process.env.STAGING_DB_HOST;
 if (!host || !/^airs-agent-staging-db\.[a-z0-9]+\.us-east-2\.rds\.amazonaws\.com$/.test(host)) throw new Error('Refusing non-staging database');
 function connection(role,key) {
   const password=process.env[key];
-  if (!password || password.length<32) throw new Error('Missing staging credential');
+  // RDS manages the master password length; application passwords are 48 chars.
+  if (!password || password.length<(key==='ADMIN_DB_PASSWORD'?16:32)) throw new Error('Missing staging credential');
   const url=new URL(`postgresql://${role}@${host}:5432/airs_agent`);
   url.password=password;
   url.searchParams.set('sslmode','verify-full');

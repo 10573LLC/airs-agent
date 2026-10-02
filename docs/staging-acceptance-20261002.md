@@ -32,11 +32,11 @@ Run from the application checkout with Docker available. The harness creates its
 
 ## Release boundaries
 
-AWS discovery initially failed certificate validation. Using the workstation's trusted CA bundle through AWS_CA_BUNDLE allowed authentication to proceed. The user renewed the expired `airs-10573-deploy` session and STS verified account 578856792953. CloudFormation inventory contains AIRS production foundation/runtime stacks but no AIRS staging stack. Route53 has no hosted zones; the existing Ohio certificate covers only app.airsagent.com.
+After AWS renewal and Cloudflare sign-in, separate staging foundation/runtime stacks were deployed at https://staging.airsagent.com. All 21 migrations applied successfully. The web service, HTTPS/login-security checks and the five-entity service/database exercise passed in AWS. See ../deploy/aws/STAGING-DEPLOYMENT.md for exact task IDs, image metadata and release boundaries. Three infrastructure isolation tests and AWS template validation also passed.
 
-`deploy/aws/build-staging.mjs` prepares a separate foundation from the existing topology: 10.30.0.0/16 VPC, private encrypted staging database, separate ECS cluster, image repository, scoped roles and invitation-only MFA Cognito pool. It rejects the live application origin and imported physical network IDs. Two isolation tests, typecheck, and AWS CloudFormation template validation pass. This template has not been executed. Staging HTTPS requires a separate address and DNS access through Cloudflare; the Cloudflare dashboard was opened for user sign-in. Runtime deployment, credentials, schema bootstrap and cloud acceptance are still pending.
+The user authorized a staging invitation to admin@airsagent.com, and Cognito accepted the email request. Actual user password setup, MFA enrollment, verified-email sign-in and application invitation acceptance remain pending.
 
-Cloud browser acceptance, authenticated HTTP concurrency, backup/restore and rollout checks remain outstanding. Real Dedrone ingestion and external session revocation require an authorized vendor endpoint, API/session specifications, representative payloads, and credentials in a secret store. The synthetic Dedrone records here are test fixtures, not evidence of a live integration.
+Authenticated browser acceptance and concurrency, backup/restore and production rollout checks remain outstanding. Real Dedrone ingestion/revocation requires an authorized endpoint, provider specifications, representative payloads and secret-store credentials. Synthetic Dedrone records do not establish a live integration.
 
 Application draft PR: https://github.com/10573LLC/airs-agent/pull/4
 

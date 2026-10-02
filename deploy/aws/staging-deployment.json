@@ -1,0 +1,42 @@
+{
+  "publicBaseUrl": "https://staging.airsagent.com",
+  "environment": "staging",
+  "oidcSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-staging/oidc-client-An5Wt3",
+  "account": "578856792953",
+  "region": "us-east-2",
+  "release": "framework-8793ec9-20261002",
+  "foundation": {
+    "EcsSecurityGroup": "sg-028e018926e8b504a",
+    "OpsExecutionRoleArn": "arn:aws:iam::578856792953:role/airs-agent-staging-ops-execution-role",
+    "PublicA": "subnet-000272d14bbd20d00",
+    "AlbSecurityGroup": "sg-084f7b0ef0d2f636f",
+    "PrivateA": "subnet-07f23a1fbc1ff1f18",
+    "UserPool": "us-east-2_ENyVaAh5o",
+    "Vpc": "vpc-070b4a0a2e3e322c3",
+    "UserPoolDomain": "airs-agent-staging-578856792953-us-east-2",
+    "PrivateB": "subnet-0b42d764a4dd9c813",
+    "Cluster": "airs-agent-staging",
+    "DatabaseEndpoint": "airs-agent-staging-db.cp8c828kkueu.us-east-2.rds.amazonaws.com",
+    "RepositoryUri": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging",
+    "MasterSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:rds!db-a0ac98b8-919d-4995-8921-75ede743ca45-N50Hu7",
+    "PublicB": "subnet-0ab76f2c9cf155bbb",
+    "UserPoolClient": "h1s2sachpqc981oadgb7j33vl",
+    "DatabaseSecurityGroup": "sg-0c4b2dbb2246d214e"
+  },
+  "certificateArn": "arn:aws:acm:us-east-2:578856792953:certificate/63ad638f-3b65-48dd-baef-513b8dc46b2d",
+  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging@sha256:14653bc7cacbd0fcb3d0314d8bfa4095e909f4d7ec86cfe76cb20893d4f5f324",
+  "opsImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging@sha256:58906a9fdce8392045c7c1541f81441728bdce2183097530b64e86206ea642f7",
+  "exerciseImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging@sha256:ad450a2f1fd3c871855bddfe963369f5f82f0503df5a5eac02077b1c87923c7e",
+  "runtime": {
+    "TargetGroupArn": "arn:aws:elasticloadbalancing:us-east-2:578856792953:targetgroup/airs-agent-staging-web/876f8bf41f1bffc9",
+    "BootstrapTask": "arn:aws:ecs:us-east-2:578856792953:task-definition/airs-agent-staging-bootstrap:1",
+    "LoadBalancerArn": "arn:aws:elasticloadbalancing:us-east-2:578856792953:loadbalancer/app/airs-agent-staging-alb/7be11079982f9a75",
+    "MaintenancePassword": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-staging/maintenance-db-password-rq6VFA",
+    "LoadBalancerDns": "airs-agent-staging-alb-502863918.us-east-2.elb.amazonaws.com",
+    "MaintenanceTask": "arn:aws:ecs:us-east-2:578856792953:task-definition/airs-agent-staging-maintenance:1",
+    "AppPassword": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-staging/app-db-password-bLqYhL",
+    "SessionSecret": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-staging/session-7aOdMu",
+    "WebTask": "arn:aws:ecs:us-east-2:578856792953:task-definition/airs-agent-staging:1"
+  },
+  "exerciseTaskDefinition": "airs-agent-staging-exercise:2"
+}

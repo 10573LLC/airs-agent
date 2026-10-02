@@ -349,7 +349,7 @@
         "ContainerDefinitions": [
           {
             "Name": "airs-agent",
-            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:62726a5e85369991147be677a8503bac3285fda44b48e710ddd544c741d9c747",
+            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:0fbec48ff66d61a379ef1767892e28e2038bf8ae13adb90b99145f21a04209e2",
             "Essential": true,
             "User": "node",
             "Environment": [
@@ -391,7 +391,7 @@
               },
               {
                 "Name": "AIRS_APP_RELEASE",
-                "Value": "ae77083-ohio-20261001"
+                "Value": "observer-20261002"
               },
               {
                 "Name": "DATABASE_URL",
@@ -477,7 +477,7 @@
         "ContainerDefinitions": [
           {
             "Name": "bootstrap",
-            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:936ab8912e94cf6afb6ff2355d65ca1328463922be230cfcbbdc1df54e16d960",
+            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:7db6d0b2d02f4500a77f519159d659d2db8b1a12971920bdf6dbf6e01cd56982",
             "Essential": true,
             "User": "node",
             "Environment": [

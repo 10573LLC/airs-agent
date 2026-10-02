@@ -185,7 +185,7 @@ function MapPage() {
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
   const signedIn = session.data?.ok === true;
 
-  const incidents = useQuery({
+  const incidents = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["incidents"],
     queryFn: () => incidentsFn({ data: {} }),
     enabled: signedIn,
@@ -195,22 +195,22 @@ function MapPage() {
     queryFn: () => resourcesFn({ data: {} }),
     enabled: signedIn,
   });
-  const assignments = useQuery({
+  const assignments = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["incident-resource-assignments", incidentId],
     queryFn: () => assignmentsFn({ data: { incidentId } }),
     enabled: signedIn && Boolean(incidentId),
   });
-  const features = useQuery({
+  const features = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["map-features", incidentId],
     queryFn: () => featuresFn({ data: { incidentId: incidentId || null } }),
     enabled: signedIn,
   });
-  const areas = useQuery({
+  const areas = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["operating-areas", incidentId],
     queryFn: () => areasFn({ data: { incidentId: incidentId || null } }),
     enabled: signedIn,
   });
-  const locations = useQuery({
+  const locations = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["resource-locations", incidentId],
     queryFn: () =>
       incidentId
@@ -219,7 +219,7 @@ function MapPage() {
     enabled: signedIn,
   });
 
-  const observations = useQuery({
+  const observations = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["observations", "map", incidentId],
     queryFn: () => observationsFn({ data: { incidentId: incidentId || null } }),
     enabled: signedIn,

@@ -59,6 +59,7 @@ function hoursFromNow(h: number) {
 function IncidentDetailPage() {
   const { incidentId } = Route.useParams();
   const qc = useQueryClient();
+  const [liveUpdates, setLiveUpdates] = useState(true);
   const [notice, setNotice] = useState<string | null>(null);
   const [issuedToken, setIssuedToken] = useState<string | null>(null);
   const [partnerOrgId, setPartnerOrgId] = useState("");
@@ -84,14 +85,20 @@ function IncidentDetailPage() {
 
   const room = useQuery({
     queryKey: ["incident", incidentId],
+    refetchInterval: liveUpdates ? 3000 : false,
+    refetchIntervalInBackground: false,
     queryFn: () => read({ data: { incidentId } }),
   });
   const roster = useQuery({
     queryKey: ["incident-participants", incidentId],
+    refetchInterval: liveUpdates ? 3000 : false,
+    refetchIntervalInBackground: false,
     queryFn: () => participants({ data: { incidentId } }),
   });
   const history = useQuery({
     queryKey: ["incident-audit", incidentId],
+    refetchInterval: liveUpdates ? 3000 : false,
+    refetchIntervalInBackground: false,
     queryFn: () => auditFn({ data: { incidentId } }),
   });
   const trustList = useQuery({ queryKey: ["trusted"], queryFn: () => trusted({ data: {} }) });
@@ -213,6 +220,13 @@ function IncidentDetailPage() {
       {notice && (
         <p className="mt-4 rounded-md bg-muted px-3 py-2 text-sm text-foreground">{notice}</p>
       )}
+
+      <div className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
+        <span>{liveUpdates ? "Live updates · every 3 seconds" : "Live updates paused"}</span>
+        <span className="text-muted-foreground">{room.isError || roster.isError || history.isError ? "Connection interrupted — retrying" : `Last checked ${new Date(room.dataUpdatedAt).toLocaleTimeString()}`}</span>
+        <button className="underline" onClick={() => setLiveUpdates(!liveUpdates)}>{liveUpdates ? "Pause updates" : "Resume updates"}</button>
+      </div>
+      {incident.name.startsWith("EXERCISE") && <p className="mt-3 rounded-md border border-orange-400 bg-orange-50 p-3 text-sm font-semibold text-orange-950">EXERCISE ONLY — historical scenario, simulated agencies and events. No live emergency dispatch.</p>}
 
       <Panel title="Lifecycle">
         <div className="flex flex-wrap gap-2">
@@ -386,7 +400,7 @@ function IncidentDetailPage() {
         )}
       </Panel>
 
-      <IncidentAssignments incidentId={incidentId} />
+      <IncidentAssignments incidentId={incidentId} liveUpdates={liveUpdates} />
 
       <Panel title="Room history">
         {history.data && !history.data.ok ? (

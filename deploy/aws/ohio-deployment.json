@@ -1,11 +1,11 @@
 {
-  "release": "ae77083-ohio-20261001",
-  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:62726a5e85369991147be677a8503bac3285fda44b48e710ddd544c741d9c747",
+  "release": "observer-20261002",
+  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:0fbec48ff66d61a379ef1767892e28e2038bf8ae13adb90b99145f21a04209e2",
   "account": "578856792953",
   "oidcSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-prod/oidc-client-nkrLpu",
   "certificateArn": "arn:aws:acm:us-east-2:578856792953:certificate/b8c80d75-26d9-425d-915d-4a571539c978",
   "region": "us-east-2",
-  "opsImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:936ab8912e94cf6afb6ff2355d65ca1328463922be230cfcbbdc1df54e16d960",
+  "opsImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:7db6d0b2d02f4500a77f519159d659d2db8b1a12971920bdf6dbf6e01cd56982",
   "foundation": {
     "Vpc": "vpc-0363a653c82717957",
     "MasterSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:rds!db-14d5fa96-95dc-49d4-a3a7-885b1c3dace3-1alt0v",
@@ -23,5 +23,6 @@
     "DatabaseEndpoint": "airs-agent-prod-db.cp8c828kkueu.us-east-2.rds.amazonaws.com",
     "OpsExecutionRoleArn": "arn:aws:iam::578856792953:role/airs-agent-prod-ops-execution-role",
     "PrivateB": "subnet-08ecbba0eda28ed91"
-  }
+  },
+  "maintenanceImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:936ab8912e94cf6afb6ff2355d65ca1328463922be230cfcbbdc1df54e16d960"
 }

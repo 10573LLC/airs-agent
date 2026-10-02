@@ -60,7 +60,7 @@ const secondaryButtonClass =
 const smallButton =
   "rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-muted";
 
-export function IncidentAssignments({ incidentId }: { incidentId: string }) {
+export function IncidentAssignments({ incidentId, liveUpdates = true }: { incidentId: string; liveUpdates?: boolean }) {
   const qc = useQueryClient();
   const listFn = useServerFn(listIncidentAssignmentsFn);
   const resourcesFn = useServerFn(listResourcesFn);
@@ -83,6 +83,8 @@ export function IncidentAssignments({ incidentId }: { incidentId: string }) {
 
   const assignments = useQuery({
     queryKey: ["incident-assignments", incidentId],
+    refetchInterval: liveUpdates ? 3000 : false,
+    refetchIntervalInBackground: false,
     queryFn: () => listFn({ data: { incidentId } }),
   });
   const resources = useQuery({ queryKey: ["resources"], queryFn: () => resourcesFn({ data: {} }) });

@@ -1,4 +1,5 @@
 import { ResourceTasking } from "./resource-tasking";
+import { IncidentLocation } from "./incident-location";
 import { readResourceOrdersFn } from "@/lib/api/resource-orders.functions";
 import { FrameworkPanel } from "./framework-panel";
 import { AidRequests } from "./aid-requests";
@@ -363,6 +364,12 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
         <a className="underline" href={`/map?tools=true&incident=${incidentId}`}>
           Map tools
         </a>
+        <IncidentLocation
+          incidentId={incidentId}
+          version={incident.version}
+          address={incident.geographicDescription}
+          canEdit={commandBoard?.canDirect ?? false}
+        />
         <Sheet
           modal={false}
           open={toolPanel === "aid"}

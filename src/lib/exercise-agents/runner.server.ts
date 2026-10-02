@@ -189,7 +189,7 @@ export async function runAgencyCycle(input: {
             ? validatePlan(JSON.parse(receipt.summary), decision.count)
             : await planExercise(`${orgId}:${request.id}`, {
                 agency,
-                incidentName: room.name,
+                incidentName: `${room.name} · Incident location: ${room.geographicDescription || "not set by command"}`,
                 description: request.description,
                 stagingLocation: request.stagingLocation,
                 requestedUnits: request.quantity,

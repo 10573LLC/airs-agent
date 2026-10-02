@@ -2,6 +2,25 @@
 
 All notable changes. Newest first. Dates are UTC.
 
+## [AIRS + ICS Operational Completeness] 2026-10-02
+
+### Added
+
+- A reusable operational-completeness model driven by the AIRS framework and ICS
+  completeness concerns without making the AIRS interface look like an ICS form.
+- A concise operational picture covering situation, people/assets, location, timing,
+  operational context, and what happens next.
+- Explicit information-gap detection for a reported victim/person with no COP location,
+  operational resources with unknown locations, missing geography, unestablished command,
+  missing mission priority, and missing current actions.
+- Regression tests proving that victim/location omissions are surfaced rather than hidden.
+
+### Changed
+
+- The simulation operational workspace now exposes whether the incident picture is
+  understandable and actionable instead of only showing disconnected command, resource,
+  agency, map, and timeline panels.
+
 ## [Common Operating Picture Basemap Tile Loading Fix] 2026-08-08
 
 ### Fixed

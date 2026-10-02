@@ -1,0 +1,329 @@
+{
+  "exercise": "Anconison Helene coordination gauntlet",
+  "account": "578856792953",
+  "region": "us-east-2",
+  "incidentId": "513ce2ca-a791-4e55-89e4-cd37fee87de6",
+  "taskId": "86320fa5cb9343e281ce506cacb50790",
+  "startedAt": "2026-10-02T03:02:15.257Z",
+  "completedAt": "2026-10-02T03:11:00.997Z",
+  "status": "completed",
+  "externalInvitationsSent": 0,
+  "checks": 46,
+  "results": [
+    {
+      "check": "Restricted application role",
+      "outcome": "passed"
+    },
+    {
+      "check": "Uninvited agency 1 cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Uninvited agency 2 cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Uninvited agency 3 cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Uninvited agency 4 cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Uninvited agency 5 cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Uninvited agency 6 cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Stale incident version rejected",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_stale_version"
+      }
+    },
+    {
+      "check": "Agency 1 sees its invitation",
+      "outcome": "passed"
+    },
+    {
+      "check": "Invited agency 1 cannot read protected room",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Agency 2 sees its invitation",
+      "outcome": "passed"
+    },
+    {
+      "check": "Invited agency 2 cannot read protected room",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Agency 3 sees its invitation",
+      "outcome": "passed"
+    },
+    {
+      "check": "Invited agency 3 cannot read protected room",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Agency 4 sees its invitation",
+      "outcome": "passed"
+    },
+    {
+      "check": "Invited agency 4 cannot read protected room",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Agency 5 sees its invitation",
+      "outcome": "passed"
+    },
+    {
+      "check": "Invited agency 5 cannot read protected room",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Agency 6 sees its invitation",
+      "outcome": "passed"
+    },
+    {
+      "check": "Invited agency 6 cannot read protected room",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Acceptance waits for approval",
+      "outcome": "passed"
+    },
+    {
+      "check": "Pending approval cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Duplicate acceptance rejected",
+      "outcome": "passed",
+      "detail": {
+        "code": "participation_inactive"
+      }
+    },
+    {
+      "check": "Approved rescue can read",
+      "outcome": "passed"
+    },
+    {
+      "check": "Declined logistics cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "View-only partner cannot edit command",
+      "outcome": "passed",
+      "detail": {
+        "code": "forbidden"
+      }
+    },
+    {
+      "check": "Resource 1 ownership preserved",
+      "outcome": "passed"
+    },
+    {
+      "check": "Resource 1 owner-only notes withheld",
+      "outcome": "passed"
+    },
+    {
+      "check": "Resource 2 ownership preserved",
+      "outcome": "passed"
+    },
+    {
+      "check": "Resource 2 owner-only notes withheld",
+      "outcome": "passed"
+    },
+    {
+      "check": "Resource 6 ownership preserved",
+      "outcome": "passed"
+    },
+    {
+      "check": "Resource 6 owner-only notes withheld",
+      "outcome": "passed"
+    },
+    {
+      "check": "Partner cannot change another agency resource",
+      "outcome": "passed",
+      "detail": {
+        "code": "tenant_mismatch"
+      }
+    },
+    {
+      "check": "Observer sees three assignments",
+      "outcome": "passed"
+    },
+    {
+      "check": "Repeated read retains same incident",
+      "outcome": "passed"
+    },
+    {
+      "check": "Revoked agency cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Expired invitation cannot be accepted",
+      "outcome": "passed",
+      "detail": {
+        "code": "participation_inactive"
+      }
+    },
+    {
+      "check": "Unanswered agency cannot read",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Service reads with concurrency cap 2",
+      "outcome": "passed",
+      "detail": {
+        "requests": 239,
+        "errors": 0,
+        "p95Ms": 21,
+        "concurrencyCap": 2,
+        "observedPeak": 2,
+        "rateCeiling": 4,
+        "scope": "internal authenticated service + RLS; not HTTP load or capacity proof"
+      }
+    },
+    {
+      "check": "Service reads with concurrency cap 5",
+      "outcome": "passed",
+      "detail": {
+        "requests": 239,
+        "errors": 0,
+        "p95Ms": 17,
+        "concurrencyCap": 5,
+        "observedPeak": 1,
+        "rateCeiling": 4,
+        "scope": "internal authenticated service + RLS; not HTTP load or capacity proof"
+      }
+    },
+    {
+      "check": "Service reads with concurrency cap 10",
+      "outcome": "passed",
+      "detail": {
+        "requests": 240,
+        "errors": 0,
+        "p95Ms": 15,
+        "concurrencyCap": 10,
+        "observedPeak": 1,
+        "rateCeiling": 4,
+        "scope": "internal authenticated service + RLS; not HTTP load or capacity proof"
+      }
+    },
+    {
+      "check": "Closed incident denies former agency 1",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Closed incident denies former agency 2",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Closed incident denies former agency 3",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Closed incident denies former agency 6",
+      "outcome": "passed",
+      "detail": {
+        "code": "incident_not_found"
+      }
+    },
+    {
+      "check": "Owner retains lifecycle history",
+      "outcome": "passed"
+    }
+  ],
+  "scheduledExpiration": {
+    "expiredInvitations": 1,
+    "observedInBrowser": true,
+    "executionId": "53791b23-80bb-47f0-a839-1b21e1801b7f"
+  },
+  "observer": {
+    "activeOrganization": "Anconison Agency — Exercise",
+    "signedIn": true,
+    "activationResponsesResourcesAndClosureObserved": true,
+    "refreshSeconds": 3
+  },
+  "limitations": [
+    "HTTP/browser load and reconnection",
+    "maximum production capacity",
+    "restore",
+    "rollback",
+    "alert delivery"
+  ],
+  "publicLaunchReady": false,
+  "taskExitCode": 0,
+  "finalVerification": {
+    "taskId": "a4f647a66ccf494d9895c279c434e6b2",
+    "exitCode": 0,
+    "incidentStatus": "closed",
+    "activeSyntheticSessions": 0,
+    "completedAssignments": 3,
+    "livePartnerGrants": 0,
+    "applicationCanRunMaintenance": false
+  }
+}

@@ -477,6 +477,7 @@ function DesktopMapPanel({
           className="h-full w-full overflow-hidden rounded-md border border-border"
           picking={controls.picking}
           onPickPoint={controls.onPickPoint}
+          onDropResource={controls.onDropResource}
         />
         {controls.tray && <div className="absolute bottom-12 left-5 z-10">{controls.tray}</div>}
       </div>
@@ -513,6 +514,7 @@ function MapView({
         <CopMap
           picking={controls.picking}
           onPickPoint={controls.onPickPoint}
+          onDropResource={controls.onDropResource}
           items={mapItems}
           styleUrl={mapStyleUrl}
           attribution={mapAttribution}

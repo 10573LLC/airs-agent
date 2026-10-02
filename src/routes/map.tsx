@@ -168,6 +168,9 @@ function MapToolsPage() {
   const [incidentId, setIncidentId] = useState<string>(Route.useSearch().incident);
   const [featureType, setFeatureType] = useState<MapFeatureType>("staging_area");
   const [featureName, setFeatureName] = useState("");
+  const [featureDescription, setFeatureDescription] = useState("");
+  const [featureShared, setFeatureShared] = useState(false);
+  const [coordinateText, setCoordinateText] = useState({latitude:"",longitude:""});
   const [featurePrecision, setFeaturePrecision] = useState<PrecisionPolicy>("generalized");
   const [areaName, setAreaName] = useState("");
   const [areaFloor, setAreaFloor] = useState("0");
@@ -324,6 +327,8 @@ function MapToolsPage() {
           incidentId: incidentId || null,
           featureType,
           name: featureName,
+          description: featureDescription,
+          classification: featureShared ? "participating_orgs" : "originating_org_only",
           geometry: { type: "Point" as const, coordinates: picked as [number, number] },
           precisionPolicy: featurePrecision,
         },
@@ -519,6 +524,13 @@ function MapToolsPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <SectionCard title="Place a map feature" description="Owned by your agency.">
           <div className="space-y-3">
+            <details><summary className="cursor-pointer text-sm">Enter a known coordinate</summary>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Field label="Feature latitude"><input type="number" step="any" min="-90" max="90" className={inputClass} value={coordinateText.latitude} onChange={e=>setCoordinateText(v=>({...v,latitude:e.target.value}))}/></Field>
+                <Field label="Feature longitude"><input type="number" step="any" min="-180" max="180" className={inputClass} value={coordinateText.longitude} onChange={e=>setCoordinateText(v=>({...v,longitude:e.target.value}))}/></Field>
+              </div>
+              <button className={smallButton} disabled={!coordinateText.latitude||!coordinateText.longitude||!Number.isFinite(Number(coordinateText.latitude))||!Number.isFinite(Number(coordinateText.longitude))||Math.abs(Number(coordinateText.latitude))>90||Math.abs(Number(coordinateText.longitude))>180} onClick={()=>setPicked([Number(coordinateText.longitude),Number(coordinateText.latitude)])}>Use coordinate</button>
+            </details>
             <Field label="Type">
               <select
                 className={inputClass}
@@ -552,6 +564,8 @@ function MapToolsPage() {
                 ))}
               </select>
             </Field>
+            <Field label="Feature description / location source"><textarea className={inputClass} value={featureDescription} maxLength={2000} onChange={e=>setFeatureDescription(e.target.value)}/></Field>
+            <label className="flex gap-2 text-sm"><input type="checkbox" checked={featureShared} disabled={!incidentId} onChange={e=>setFeatureShared(e.target.checked)}/>Share feature with participating agencies in this incident</label>
             <button
               className={buttonClass}
               disabled={!picked || !featureName || addFeature.isPending}

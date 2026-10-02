@@ -15,6 +15,7 @@ export type CommandMapControls = {
   tray?: ReactNode;
   picking?: boolean;
   onPickPoint?: (point: [number, number]) => void;
+  onDropResource?: (assignmentId: string, point: [number, number]) => void;
 };
 type Board = Awaited<ReturnType<typeof readResourceOrders>>;
 const field = "w-full rounded border bg-background p-2 text-sm";
@@ -62,9 +63,18 @@ export function ResourceTasking({
     <>
       {children({
         picking,
+        onDropResource: (id, p) => {
+          if (!board?.canDirect || !awaiting.some((a) => a.id === id)) return;
+          choose(id);
+          setPoint(p);
+          setDestination(`Map destination: ${p[1].toFixed(5)}, ${p[0].toFixed(5)}`);
+          setPicking(false);
+        },
         onPickPoint: (p) => {
           if (!picking) return;
           setPoint(p);
+          if (!destination.trim())
+            setDestination(`Map destination: ${p[1].toFixed(5)}, ${p[0].toFixed(5)}`);
           setPicking(false);
           setOpen(true);
         },
@@ -78,6 +88,11 @@ export function ResourceTasking({
               {awaiting.map((a) => (
                 <button
                   key={a.id}
+                  draggable={board?.canDirect}
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData("application/x-airs-resource-assignment", a.id);
+                    event.dataTransfer.effectAllowed = "move";
+                  }}
                   title={`${a.ownerOrgName ?? "Your agency"} · ${a.label ?? "Resource"}`}
                   className="flex items-center gap-1 rounded border p-2 text-xs"
                   onClick={() => choose(a.id)}

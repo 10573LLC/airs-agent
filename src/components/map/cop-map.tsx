@@ -35,6 +35,7 @@ export interface CopMapProps {
   attribution?: string;
   className?: string;
   onPickPoint?: (lngLat: [number, number]) => void;
+  onDropResource?: (assignmentId: string, lngLat: [number, number]) => void;
   picking?: boolean;
   /** The coordinate the forms below the map are currently working with. */
   workingPoint?: [number, number] | null;
@@ -69,6 +70,7 @@ export function CopMap({
   attribution,
   className,
   onPickPoint,
+  onDropResource,
   picking,
   workingPoint,
 }: CopMapProps) {
@@ -168,9 +170,8 @@ export function CopMap({
       // worker is what schedules and parses vector tiles — the style, TileJSON
       // and sprites all load while no `.pbf` tile is ever requested. Handing
       // MapLibre a bundler-resolved worker URL fixes tile scheduling.
-      const { default: workerUrl } = await import(
-        "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"
-      );
+      const { default: workerUrl } =
+        await import("maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url");
       maplibre.setWorkerUrl(workerUrl);
       if (disposed || !holder.current) return;
       map = new maplibre.Map({
@@ -203,11 +204,7 @@ export function CopMap({
       m.on("load", install);
       m.on("styledata", install);
       m.on("mousemove", (event) => {
-        const hit = safeQuery(
-          m as unknown as MinimalMap,
-          event.point,
-          COP_INTERACTIVE_LAYER_IDS,
-        );
+        const hit = safeQuery(m as unknown as MinimalMap, event.point, COP_INTERACTIVE_LAYER_IDS);
         m.getCanvas().style.cursor = hit.length ? "pointer" : pickingRef.current ? "crosshair" : "";
       });
       m.on("click", (event) => {
@@ -343,6 +340,25 @@ export function CopMap({
           style={{ cursor: picking ? "crosshair" : undefined }}
           role="application"
           aria-label="Common operating picture map"
+          onDragOver={(event) => {
+            if (
+              onDropResource &&
+              event.dataTransfer.types.includes("application/x-airs-resource-assignment")
+            ) {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }
+          }}
+          onDrop={(event) => {
+            if (!onDropResource) return;
+            const id = event.dataTransfer.getData("application/x-airs-resource-assignment");
+            const map = mapRef.current as import("maplibre-gl").Map | null;
+            if (!id || !map || !holder.current) return;
+            event.preventDefault();
+            const rect = holder.current.getBoundingClientRect();
+            const point = map.unproject([event.clientX - rect.left, event.clientY - rect.top]);
+            onDropResource(id, [point.lng, point.lat]);
+          }}
         />
         {info ? (
           <div className="absolute bottom-2 left-2 max-w-[18rem] rounded-md border border-border bg-background/95 p-2 text-xs shadow-sm">

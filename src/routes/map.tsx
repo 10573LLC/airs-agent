@@ -856,7 +856,7 @@ function ProductionMapPage() {
   const incidents=useQuery({queryKey:["incidents"],queryFn:()=>list({data:{}}),refetchInterval:3000,refetchIntervalInBackground:false});
   const rows=incidents.data?.ok?incidents.data.data:[];
   const incidentId=selected || (rows.length===1?rows[0].id:"");
-  return <PageShell width="full" viewport><div className="flex h-full min-h-0 flex-col gap-2">
+  return <PageShell width="full"><div className="flex flex-col gap-2">
     <div className="flex shrink-0 flex-wrap items-center gap-3"><h1 className="text-lg font-semibold">Common Operating Picture</h1><label className="text-xs">Incident <select className="ml-2 rounded border bg-background px-2 py-1" value={incidentId} onChange={e=>setSelected(e.target.value)}><option value="">Select incident</option>{rows.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label></div>
     {incidents.data?.ok===false?<p role="alert">Select an authorized agency in the organization menu to load its incident workspace.</p>:incidentId?<div className="min-h-0 flex-1"><IncidentWorkspace key={incidentId} incidentId={incidentId}/></div>:<p>{incidents.isPending?"Loading incidents…":"Select an incident to view its command post, agencies, resources, map and decision log."}</p>}
   </div></PageShell>;

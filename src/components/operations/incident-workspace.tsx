@@ -343,7 +343,6 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
       <div className="min-h-0 flex-1">
         <OperationalWorkspace
           projection={projection}
-          viewport
           mode="production"
           exercise={exercise}
         />

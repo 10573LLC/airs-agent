@@ -7,7 +7,7 @@ import { BRAND } from "./assets";
  */
 
 /** Internal platform-tenant naming must never surface in the product UI. */
-const INTERNAL_ORG_NAME = /anconison/i;
+const INTERNAL_ORG_NAME = /^Anconison\s*[-–—]\s*AIRS Agent Platform$/i;
 
 export function displayOrgName(name: string | undefined | null): string {
   if (!name) return BRAND.name;

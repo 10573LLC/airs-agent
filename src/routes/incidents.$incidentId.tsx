@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 
@@ -49,7 +49,7 @@ export const Route = createFileRoute("/incidents/$incidentId")({
     ],
   }),
   ssr: false,
-  component: IncidentDetailPage,
+  component: IncidentRoute,
 });
 
 function hoursFromNow(h: number) {
@@ -418,4 +418,9 @@ function IncidentDetailPage() {
       </Panel>
     </main>
   );
+}
+
+function IncidentRoute() {
+  const hasCommandChild = useRouterState({ select: (state) => state.matches.some((match) => match.routeId === "/incidents/$incidentId/command") });
+  return hasCommandChild ? <Outlet /> : <IncidentDetailPage />;
 }

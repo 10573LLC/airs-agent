@@ -1,6 +1,6 @@
 {
-  "release": "observer-20261002",
-  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:0fbec48ff66d61a379ef1767892e28e2038bf8ae13adb90b99145f21a04209e2",
+  "release": "command-a511ae8-20261002",
+  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:5944db28060ebc9620a31ee6456568f18290d8638aac14312cb74cc98d2d6b58",
   "account": "578856792953",
   "oidcSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-prod/oidc-client-nkrLpu",
   "certificateArn": "arn:aws:acm:us-east-2:578856792953:certificate/b8c80d75-26d9-425d-915d-4a571539c978",

@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useRouterState } from "@tanstack/react-router";
 
 import { AppChrome } from "@/components/brand";
 
@@ -9,6 +9,8 @@ export const Route = createFileRoute("/incidents")({
 });
 
 function IncidentsLayout() {
+  const command = useRouterState({select: state => state.matches.some(match => match.routeId === "/incidents/$incidentId/command")});
+  if (command) return <Outlet />;
   return (
     <AppChrome>
       {/* Required: nested incident routes render here. */}

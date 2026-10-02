@@ -1,3 +1,4 @@
+import { IncidentWorkspace } from "@/components/operations/incident-workspace";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -17,7 +18,8 @@ import { MAP_FEATURE_LABELS, MAP_FEATURE_TYPES, type MapFeatureType } from "@/li
 export const Route = createFileRoute("/incidents/$incidentId/command")({
   head: () => ({ meta: [{ title: "Incident command console — AIRS Agent" }] }),
   ssr: false,
-  component: IncidentCommandConsole,
+  validateSearch: (search: Record<string, unknown>) => ({ edit: search.edit === true || search.edit === "true" }),
+  component: IncidentCommandRoute,
 });
 
 const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
@@ -267,6 +269,7 @@ function IncidentCommandConsole() {
   return (
     <PageShell width="full" viewport>
       <div className="flex h-full min-h-0 flex-col gap-2">
+        <a className="shrink-0 text-sm underline" href={`/incidents/${incidentId}/command`}>Back to operational workspace</a>
         {roomData.incident.name.startsWith("EXERCISE") && <p className="rounded border border-amber-500 bg-amber-50 p-2 text-sm font-semibold text-amber-950">EXERCISE ONLY — simulated agencies and activity; not a live emergency.</p>}
         <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs"><button className={smallButton} onClick={() => setLiveUpdates((v) => !v)}>{liveUpdates ? "Pause updates" : "Resume updates"}</button><span role="status">{!liveUpdates ? "Updates paused" : [room, roster, ics, assignments, features, areas, locations, observations].some((q) => q.isError || q.data?.ok === false) ? "Some updates failed — displayed information may be out of date" : "Checking for updates every 3 seconds while this tab is visible"}</span><span>Room checked: {room.dataUpdatedAt ? new Date(room.dataUpdatedAt).toLocaleTimeString() : "Waiting"}</span></div>
         <header className="flex shrink-0 flex-wrap items-center gap-3 rounded-md border border-border bg-card px-3 py-2 shadow-panel">
@@ -384,4 +387,10 @@ function IncidentCommandConsole() {
 
 function Metric({ label: text, value }: { label: string; value: string }) {
   return <div className="rounded-md border border-border bg-card px-3 py-2 shadow-panel"><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{text}</p><p className="mt-1 truncate text-sm font-semibold text-foreground">{value}</p></div>;
+}
+
+function IncidentCommandRoute() {
+  const {incidentId}=Route.useParams();
+  const {edit}=Route.useSearch();
+  return edit ? <IncidentCommandConsole/> : <PageShell width="full" viewport><IncidentWorkspace key={incidentId} incidentId={incidentId}/></PageShell>;
 }

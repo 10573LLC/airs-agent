@@ -13,7 +13,7 @@ Public identifiers, image digests and secret ARNs are in `staging-deployment.jso
 - Bootstrap task `b01ccf85f6b849b2853c5246d2f52385` exited 0: 21 migrations recorded, highest 0021, zero pending/checksum conflicts, no adoption required. No demo seed was applied.
 - Web service: desired 1, running 1, pending 0, deployment completed. HTTPS health returned 200 with database reachable.
 - Cloud HTTP checks passed: managed sign-in page, staging Cognito issuer/callback, PKCE S256, Secure/HttpOnly/SameSite transaction cookie, invalid callback rejection without a session.
-- Browser verification reached the staging Cognito sign-in form. This is not a completed human sign-in or MFA enrollment.
+- Human browser sign-in completed: the user reached the staging console with an active Platform Administrator session and accepted application invitation. AWS independently confirms verified email and preferred SOFTWARE_TOKEN_MFA.
 - Exercise task `11fcd8140aba49709f305565b4fd68b9` (`airs-agent-staging-exercise:2`) exited 0. The five-entity test passed against staging RDS in 6.70 seconds. It covers onboarding, automatic Partner and incident-only Associate sharing, human reports, provenance, missing/stale/conflicting positions, access denials, revocation, incident locking and closeout. Synthetic fixtures and sessions are removed in cleanup.
 - The first exercise stopped before fixture setup because its password-length check did not accommodate the RDS-managed master credential. The runner was corrected, rebuilt and passed on rerun; no credential was changed.
 - Earlier local validation: 458 tests/40 files, all 14 SQL suites, typecheck, production build and container smoke checks passed. Three additional infrastructure isolation tests and AWS template validation passed.
@@ -28,6 +28,6 @@ Docker on this workstation requires its configured HTTP/HTTPS build proxy. Optio
 
 ## Remaining gates
 
-The user authorized a staging login invitation to admin@airsagent.com. Cognito accepted the email invitation request and returned FORCE_CHANGE_PASSWORD. Password setup, authenticator enrollment, verified-email sign-in and acceptance of the separate application invitation still require the user. No email was sent before authorization, and no password or MFA credential was set on the user's behalf.
+The user authorized a staging login invitation to admin@airsagent.com. Cognito accepted the email invitation request and returned FORCE_CHANGE_PASSWORD. The user completed password setup, authenticator enrollment, email verification and acceptance of the separate application invitation. The temporary enrollment client was removed; only the staging web client remains. No email was sent before authorization, and no password or MFA credential was set on the user's behalf.
 
 Live Dedrone ingestion/revocation, authenticated browser concurrency, backup/restore and rollback drills remain unverified. Provider specifications, approved credentials and representative payloads remain prerequisites for live integration. Public-site PR #5 remains unpublished; production release and main merges have not occurred.

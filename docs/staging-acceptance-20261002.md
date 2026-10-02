@@ -34,7 +34,7 @@ Run from the application checkout with Docker available. The harness creates its
 
 After AWS renewal and Cloudflare sign-in, separate staging foundation/runtime stacks were deployed at https://staging.airsagent.com. All 21 migrations applied successfully. The web service, HTTPS/login-security checks and the five-entity service/database exercise passed in AWS. See ../deploy/aws/STAGING-DEPLOYMENT.md for exact task IDs, image metadata and release boundaries. Three infrastructure isolation tests and AWS template validation also passed.
 
-The user authorized a staging invitation to admin@airsagent.com, and Cognito accepted the email request. Actual user password setup, MFA enrollment, verified-email sign-in and application invitation acceptance remain pending.
+The user authorized a staging invitation to admin@airsagent.com, and Cognito accepted the email request. The user has now completed password setup, MFA enrollment, verified-email sign-in and application invitation acceptance. The staging console shows active Platform Administrator access. Temporary enrollment access was removed.
 
 Authenticated browser acceptance and concurrency, backup/restore and production rollout checks remain outstanding. Real Dedrone ingestion/revocation requires an authorized endpoint, provider specifications, representative payloads and secret-store credentials. Synthetic Dedrone records do not establish a live integration.
 

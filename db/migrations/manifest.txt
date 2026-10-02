@@ -17,3 +17,4 @@
 0017_information_path_model.sql
 0018_incident_owner_partner_resources.sql
 0019_friend_profiles.sql
+0020_locked_framework.sql

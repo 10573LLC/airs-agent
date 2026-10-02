@@ -61,6 +61,12 @@ const column = (t, c) =>
  * are neither present nor part of the same plan.
  */
 export const CANONICAL_OBJECTS = [
+  ...['entity_profiles','source_systems','partner_envelopes','incident_source_grants','operational_observations','supplemental_source_access','observation_correlations'].flatMap(name => [
+    {version:'0020',id:'airs.'+name,label:name,probe:table(name)},
+    {version:'0020',id:'rls:'+name,label:name+' forced RLS',probe:forced(name),requires:['airs.'+name]},
+    {version:'0020',id:'policy:'+name,label:name+' policies',probe:policy(name),requires:['airs.'+name]},
+  ]),
+  ...['framework_incident_active','framework_grant_valid','framework_closeout','expire_framework_state','activate_framework_partners','framework_activation_trigger','framework_entity_directory'].map(name=>({version:'0020',id:'airs.'+name+'()',label:name,probe:fn(name)})),
   {version: '0019', id:'airs.friend_briefings()', label:'reciprocal friend briefings', probe: fn('friend_briefings')},
   {version:'0019',id:'col:trusted_agencies.relationship_level',label:'Friend relationship level',probe:column('trusted_agencies','relationship_level')},
   // ---- 0001 tenancy foundation ------------------------------------------

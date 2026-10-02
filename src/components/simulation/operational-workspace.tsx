@@ -148,16 +148,16 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function OperationalPictureSummary({ picture }: { picture: NonNullable<SimOperationalProjection["operationalPicture"]> }) {
+function OperationalPictureSummary({ picture }: { picture: NonNullable<WorkspaceProjection["operationalPicture"]> }) {
   const compact = (items: string[]) => items.slice(0, 3).join(" · ");
   return (
     <div className="mt-3 rounded-md border border-border bg-background/80 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Operational picture</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">AIRS + ICS completeness logic translated into an immediate incident picture.</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">Current situation, locations, information gaps, and next actions.</p>
         </div>
-        {picture.gaps.length ? <StatusPill tone="caution">{picture.gaps.length} information gap{picture.gaps.length === 1 ? "" : "s"}</StatusPill> : <StatusPill tone="active">Picture complete</StatusPill>}
+        {picture.gaps.length ? <StatusPill tone="caution">{picture.gaps.length} information gap{picture.gaps.length === 1 ? "" : "s"}</StatusPill> : <StatusPill tone="active">No gaps detected by available checks</StatusPill>}
       </div>
       <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         <Metric label="Situation" value={picture.situation} />

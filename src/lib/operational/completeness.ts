@@ -1,6 +1,11 @@
-import type { SimAgency, SimCoordinationAction, SimMapItem, SimResource } from "@/lib/simulation/operational";
+import type { WorkspaceProjection } from "@/lib/operations/workspace-model";
 
-export const AIRS_COMPLETENESS_PILLARS = ["Awareness", "Intelligence", "Response", "Security"] as const;
+export const AIRS_COMPLETENESS_PILLARS = [
+  "Awareness",
+  "Intelligence",
+  "Response",
+  "Security",
+] as const;
 
 export const ICS_COMPLETENESS_CONCERNS = [
   "incident situation",
@@ -29,10 +34,10 @@ export interface OperationalCompletenessInput {
   incidentStatus: string;
   commandLead: string;
   priority: string;
-  agencies: readonly SimAgency[];
-  resources: readonly SimResource[];
-  mapItems: readonly SimMapItem[];
-  actions: readonly SimCoordinationAction[];
+  agencies: Readonly<WorkspaceProjection["agencies"]>;
+  resources: Readonly<WorkspaceProjection["resources"]>;
+  mapItems: Readonly<WorkspaceProjection["mapItems"]>;
+  actions: Readonly<WorkspaceProjection["actions"]>;
   sourceText?: string;
 }
 
@@ -46,19 +51,44 @@ export interface OperationalCompletenessInput {
  */
 export function buildOperationalPicture(input: OperationalCompletenessInput): OperationalPicture {
   const sourceText = input.sourceText ?? "";
-  const recentAction = [...input.actions].sort((a, b) => b.atSeconds - a.atSeconds)[0];
-  const locatedResources = input.resources.filter((item) => !/not reported|unknown|not specified/i.test(item.location));
-  const unknownLocationResources = input.resources.filter((item) => /not reported|unknown|not specified/i.test(item.location));
-  const peopleMentioned = /\b(victim|patient|missing person|injured person|casualt(?:y|ies)|person in the river|people in the river)\b/i.test(sourceText);
-  const mappedPeople = input.mapItems.some((item) => /victim|patient|missing person|casualt|person|people/i.test(`${item.label} ${item.detail}`));
-  const pendingActions = input.actions.filter((item) => item.status === "pending" || item.status === "active").slice(-5).reverse();
+  const recentAction = [...input.actions].sort(
+    (a, b) =>
+      (b.occurredAt ? Date.parse(b.occurredAt) : b.atSeconds) -
+      (a.occurredAt ? Date.parse(a.occurredAt) : a.atSeconds),
+  )[0];
+  const locatedResources = input.resources.filter(
+    (item) => !/not reported|unknown|not specified|withheld|stale/i.test(item.location),
+  );
+  const unknownLocationResources = input.resources.filter((item) =>
+    /not reported|unknown|not specified|withheld|stale/i.test(item.location),
+  );
+  const peopleMentioned =
+    /\b(victim|patient|missing person|injured person|casualt(?:y|ies)|person in the river|people in the river)\b/i.test(
+      sourceText,
+    );
+  const mappedPeople = input.mapItems.some(
+    (item) =>
+      !!item.geometry &&
+      /victim|patient|missing person|casualt|person|people/i.test(`${item.label} ${item.detail}`),
+  );
+  const pendingActions = input.actions
+    .filter((item) => item.status === "pending" || item.status === "active")
+    .slice(-5)
+    .reverse();
 
   const peopleAndAssets = [
-    ...input.resources.slice(0, 8).map((item) => `${item.name} — ${item.status.replaceAll("_", " ")}`),
+    ...input.resources
+      .slice(0, 8)
+      .map((item) => `${item.name} — ${item.status.replaceAll("_", " ")}`),
     ...input.agencies.slice(0, 5).map((item) => `${item.name} — ${item.role}`),
   ];
-  if (peopleMentioned && !peopleAndAssets.some((item) => /victim|patient|missing person|casualt/i.test(item))) {
-    peopleAndAssets.unshift("Victim/person involvement is reported in source information; accountability is incomplete.");
+  if (
+    peopleMentioned &&
+    !peopleAndAssets.some((item) => /victim|patient|missing person|casualt/i.test(item))
+  ) {
+    peopleAndAssets.unshift(
+      "Victim/person involvement is reported in source information; accountability is incomplete.",
+    );
   }
 
   const locations = [
@@ -67,15 +97,28 @@ export function buildOperationalPicture(input: OperationalCompletenessInput): Op
   ];
 
   const gaps: string[] = [];
-  if (peopleMentioned && !mappedPeople) gaps.push("Victim/person location is not represented in the common operating picture.");
-  if (unknownLocationResources.length) gaps.push(`${unknownLocationResources.length} operational resource${unknownLocationResources.length === 1 ? "" : "s"} lack a current usable location.`);
-  if (input.mapItems.length === 0) gaps.push("No incident geography is plotted.");
-  if (!input.commandLead || /not (yet )?established/i.test(input.commandLead)) gaps.push("Command/coordination lead is not established.");
+  if (peopleMentioned && !mappedPeople)
+    gaps.push("Victim/person location is not represented in the common operating picture.");
+  if (unknownLocationResources.length)
+    gaps.push(
+      `${unknownLocationResources.length} operational resource${unknownLocationResources.length === 1 ? "" : "s"} lack a current usable location.`,
+    );
+  if (!input.mapItems.some((item) => !!item.geometry))
+    gaps.push("No incident geography is plotted.");
+  if (!input.commandLead || /not (yet )?established|not entered/i.test(input.commandLead))
+    gaps.push("Command/coordination lead is not established.");
   if (!recentAction) gaps.push("No current operational action or decision is recorded.");
-  if (!input.priority || /awaiting|not established/i.test(input.priority)) gaps.push("Current mission priority is not established.");
+  if (!input.priority || /awaiting|not established/i.test(input.priority))
+    gaps.push("Current mission priority is not established.");
 
   const timing = recentAction
-    ? `Latest recorded operational action at T+${Math.floor(recentAction.atSeconds / 3600)}:${Math.floor((recentAction.atSeconds % 3600) / 60).toString().padStart(2, "0")}.`
+    ? recentAction.occurredAt
+      ? `Latest recorded operational update: ${recentAction.occurredAt}.`
+      : `Latest recorded operational action at T+${Math.floor(recentAction.atSeconds / 3600)}:${Math.floor(
+          (recentAction.atSeconds % 3600) / 60,
+        )
+          .toString()
+          .padStart(2, "0")}.`
     : "No operational update time is available.";
 
   const nextActions = pendingActions.length
@@ -86,10 +129,14 @@ export function buildOperationalPicture(input: OperationalCompletenessInput): Op
 
   return {
     situation: `${input.incidentStatus}. Priority: ${input.priority}.`,
-    peopleAndAssets: peopleAndAssets.length ? peopleAndAssets : ["No people, units, or operational assets are currently represented."],
-    locations: locations.length ? locations : ["Location picture incomplete — no usable incident positions are represented."],
+    peopleAndAssets: peopleAndAssets.length
+      ? peopleAndAssets
+      : ["No people, units, or operational assets are currently represented."],
+    locations: locations.length
+      ? locations
+      : ["Location picture incomplete — no usable incident positions are represented."],
     timing,
-    context: `${input.commandLead}. AIRS uses Awareness, Intelligence, Response, and Security with ICS completeness checks to keep the operational picture coherent without presenting an ICS worksheet.`,
+    context: `${input.commandLead}. ${input.incidentName}.`,
     nextActions,
     gaps,
   };

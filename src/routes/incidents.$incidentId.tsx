@@ -203,8 +203,17 @@ function IncidentDetailPage() {
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
       <div className="flex flex-wrap items-center gap-3">
-        <Link to="/incidents" className="text-sm underline">Back to incident rooms</Link>
-        <Link to="/incidents/$incidentId/command" search={{ edit: false }} params={{ incidentId }} className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Open command console</Link>
+        <Link to="/incidents" className="text-sm underline">
+          Back to incident rooms
+        </Link>
+        <Link
+          to="/incidents/$incidentId/command"
+          search={{ edit: false }}
+          params={{ incidentId }}
+          className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+        >
+          Open command console
+        </Link>
       </div>
       <h1 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">
         {incident.name}
@@ -223,10 +232,21 @@ function IncidentDetailPage() {
 
       <div className="mt-4 flex flex-wrap items-center gap-3 rounded-md border border-border bg-card px-3 py-2 text-sm">
         <span>{liveUpdates ? "Live updates · every 3 seconds" : "Live updates paused"}</span>
-        <span className="text-muted-foreground">{room.isError || roster.isError || history.isError ? "Connection interrupted — retrying" : `Last checked ${new Date(room.dataUpdatedAt).toLocaleTimeString()}`}</span>
-        <button className="underline" onClick={() => setLiveUpdates(!liveUpdates)}>{liveUpdates ? "Pause updates" : "Resume updates"}</button>
+        <span className="text-muted-foreground">
+          {room.isError || roster.isError || history.isError
+            ? "Connection interrupted — retrying"
+            : `Last checked ${new Date(room.dataUpdatedAt).toLocaleTimeString()}`}
+        </span>
+        <button className="underline" onClick={() => setLiveUpdates(!liveUpdates)}>
+          {liveUpdates ? "Pause updates" : "Resume updates"}
+        </button>
       </div>
-      {incident.name.startsWith("EXERCISE") && <p className="mt-3 rounded-md border border-orange-400 bg-orange-50 p-3 text-sm font-semibold text-orange-950">EXERCISE ONLY — historical scenario, simulated agencies and events. No live emergency dispatch.</p>}
+      {incident.name.startsWith("EXERCISE") && (
+        <p className="mt-3 rounded-md border border-orange-400 bg-orange-50 p-3 text-sm font-semibold text-orange-950">
+          EXERCISE ONLY — historical scenario, simulated agencies and events. No live emergency
+          dispatch.
+        </p>
+      )}
 
       <Panel title="Lifecycle">
         <div className="flex flex-wrap gap-2">
@@ -260,7 +280,7 @@ function IncidentDetailPage() {
       </Panel>
 
       {isOwner && (
-        <Panel title="Trusted agencies">
+        <Panel title="Legacy invitation restrictions">
           <form
             className="flex flex-wrap items-end gap-3"
             onSubmit={(e) => {
@@ -307,7 +327,7 @@ function IncidentDetailPage() {
       )}
 
       {isOwner && (
-        <Panel title="Invite a partner agency">
+        <Panel title="Invite a Partner or incident-only Associate">
           <form
             className="flex flex-wrap items-end gap-3"
             onSubmit={(e) => {
@@ -394,7 +414,7 @@ function IncidentDetailPage() {
               </li>
             ))}
             {roster.data?.ok && roster.data.data.length === 0 && (
-              <li className="text-sm text-muted-foreground">No partner agencies invited.</li>
+              <li className="text-sm text-muted-foreground">No entities invited.</li>
             )}
           </ul>
         )}
@@ -421,6 +441,9 @@ function IncidentDetailPage() {
 }
 
 function IncidentRoute() {
-  const hasCommandChild = useRouterState({ select: (state) => state.matches.some((match) => match.routeId === "/incidents/$incidentId/command") });
+  const hasCommandChild = useRouterState({
+    select: (state) =>
+      state.matches.some((match) => match.routeId === "/incidents/$incidentId/command"),
+  });
   return hasCommandChild ? <Outlet /> : <IncidentDetailPage />;
 }

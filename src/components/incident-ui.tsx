@@ -12,7 +12,7 @@ export const DENY_MESSAGES: Record<string, string> = {
   incident_not_found: "That incident room does not exist for your organization.",
   incident_state_invalid: "That action is not allowed in the room's current state.",
   incident_stale_version: "The room changed since you loaded it. Reload and try again.",
-  partner_not_eligible: "That agency is not an approved trusted partner.",
+  partner_not_eligible: "That entity is unavailable or has an explicit participation restriction.",
   participation_inactive: "Your organization's participation in this room is not active.",
   invalid_input: "Check the values you entered.",
   incident_closed: "That incident room is closed.",

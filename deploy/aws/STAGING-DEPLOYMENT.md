@@ -72,3 +72,7 @@ The final permission change passed four targeted workflow integration tests and 
 Browser verification saved `99 Slingerland St, Albany, NY 12202` as the current exercise incident address. The map feature attempt was denied before the scoped permission correction, so no incident marker was created. The user session subsequently expired. Final marker placement and actual drag-and-drop browser acceptance remain pending renewed sign-in; implemented behavior is not claimed as browser-verified. No command order was issued during these checks.
 
 Final cloud verification: runtime stack UPDATE_COMPLETE; web task revision 11 and responder revision 10 both have one running task, zero pending and COMPLETED deployments. The load balancer reported healthy targets, and the worker logged readiness for all twelve agency identities. Production and main were not deployed or merged.
+
+### Renewed-session browser acceptance
+
+After the user completed staging sign-in, the requesting agency was selected. The incident commander successfully placed `EXERCISE incident — 99 Slingerland St`, with approximate precision and Census address-interpolation provenance, shared with incident participants. The COP displayed one plotted incident marker and four awaiting-assignment resources. An actual drag of the Utilities tray icon onto the map opened its assignment draft with destination coordinates automatically populated. No command assignment was submitted. This completes the marker and drag-and-drop browser checks previously listed as pending.

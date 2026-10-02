@@ -200,15 +200,13 @@ export async function readFramework(token: string | null, incidentId?: string) {
         envelopes,
         grants,
         observationsTruncated: observations.length > 500,
-        observations: observations
-          .slice(0, 500)
-          .map((o) => ({
-            ...o.observation,
-            id: o.id,
-            orgId: o.orgId,
-            receivedTimestamp: o.receivedTimestamp,
-            operationalEntityId: o.operationalEntityId,
-          })) as Observation[],
+        observations: observations.slice(0, 500).map((o) => ({
+          ...o.observation,
+          id: o.id,
+          orgId: o.orgId,
+          receivedTimestamp: o.receivedTimestamp,
+          operationalEntityId: o.operationalEntityId,
+        })) as Observation[],
         supplemental,
       };
     },
@@ -274,10 +272,15 @@ export async function writeFramework(token: string | null, raw: FrameworkCommand
           const v = command.value;
           if (v.id) {
             const rows = await q.query(
-              `UPDATE airs.source_systems SET profile=$3,updated_at=now() WHERE id=$1 AND org_id=$2 RETURNING id`,
+              `UPDATE airs.source_systems SET profile=$3,health='identified',updated_at=now() WHERE id=$1 AND org_id=$2 RETURNING id`,
               [v.id, ctx.orgId, JSON.stringify(v)],
             );
             if (!rows.length) throw new AccessError("forbidden");
+            if (v.ingestionAuthorization !== "authorized")
+              await q.query(
+                `UPDATE airs.incident_source_grants SET revoked_at=coalesce(revoked_at,now()) WHERE source_id=$1 AND org_id=$2`,
+                [v.id, ctx.orgId],
+              );
           } else
             await q.query(`INSERT INTO airs.source_systems(org_id,profile) VALUES($1,$2)`, [
               ctx.orgId,

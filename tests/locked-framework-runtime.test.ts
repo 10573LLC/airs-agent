@@ -205,6 +205,10 @@ describe.skipIf(!enabled)("locked framework runtime", () => {
       }),
     ).rejects.toMatchObject({ code: "forbidden" });
     await service.writeFramework(adminToken, {
+      action: "readiness",
+      value: { id: sourceId, health: "verified", receipt: "Test connection receipt" },
+    });
+    await service.writeFramework(adminToken, {
       action: "source",
       value: { ...input, id: sourceId, ingestionAuthorization: "denied" },
     });
@@ -212,6 +216,14 @@ describe.skipIf(!enabled)("locked framework runtime", () => {
     await expect(
       service.writeFramework(adminToken, { action: "report", value: report }),
     ).rejects.toMatchObject({ code: "forbidden" });
+    await service.writeFramework(adminToken, {
+      action: "source",
+      value: { ...input, id: sourceId, ingestionAuthorization: "authorized" },
+    });
+    const renewed = await service.readFramework(adminToken, incidentId);
+    expect(renewed.sources[0].health).toBe("identified");
+    expect(renewed.observations).toEqual([]);
+    expect(renewed.grants[0].revokedAt).not.toBeNull();
     await service.writeFramework(adminToken, {
       action: "supplemental",
       value: {

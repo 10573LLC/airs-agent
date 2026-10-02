@@ -7,6 +7,7 @@ import { PageHeading, PageShell, SectionCard, StatusPill } from "@/components/br
 import { AgencyPreviewEffect, AgencyPreviewSession } from "@/components/simulation/agency-preview-session";
 import { AgencyWalkthrough } from "@/components/simulation/agency-walkthrough";
 import { OperationalWorkspace } from "@/components/simulation/operational-workspace";
+import { AgencyExerciseWorkspace } from "@/components/simulation/agency-exercise-workspace";
 import { getMe, getOrganization } from "@/lib/api/auth.functions";
 import { canRunSimulation } from "@/lib/rbac/module-access";
 import type { AgencyPreviewRole } from "@/lib/simulation/agency-preview";
@@ -147,6 +148,7 @@ function DesktopPlaybackBar({
 }
 
 function SimulationPage() {
+  const [exerciseMode, setExerciseMode] = useState<"agency" | "timeline">("agency");
   const me = useServerFn(getMe);
   const org = useServerFn(getOrganization);
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
@@ -233,8 +235,19 @@ function SimulationPage() {
     );
   }
 
+  if (exerciseMode === "agency") return (
+    <PageShell width="wide">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <Link to="/console" className="text-sm underline">Back to console</Link>
+        <button className="rounded-md border border-border px-3 py-2 text-sm" onClick={() => setExerciseMode("timeline")}>Open authored timeline lab</button>
+      </div>
+      <AgencyExerciseWorkspace key={session.data.data.account.accountId} accountId={session.data.data.account.accountId} />
+    </PageShell>
+  );
+
   return (
     <PageShell width="full" viewport={activeViewport}>
+      <button className="mb-2 rounded-md border border-border px-3 py-2 text-sm" onClick={() => setExerciseMode("agency")}>Return to agency exercise</button>
       <div className={activeViewport ? "xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-2" : ""}>
       <div className={activeViewport ? "rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-center text-sm font-bold tracking-wide text-warning-foreground xl:shrink-0 xl:px-3 xl:py-1.5 xl:text-xs" : "rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-center text-sm font-bold tracking-wide text-warning-foreground"}>
         {SIMULATION_BANNER}

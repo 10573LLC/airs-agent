@@ -32,7 +32,9 @@ Run from the application checkout with Docker available. The harness creates its
 
 ## Release boundaries
 
-AWS discovery initially failed certificate validation. Using the workstation's trusted CA bundle through AWS_CA_BUNDLE allowed authentication to proceed, revealing that the deployment profile session had expired. A renewed `airs-10573-deploy` session is required before cloud staging can be inspected or provisioned. No staging target has yet been verified.
+AWS discovery initially failed certificate validation. Using the workstation's trusted CA bundle through AWS_CA_BUNDLE allowed authentication to proceed. The user renewed the expired `airs-10573-deploy` session and STS verified account 578856792953. CloudFormation inventory contains AIRS production foundation/runtime stacks but no AIRS staging stack. Route53 has no hosted zones; the existing Ohio certificate covers only app.airsagent.com.
+
+`deploy/aws/build-staging.mjs` prepares a separate foundation from the existing topology: 10.30.0.0/16 VPC, private encrypted staging database, separate ECS cluster, image repository, scoped roles and invitation-only MFA Cognito pool. It rejects the live application origin and imported physical network IDs. Two isolation tests, typecheck, and AWS CloudFormation template validation pass. This template has not been executed. Staging HTTPS requires a separate address and DNS access through Cloudflare; the Cloudflare dashboard was opened for user sign-in. Runtime deployment, credentials, schema bootstrap and cloud acceptance are still pending.
 
 Cloud browser acceptance, authenticated HTTP concurrency, backup/restore and rollout checks remain outstanding. Real Dedrone ingestion and external session revocation require an authorized vendor endpoint, API/session specifications, representative payloads, and credentials in a secret store. The synthetic Dedrone records here are test fixtures, not evidence of a live integration.
 

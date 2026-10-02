@@ -47,6 +47,15 @@ const EMPTY_OPERATIONAL_PROJECTION: SimOperationalProjection = {
   resources: [],
   mapItems: [],
   actions: [],
+  operationalPicture: {
+    situation: "No active incident picture.",
+    peopleAndAssets: ["No people, units, or assets represented."],
+    locations: ["No incident geography represented."],
+    timing: "No operational update time is available.",
+    context: "No operational context established.",
+    nextActions: ["Establish the next operational objective/action."],
+    gaps: ["No active exercise scenario."],
+  },
 };
 
 const views: { id: View; label: string }[] = [
@@ -81,6 +90,7 @@ export function OperationalWorkspace({ projection: suppliedProjection, viewport 
           <Metric label="Priority" value={projection.priority} />
           <Metric label="Coordination picture" value={`${projection.agencies.length} organizations · ${projection.resources.length} resources`} />
         </div>
+        <OperationalPictureSummary picture={projection.operationalPicture ?? EMPTY_OPERATIONAL_PROJECTION.operationalPicture!} />
       </div>
 
       <div className="xl:hidden">
@@ -133,6 +143,35 @@ function Metric({ label, value }: { label: string; value: string }) {
     <div className="rounded-md border border-border bg-background/70 px-3 py-2">
       <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
       <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
+    </div>
+  );
+}
+
+function OperationalPictureSummary({ picture }: { picture: NonNullable<SimOperationalProjection["operationalPicture"]> }) {
+  const compact = (items: string[]) => items.slice(0, 3).join(" · ");
+  return (
+    <div className="mt-3 rounded-md border border-border bg-background/80 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Operational picture</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">AIRS + ICS completeness logic translated into an immediate incident picture.</p>
+        </div>
+        {picture.gaps.length ? <StatusPill tone="caution">{picture.gaps.length} information gap{picture.gaps.length === 1 ? "" : "s"}</StatusPill> : <StatusPill tone="active">Picture complete</StatusPill>}
+      </div>
+      <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
+        <Metric label="Situation" value={picture.situation} />
+        <Metric label="People & assets" value={compact(picture.peopleAndAssets)} />
+        <Metric label="Location picture" value={compact(picture.locations)} />
+        <Metric label="Timing" value={picture.timing} />
+        <Metric label="Operational context" value={picture.context} />
+        <Metric label="What happens next" value={compact(picture.nextActions)} />
+      </div>
+      {picture.gaps.length ? (
+        <div className="mt-3 rounded-md border border-amber-300/50 bg-amber-50/60 px-3 py-2 text-xs text-foreground">
+          <span className="font-semibold">Missing from the operational picture: </span>
+          {picture.gaps.join(" · ")}
+        </div>
+      ) : null}
     </div>
   );
 }

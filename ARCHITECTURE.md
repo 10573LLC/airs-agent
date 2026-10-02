@@ -503,3 +503,40 @@ later migration superseded can never re-enter either probe set, and a genuinely
 missing current object can never be silently accepted. The reconciliation body
 is derived from the canonical migrations rather than hand-copied, so a
 reconciled database and a freshly migrated one are definitionally identical.
+
+## AIRS + ICS operational completeness model (2026-10-02)
+
+AIRS Agent does **not** present itself as an ICS worksheet. AIRS and ICS are the
+frameworks used behind the interface to determine whether the operational picture
+is complete enough for a responder, supervisor, or incident leader to understand
+the situation and act.
+
+The governing rule is:
+
+> AIRS Agent should think through AIRS and ICS, but communicate as an operational
+> decision tool.
+
+The AIRS pillars — Awareness, Intelligence, Response, and Security — establish the
+platform's reasoning domains. ICS contributes completeness concerns such as incident
+situation, objectives and priorities, resource accountability, assignments, location
+and geography, hazards and safety, communications and coordination, command and
+authority, and time/change.
+
+Together they continuously answer the practical questions behind the 5W model:
+who is involved, what is happening, when it changed, where it is happening, why or
+what context governs it, and what needs to happen next. Those questions are internal
+completeness tests, not required UI headings.
+
+`src/lib/operational/completeness.ts` is the reusable implementation of
+this rule. A missing operational fact is surfaced as an information gap instead of
+being silently omitted or inferred. In particular, when source information describes
+a victim/person but the common operating picture has no represented location, AIRS
+flags that absence explicitly. The same applies to operational resources without a
+usable current position, missing geography, unestablished command/coordination,
+missing mission priority, or absence of a current action/decision.
+
+The simulation consumes this model through `SimOperationalProjection.operationalPicture`
+and renders a concise "Operational picture" rather than an ICS form. The live
+application should converge on the same shared model as operational entities and
+stream integrations are completed.
+

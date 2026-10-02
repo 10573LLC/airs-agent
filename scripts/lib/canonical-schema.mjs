@@ -61,6 +61,8 @@ const column = (t, c) =>
  * are neither present nor part of the same plan.
  */
 export const CANONICAL_OBJECTS = [
+  {version:'0021',id:'airs.lock_framework_incident()',label:'access-checked incident lock',probe:fn('lock_framework_incident')},
+  {version:'0021',id:'acl:lock_framework_incident',label:'incident lock privilege boundary',requires:['airs.lock_framework_incident()'],probe:`EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='lock_framework_incident' AND p.prosecdef AND p.provolatile='v' AND p.proconfig @> ARRAY['search_path=pg_catalog, airs'] AND has_function_privilege('airs_app',p.oid,'EXECUTE') AND NOT EXISTS(SELECT 1 FROM aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE'))`},
   ...['entity_profiles','source_systems','partner_envelopes','incident_source_grants','operational_observations','supplemental_source_access','observation_correlations'].flatMap(name => [
     {version:'0020',id:'airs.'+name,label:name,probe:table(name)},
     {version:'0020',id:'rls:'+name,label:name+' forced RLS',probe:forced(name),requires:['airs.'+name]},

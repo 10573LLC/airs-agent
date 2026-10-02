@@ -145,6 +145,7 @@ describe("legacy state classification", () => {
       "0018": "present",
       "0019": "present",
       "0020": "present",
+      "0021": "present",
     });
   });
 

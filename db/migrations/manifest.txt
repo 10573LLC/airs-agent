@@ -18,3 +18,4 @@
 0018_incident_owner_partner_resources.sql
 0019_friend_profiles.sql
 0020_locked_framework.sql
+0021_framework_participant_lock.sql

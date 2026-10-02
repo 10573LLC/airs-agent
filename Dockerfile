@@ -19,7 +19,7 @@ RUN npm run build
 FROM node:22-alpine AS production-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci --legacy-peer-deps
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps --no-audit --maxsockets=10
 RUN npm prune --omit=dev --legacy-peer-deps --no-audit --offline
 
 # Shared production filesystem. Keeping this separate lets AWS build a normal

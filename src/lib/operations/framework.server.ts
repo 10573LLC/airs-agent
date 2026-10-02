@@ -61,7 +61,7 @@ type Room = { incidentType: string; status: string; retention: number };
 async function activeRoom(q: QueryRunner, id: string): Promise<Room> {
   const rows = await q.query<Room>(
     `SELECT incident_type AS "incidentType",status,temp_data_retention_hours AS retention
-    FROM airs.incident_rooms WHERE id=$1 AND airs.framework_incident_active(id) FOR SHARE`,
+    FROM airs.lock_framework_incident($1)`,
     [id],
   );
   if (!rows[0]) throw new AccessError("incident_state_invalid");

@@ -1,132 +1,96 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-
-import {
-  BRAND,
-  BrandHorizontal,
-  BrandMark,
-  DataRow,
-  PageHeading,
-  PageShell,
-  SectionCard,
-  StatusPill,
-} from "@/components/brand";
-import { ROLE_KEYS, ROLE_LABELS, ROLE_PERMISSIONS } from "@/lib/rbac/roles";
+import { PageShell, PageHeading, SectionCard } from "@/components/brand";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "AIRS Agent — Secure Airspace Incident Coordination" },
+      { title: "AIRS Agent — One incident. One shared operational picture." },
       {
         name: "description",
         content:
-          "AIRS Agent coordinates drone and crewed-aircraft operations across public-safety agencies with tenant-isolated incident rooms and default-deny access.",
+          "Entity-led incident coordination. Authorized observations, responders, aircraft, hazards, and context in one Common Operating Picture.",
       },
-      { property: "og:title", content: "AIRS Agent — Secure Airspace Incident Coordination" },
-      {
-        property: "og:description",
-        content:
-          "Incident rooms, trusted-agency sharing and audited closure for public-safety airspace coordination.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: FoundationStatus,
+  component: PublicOverview,
 });
 
-const DOCS = [
-  "ARCHITECTURE.md",
-  "DATABASE.md",
-  "SECURITY.md",
-  "LOCAL_SETUP.md",
-  "CHANGELOG.md",
-  "BUILD_AUDIT.md",
-];
-
-const STAGES = [
-  { name: "Foundation & portability", state: "Closed", tone: "active" as const },
-  { name: "Authentication & authorization", state: "Closed", tone: "active" as const },
-  { name: "Incident room lifecycle", state: "Closed", tone: "active" as const },
-  { name: "Branding & expiration operations", state: "Current", tone: "info" as const },
-];
-
-// This screen reports source-derived build state only. No decorative controls:
-// application workflows live behind the console and incident routes.
-function FoundationStatus() {
+function PublicOverview() {
   return (
     <PageShell
       variant="public"
       headerRight={
-        <Link
-          to="/auth"
-          className="rounded-md border border-white/25 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-colors hover:bg-white/10"
-        >
+        <Link to="/auth" className="rounded border px-3 py-2 text-sm">
           Sign in
         </Link>
       }
     >
       <PageHeading
-        eyebrow="Stage 5A — Branding & expiration operations"
-        title="Secure airspace coordination, one incident at a time"
-        description="AIRS Agent lets separate public-safety agencies open a temporary incident room, share approved airspace information under explicit permission, and end that sharing the moment the incident closes."
+        eyebrow="Awareness · Intelligence · Response · Security"
+        title="One incident. One shared operational picture."
+        description="AIRS connects entities and brings authorized information into an incident-centric Common Operating Picture: what is happening, where people and assets are, what is uncertain, and what happens next."
       />
-
-      <div className="mt-10 grid gap-6 lg:grid-cols-3">
-        <SectionCard title="Build stages" className="lg:col-span-2">
-          <ul className="divide-y divide-border">
-            {STAGES.map((stage) => (
-              <li key={stage.name} className="flex items-center justify-between gap-4 py-2.5">
-                <span className="text-sm text-foreground">{stage.name}</span>
-                <StatusPill tone={stage.tone}>{stage.state}</StatusPill>
-              </li>
-            ))}
-          </ul>
+      <div className="mt-8 grid gap-5 md:grid-cols-3">
+        <SectionCard title="Partner">
+          <p>
+            A standing entity relationship defines a sharing envelope. Qualifying incidents activate
+            selected sources and information classes under its approval rules.
+          </p>
         </SectionCard>
-
-        <SectionCard title="Brand" description="Approved package v2, transparent masters">
-          <div className="flex flex-col items-center gap-4">
-            <BrandMark size={112} />
-            <BrandHorizontal width={260} />
-            <p className="text-center text-xs text-muted-foreground">{BRAND.tagline}</p>
-          </div>
+        <SectionCard title="Associate">
+          <p>
+            An invited entity chooses temporary sharing for one incident. Participation does not
+            require a permanent Partner relationship.
+          </p>
+        </SectionCard>
+        <SectionCard title="Participant">
+          <p>
+            Dispatch, radio, phone, liaison, email, and manual reporting bring operational
+            contributions into AIRS, even without source-system ingestion.
+          </p>
         </SectionCard>
       </div>
-
-      <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <SectionCard
-          title="Role model"
-          description="Nine roles, enforced server-side and by row-level security"
-        >
-          <ul className="divide-y divide-border">
-            {ROLE_KEYS.map((key) => (
-              <li key={key} className="flex flex-col gap-1 py-2.5">
-                <span className="text-sm font-medium text-foreground">{ROLE_LABELS[key]}</span>
-                <span className="font-mono text-[11px] leading-relaxed text-muted-foreground">
-                  {ROLE_PERMISSIONS[key].join(" · ")}
-                </span>
-              </li>
-            ))}
-          </ul>
+      <div className="mt-5 grid gap-5 md:grid-cols-2">
+        <SectionCard title="Onboard inside AIRS Agent">
+          <p>
+            Build an entity profile, identify capabilities and source systems, and answer
+            platform-specific follow-up questions. Authorizing AIRS ingestion is separate from
+            authorizing incident sharing.
+          </p>
+          <Link className="mt-3 inline-block underline" to="/agency/systems">
+            Entity onboarding and Source Systems
+          </Link>
         </SectionCard>
-
-        <div className="flex flex-col gap-6">
-          <SectionCard title="Operational guarantees">
-            <DataRow label="Tenancy" value="forced RLS, default deny" />
-            <DataRow label="Ownership" value="immutable per incident" />
-            <DataRow label="Sharing" value="ends at closure or expiry" />
-            <DataRow label="Expiration" value="airs.expire_incident_state()" />
-            <DataRow label="Audit" value="every state change recorded" />
-          </SectionCard>
-
-          <SectionCard title="Documentation in repository">
-            <ul className="grid grid-cols-2 gap-2 font-mono text-xs text-muted-foreground">
-              {DOCS.map((doc) => (
-                <li key={doc}>{doc}</li>
-              ))}
-            </ul>
-          </SectionCard>
-        </div>
+        <SectionCard title="Source entities retain ownership">
+          <p>
+            AIRS preserves provenance, timestamps, confidence, precision, and scope while
+            representing permitted information. Specialized source access is supplemental and
+            belongs to the entity and event.
+          </p>
+        </SectionCard>
+        <SectionCard title="Make gaps visible">
+          <p>
+            Unknown, not provided, not authorized, stale, conflicting, unverified, and unavailable
+            information have distinct meanings. Correlation preserves every underlying observation.
+          </p>
+        </SectionCard>
+        <SectionCard title="Close the incident, end sharing">
+          <p>
+            Incident sharing ends at closeout. Temporary external access is tracked through
+            confirmed revocation. Cached information expires under policy while designated evidence
+            and necessary audit history remain.
+          </p>
+        </SectionCard>
       </div>
+      <p className="mt-8 text-sm text-muted-foreground">
+        The acquisition model includes APIs and streams, secure tunnels, authorized web adapters,
+        structured transports, and human reporting. Each external integration requires source
+        authorization and verification. AIRS begins operationally empty; catalog and directory
+        presence do not imply connectivity or permission.
+      </p>
+      <a className="mt-5 inline-block underline" href="https://airsagent.com/">
+        Visit the AIRS Agent website
+      </a>
     </PageShell>
   );
 }

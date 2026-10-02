@@ -1,3 +1,4 @@
+import { createMapFeature } from "@/lib/map/map.server";
 import {
   issueResourceOrder,
   readResourceOrders,
@@ -265,6 +266,11 @@ describe.skipIf(!enabled)("requesting agency resource direction", () => {
     });
     await runAgencyCycle(agency);
     let board = await readResourceOrders(token, requesterOrgId, room.id);
+    const marker={incidentId:room.id,featureType:'point_of_interest',name:'EXERCISE incident location',geometry:{type:'Point',coordinates:[-73.77,42.64]},classification:'participating_orgs',precisionPolicy:'approximate'};
+    expect((await createMapFeature(token,requesterOrgId,marker)).name).toBe(marker.name);
+    await expect(createMapFeature(token,requesterOrgId,{...marker,incidentId:null})).rejects.toThrow();
+    await expect(createMapFeature(token,requesterOrgId,{...marker,featureType:'boundary'})).rejects.toThrow();
+    await expect(createMapFeature(agency.commandToken,agency.orgId,marker)).rejects.toThrow();
     expect(board.orders).toHaveLength(0);
     expect(board.assignments).toHaveLength(1);
     const input = {

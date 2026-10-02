@@ -514,7 +514,8 @@ export async function createMapFeature(
     {
       token,
       orgId,
-      permission: "map.feature.manage",
+      permission: incidentId && featureType === "point_of_interest" && geometry.type === "Point"
+        ? "incident.read" : "map.feature.manage",
       action: "map.feature.created",
       resourceType: "map_feature",
       detail: { featureType, incidentId, precision, classification },
@@ -522,6 +523,12 @@ export async function createMapFeature(
     },
     async (ctx, q) => {
       if (incidentId) await assertOwnsRoom(ctx, q, incidentId);
+      if (!ctx.permissions.has("map.feature.manage")) {
+        if (!incidentId || featureType !== "point_of_interest" || geometry.type !== "Point" || !ctx.permissions.has("incident.update"))
+          throw new AccessError("forbidden");
+        if (!(await q.query("SELECT * FROM airs.lock_framework_incident($1)", [incidentId])).length)
+          throw new AccessError("incident_state_invalid");
+      }
       const rows = await q.query<{ id: string }>(
         `INSERT INTO airs.map_features
            (org_id, incident_id, feature_type, name, description, geom, classification,

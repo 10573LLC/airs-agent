@@ -2,7 +2,9 @@
 FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps --no-audit --maxsockets=10
+RUN --mount=type=cache,target=/root/.npm --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi; \
+    npm ci --legacy-peer-deps --no-audit --maxsockets=10
 COPY . .
 # Vite inlines VITE_* variables at build time, so the operator's map style must
 # be present during `npm run build`. Passed explicitly as build args — .env is
@@ -19,7 +21,9 @@ RUN npm run build
 FROM node:22-alpine AS production-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps --no-audit --maxsockets=10
+RUN --mount=type=cache,target=/root/.npm --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then export NODE_EXTRA_CA_CERTS=/run/secrets/build_ca; fi; \
+    npm ci --legacy-peer-deps --no-audit --maxsockets=10
 RUN npm prune --omit=dev --legacy-peer-deps --no-audit --offline
 
 # Shared production filesystem. Keeping this separate lets AWS build a normal
@@ -47,6 +51,14 @@ RUN --mount=type=secret,id=build_ca \
       SSL_CERT_FILE=/run/secrets/build_ca apk add --no-cache postgresql-client; \
     else apk add --no-cache postgresql-client; fi
 USER node
+
+# Test-only operator image; never used by the web service. Tests run natively
+# on the builder architecture and refuse any non-staging database endpoint.
+FROM build AS staging-exercise
+RUN chown -R node:node /app
+USER node
+ENV NODE_ENV=test
+CMD ["node", "scripts/staging-exercise.mjs"]
 
 # Default production application image remains minimal and does not contain
 # PostgreSQL client tools.

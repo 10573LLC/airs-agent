@@ -1,5 +1,6 @@
 import { FrameworkPanel } from "./framework-panel";
 import { AidRequests } from "./aid-requests";
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { readFrameworkFn } from "@/lib/api/framework.functions";
 import { projectObservations } from "@/lib/operations/framework";
 import { buildOperationalPicture } from "@/lib/operational/completeness";
@@ -26,6 +27,7 @@ import { AgencyRelationships } from "./agency-relationships";
 
 export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
   const [live, setLive] = useState(true);
+  const [toolPanel, setToolPanel] = useState<"aid" | "sources" | null>(null);
   const read = useServerFn(readIncidentFn),
     participants = useServerFn(listParticipantsFn),
     history = useServerFn(readIncidentAuditFn);
@@ -308,22 +310,36 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
         <a className="underline" href={`/map?tools=true&incident=${incidentId}`}>
           Map tools
         </a>
+        <Sheet modal={false} open={toolPanel === "aid"} onOpenChange={(open) => setToolPanel(open ? "aid" : null)}>
+          <SheetTrigger asChild>
+            <button className="rounded border border-primary px-3 py-1.5 font-semibold text-primary">Request aid / agency responses</button>
+          </SheetTrigger>
+          <SheetContent className="flex w-full flex-col gap-4 sm:w-[42rem] sm:max-w-[min(42rem,90vw)]">
+            <SheetHeader className="shrink-0 pr-8">
+              <SheetTitle>Request aid and agency responses</SheetTitle>
+              <SheetDescription>Send requests and review agency replies alongside the incident picture.</SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2"><AidRequests incidentId={incidentId} /></div>
+          </SheetContent>
+        </Sheet>
+        <Sheet modal={false} open={toolPanel === "sources"} onOpenChange={(open) => setToolPanel(open ? "sources" : null)}>
+          <SheetTrigger asChild>
+            <button className="rounded border px-3 py-1.5 font-semibold">Sources / sharing</button>
+          </SheetTrigger>
+          <SheetContent className="flex w-full flex-col gap-4 sm:w-[42rem] sm:max-w-[min(42rem,90vw)]">
+            <SheetHeader className="shrink-0 pr-8">
+              <SheetTitle>Incident sources and sharing</SheetTitle>
+              <SheetDescription>Review observations, source access and sharing details.</SheetDescription>
+            </SheetHeader>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2"><FrameworkPanel incidentId={incidentId} orgId={orgId!} /></div>
+          </SheetContent>
+        </Sheet>
       </div>
       {exercise && (
         <p className="shrink-0 rounded border border-amber-500 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950">
           EXERCISE ONLY — simulated participants; no live emergency dispatch.
         </p>
       )}
-      <details open className="shrink-0 max-h-[45vh] overflow-auto">
-        <summary className="cursor-pointer text-sm font-semibold">Request aid and agency responses</summary>
-        <AidRequests incidentId={incidentId} />
-      </details>
-      <details className="shrink-0 max-h-[45vh] overflow-auto">
-        <summary className="cursor-pointer text-sm font-semibold">
-          Incident sharing, observations, and supplemental access
-        </summary>
-        <FrameworkPanel incidentId={incidentId} orgId={orgId!} />
-      </details>
       <div className="min-h-0 flex-1">
         <OperationalWorkspace
           projection={projection}

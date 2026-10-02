@@ -38,6 +38,11 @@ async function serverCtx() {
 
 // --- authentication ---------------------------------------------------------
 
+export const getLoginMode = createServerFn({ method: "GET" }).handler(async () => {
+  const { authDriver } = await import("@/lib/auth/oidc-config.server");
+  return { managed: authDriver() === "oidc" };
+});
+
 export const signIn = createServerFn({ method: "POST" })
   .validator((d: { email: string; password: string }) =>
     z.object({ email: emailSchema, password: z.string().min(1).max(512) }).parse(d),
@@ -68,7 +73,8 @@ export const signOut = createServerFn({ method: "POST" }).handler(async () =>
     const { token, meta } = await serverCtx();
     if (token) await getAuthAdapter().signOut(token, meta);
     clearSessionCookie();
-    return { signedOut: true };
+    const { authDriver, cognitoLogoutUrl } = await import("@/lib/auth/oidc-config.server");
+    return { signedOut: true, logoutUrl: authDriver() === "oidc" ? cognitoLogoutUrl() : null };
   }),
 );
 
@@ -98,9 +104,7 @@ export const selectOrganization = createServerFn({ method: "POST" })
   );
 
 export const getOrganization = createServerFn({ method: "GET" })
-  .validator((d: { orgId?: string | null }) =>
-    z.object({ orgId: uuid.nullish() }).parse(d ?? {}),
-  )
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: uuid.nullish() }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { readOrganization } = await import("@/lib/auth/memberships.server");
@@ -112,9 +116,7 @@ export const getOrganization = createServerFn({ method: "GET" })
 // --- membership administration ----------------------------------------------
 
 export const listOrganizationMembers = createServerFn({ method: "GET" })
-  .validator((d: { orgId?: string | null }) =>
-    z.object({ orgId: uuid.nullish() }).parse(d ?? {}),
-  )
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: uuid.nullish() }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listMembers } = await import("@/lib/auth/memberships.server");
@@ -174,9 +176,7 @@ export const reinstateMembershipFn = createServerFn({ method: "POST" })
 // --- invitations -------------------------------------------------------------
 
 export const listInvitationsFn = createServerFn({ method: "GET" })
-  .validator((d: { orgId?: string | null }) =>
-    z.object({ orgId: uuid.nullish() }).parse(d ?? {}),
-  )
+  .validator((d: { orgId?: string | null }) => z.object({ orgId: uuid.nullish() }).parse(d ?? {}))
   .handler(async ({ data }) =>
     guard(async () => {
       const { listInvitations } = await import("@/lib/auth/invitations.server");
@@ -227,9 +227,7 @@ export const regenerateInvitationFn = createServerFn({ method: "POST" })
   );
 
 export const previewInvitationFn = createServerFn({ method: "GET" })
-  .validator((d: { token: string }) =>
-    z.object({ token: z.string().min(16).max(256) }).parse(d),
-  )
+  .validator((d: { token: string }) => z.object({ token: z.string().min(16).max(256) }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { previewInvitation } = await import("@/lib/auth/invitations.server");
@@ -239,9 +237,7 @@ export const previewInvitationFn = createServerFn({ method: "GET" })
   );
 
 export const acceptInvitationFn = createServerFn({ method: "POST" })
-  .validator((d: { token: string }) =>
-    z.object({ token: z.string().min(16).max(256) }).parse(d),
-  )
+  .validator((d: { token: string }) => z.object({ token: z.string().min(16).max(256) }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { acceptInvitation } = await import("@/lib/auth/invitations.server");
@@ -319,9 +315,7 @@ export const revokeAllSessionsFn = createServerFn({ method: "POST" }).handler(as
 // result is a normal authenticated session — access itself is never bypassed.
 
 export const previewActivationFn = createServerFn({ method: "POST" })
-  .validator((d: { token: string }) =>
-    z.object({ token: z.string().min(16).max(512) }).parse(d),
-  )
+  .validator((d: { token: string }) => z.object({ token: z.string().min(16).max(512) }).parse(d))
   .handler(async ({ data }) =>
     guard(async () => {
       const { previewActivation } = await import("@/lib/auth/activation.server");

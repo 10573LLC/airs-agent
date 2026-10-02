@@ -1,0 +1,54 @@
+{
+  "id": "anconison-helene-2024-gauntlet",
+  "title": "EXERCISE ONLY — Anconison Helene coordination gauntlet",
+  "mode": "simulated-participants-no-external-delivery",
+  "historicalBasis": {
+    "incident": "Hurricane Helene, western North Carolina, September–October 2024",
+    "sources": [
+      "https://www.ncdps.gov/blog/2024/10/25/helene-response-search-and-rescue",
+      "https://www.ncdps.gov/news/press-releases/2024/10/06/rescue-teams-continue-locate-survivors-communications-improve-and-more-military-assets-join-storm"
+    ],
+    "distinction": "Geographic and disaster context is historical. Agency names, requests, locations of simulated assets, incident decisions and timing are fictional. Not operational guidance or a reconstruction of actual responders' decisions."
+  },
+  "originatingAgency": "Anconison Agency — Exercise",
+  "agencies": [
+    {"name":"Blue Ridge Rescue — Exercise","response":"accept immediately; owner approval required"},
+    {"name":"Mountain Air Support — Exercise","response":"accept after delay; later share an aircraft summary"},
+    {"name":"Piedmont UAS — Exercise","response":"accept; restricted access; attempt unauthorized edit must fail"},
+    {"name":"Foothills Logistics — Exercise","response":"decline because resources unavailable"},
+    {"name":"Valley Medical — Exercise","response":"no response; invitation expires"},
+    {"name":"Ridge Communications — Exercise","response":"accept; disconnect/reconnect; owner revokes access"}
+  ],
+  "observer": {
+    "email":"admin@airsagent.com",
+    "membership":"explicit Anconison exercise membership separate from platform administration",
+    "startGate":"Do not start paced scenario until observer has signed in, selected Anconison, and has incident view open.",
+    "refreshSeconds":3,
+    "minimumEventSpacingSeconds":20,
+    "controlsRequired":["start","pause","resume","stop"],
+    "show":["incident state","agency responses","resource requests","resource assignments","map","audit history","last successful update time"]
+  },
+  "checks": [
+    "No membership before invitation acceptance",
+    "Pending approval cannot see protected room details",
+    "Approved participants see only their permitted disclosure",
+    "Declined, expired, revoked and unrelated agencies cannot read incident data",
+    "Duplicate acceptance and stale version updates are rejected",
+    "View-only agency cannot edit incident or other agencies' resources",
+    "Owner-only details never appear in a partner response",
+    "Sharing never changes resource ownership",
+    "Refresh and reconnection reflect persisted state without duplicate actions",
+    "Closing incident removes live participation access and retains authorized audit history",
+    "Maintenance expiration runs without granting application-role maintenance privilege"
+  ],
+  "boundedLoad": {
+    "concurrencySteps":[2,5,10],
+    "secondsPerStep":60,
+    "maximumRequestsPerSecond":5,
+    "scope":"authenticated AIRS reads and approved synthetic incident writes only; no Cognito password traffic or AWS map tile load test",
+    "stopOn":["any authorization leak","sustained server errors above 1 percent","read p95 above 2 seconds for two samples","unhealthy target","operator stop"],
+    "note":"Controlled baseline gauntlet, not a proof of maximum production capacity. Record latency, error counts and actual load; do not report synthetic successes."
+  },
+  "releaseGates":["administrator MFA verified","observer ready","actual service/RLS exercise passes","alert delivery confirmed","restore drill passes","rollback drill passes"],
+  "executionStatus":"PREPARED_NOT_STARTED"
+}

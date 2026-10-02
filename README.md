@@ -6,8 +6,11 @@ AIRS Agent lets separate agencies open temporary incident rooms, share approved 
 information, coordinate drone and crewed-aircraft operations, and end that sharing when the
 incident closes.
 
-**Status:** foundation only. No authentication and no application features yet — see
-`BUILD_AUDIT.md` for the verified state of every claim.
+**Status:** application implementation with database-backed sessions, agency permissions,
+invitations, incident coordination and mapping. Local login is available for development;
+the AWS deployment uses Cognito managed login. See [AWS deployment requirements](deploy/aws/README.md)
+for configuration, verification and remaining live acceptance checks. Historical foundation
+audits do not describe the current deployment state.
 
 ## Stack
 
@@ -21,13 +24,13 @@ No hosted builder service is required to install, test, build, run or deploy thi
 ## Quick start
 
 ```sh
-git clone https://github.com/anconison/airs-agent.git
+git clone https://github.com/10573LLC/airs-agent.git
 cd airs-agent
-npm install
+npm ci --legacy-peer-deps
 cp .env.example .env        # then edit DATABASE_URL
 npm run db:migrate && npm run db:seed
 npm run test
-npm run build && node .output/server/index.mjs
+npm run build && node --env-file=.env .output/server/index.mjs
 ```
 
 Full instructions: `LOCAL_SETUP.md`. Architecture: `ARCHITECTURE.md`. Schema: `DATABASE.md`.

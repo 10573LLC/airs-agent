@@ -138,12 +138,14 @@ function ActivateAccountPage() {
     );
   }
 
-  if (data.data.accountExists) {
+  if (data.data.accountExists || data.data.managedLogin) {
     return (
       <Shell>
         <p className="mt-4 text-sm text-muted-foreground">
-          An account already exists for this invitation. Sign in first, then open the invitation
-          link again to accept it.
+          Sign in with your invited e-mail address to accept this invitation.
+          {data.data.managedLogin
+            ? " Use the temporary credentials provided by your administrator and complete authenticator setup when prompted."
+            : ""}
         </p>
         <Link
           to="/auth"

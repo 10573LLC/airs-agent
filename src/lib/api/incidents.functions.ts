@@ -7,6 +7,7 @@
 // decision: only ids and the fields the server explicitly validates.
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { friendProfileSchema } from '@/lib/incidents/friend-profile';
 
 export type ApiResult<T> = { ok: true; data: T } | { ok: false; code: string };
 
@@ -484,3 +485,10 @@ export const partnerParticipationActionFn = createServerFn({ method: "POST" })
       );
     }),
   );
+
+export const listFriendBriefingsFn = createServerFn({method:'GET'})
+  .validator((d:{orgId?:string|null})=>z.object({orgId:orgIdField}).parse(d??{}))
+  .handler(async({data})=>guard(async()=>{const {listFriendBriefings}=await trust();const {token,meta}=await serverCtx();return listFriendBriefings(token,data.orgId??null,meta);}));
+export const saveFriendProfileFn = createServerFn({method:'POST'})
+  .validator((d:unknown)=>z.object({orgId:orgIdField,partnerOrgId:uuid,relationshipLevel:z.enum(['associate','friend']),shareProfile:z.boolean(),profile:friendProfileSchema,validUntil:z.string().datetime().nullable()}).parse(d))
+  .handler(async({data})=>guard(async()=>{const {saveFriendProfile}=await trust();const {token,meta}=await serverCtx();return saveFriendProfile(token,data.orgId??null,data,meta);}));

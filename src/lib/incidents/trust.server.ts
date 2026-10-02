@@ -6,6 +6,8 @@ import { AccessError } from "@/lib/auth/errors";
 import type { RequestMeta } from "@/lib/auth/types";
 
 import { TRUST_STATUSES, type TrustStatus } from "./lifecycle";
+import { friendProfileSchema, type FriendProfile } from './friend-profile';
+import { shapeAgencySystemProfile } from '@/lib/resources/agency-system-profile';
 
 export interface TrustedAgencyRow {
   id: string;
@@ -17,12 +19,18 @@ export interface TrustedAgencyRow {
   createdAt: string;
   approvedAt: string | null;
   revokedAt: string | null;
+  relationshipLevel: 'associate' | 'friend';
+  shareProfile: boolean;
+  friendProfile: FriendProfile;
+  profileValidUntil: string | null;
 }
 
 const SELECT = `
   t.id, t.org_id AS "orgId", t.partner_org_id AS "partnerOrgId",
   airs.related_org_name(t.partner_org_id) AS "partnerOrgName",
-  t.status, t.note,
+  t.status, t.note, t.relationship_level AS "relationshipLevel",
+  t.share_profile AS "shareProfile", t.friend_profile AS "friendProfile",
+  to_json(t.profile_valid_until)#>>'{}' AS "profileValidUntil",
   to_json(t.created_at)#>>'{}' AS "createdAt",
   to_json(t.approved_at)#>>'{}' AS "approvedAt",
   to_json(t.revoked_at)#>>'{}' AS "revokedAt"
@@ -50,6 +58,28 @@ export async function listTrustedAgencies(
         [ctx.orgId],
       ),
   );
+}
+
+export async function saveFriendProfile(token: string | null, orgId: string | null,
+  input: {partnerOrgId:string; relationshipLevel:'associate'|'friend'; shareProfile:boolean; profile:FriendProfile; validUntil:string | null}, meta:RequestMeta) {
+  const parsed=friendProfileSchema.safeParse(input.profile);
+  if(!parsed.success || !['associate','friend'].includes(input.relationshipLevel)) throw new AccessError('invalid_input');
+  const until=input.validUntil?Date.parse(input.validUntil):NaN;
+  if(input.shareProfile && (input.relationshipLevel!=='friend' || !Number.isFinite(until) || until<=Date.now() || until>Date.now()+366*86400000)) throw new AccessError('invalid_input','Sharing needs a future review date within one year');
+  return withAuthorized({token,orgId,permission:'org.manage',action:'trust.friend_profile.save',resourceType:'trusted_agency',resourceId:input.partnerOrgId,detail:{relationshipLevel:input.relationshipLevel,shareProfile:input.shareProfile},meta},async(ctx,q)=>{
+    const rows=await q.query(`UPDATE airs.trusted_agencies SET relationship_level=$3, share_profile=$4,
+      friend_profile=$5::jsonb, profile_confirmed_at=now(), profile_valid_until=$6, updated_at=now()
+      WHERE org_id=$1 AND partner_org_id=$2 RETURNING id`,[ctx.orgId,input.partnerOrgId,input.relationshipLevel,input.shareProfile,JSON.stringify(parsed.data),Number.isFinite(until)?new Date(until).toISOString():null]);
+    if(!rows[0]) throw new AccessError('invalid_input','Create the Associate relationship first');
+    return {saved:true};
+  });
+}
+
+export async function listFriendBriefings(token:string|null,orgId:string|null,meta:RequestMeta) {
+  return withAuthorized({token,orgId,permission:'incident.view_participants',action:'trust.friend_briefings.read',resourceType:'trusted_agency',audit:false,meta},async(_ctx,q)=>{
+    const rows=await q.query<{partnerOrgId:string;partnerOrgName:string;mutualFriend:boolean;profileState:string;profile:unknown;confirmedAt:string|null;validUntil:string|null;ecosystems:any[];components:any[]}>(`SELECT * FROM airs.friend_briefings()`);
+    return rows.map(({ecosystems,components,profile,...r})=>({...r,profile:friendProfileSchema.parse(profile),systems:shapeAgencySystemProfile({ecosystems,components})}));
+  });
 }
 
 /** Creates or re-states the caller organization's relationship to a partner. */
@@ -86,6 +116,8 @@ export async function setTrustedAgencyStatus(
                       CASE WHEN $3 = 'revoked' THEN now() END)
          ON CONFLICT (org_id, partner_org_id) DO UPDATE
             SET status = EXCLUDED.status, note = EXCLUDED.note, updated_at = now(),
+                relationship_level = CASE WHEN EXCLUDED.status='approved' THEN airs.trusted_agencies.relationship_level ELSE 'associate' END,
+                share_profile = CASE WHEN EXCLUDED.status='approved' THEN airs.trusted_agencies.share_profile ELSE false END,
                 approved_by = CASE WHEN EXCLUDED.status = 'approved' THEN $5
                                    ELSE airs.trusted_agencies.approved_by END,
                 approved_at = CASE WHEN EXCLUDED.status = 'approved' THEN now()

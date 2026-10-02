@@ -14,13 +14,19 @@ Verified live (see `db/tests/rls_isolation.sql` and BUILD_AUDIT.md §7): with no
 rows are visible; Albany PD cannot see Albany County users; a partner org gains read access only
 through an active share and loses it on revocation; cross-tenant `UPDATE` affects 0 rows.
 
-## Authentication — NOT YET IMPLEMENTED
+## Authentication — implemented; production acceptance pending
 
-No login exists. The `AuthAdapter` contract is defined; planned drivers are self-hosted local
-credentials (Argon2id + TOTP) and standard OIDC/PKCE against agency IdPs. Until this lands, the
-application has no authenticated users and must not be exposed to real data.
+`AUTH_DRIVER=local` uses PostgreSQL accounts and PBKDF2 password hashes; it does not implement MFA.
+`AUTH_DRIVER=oidc` uses Cognito managed login with authorization code, S256 PKCE, state, nonce,
+encrypted transaction cookies, and signed ID-token verification. Production must select a driver
+explicitly. Local credential operations are disabled in OIDC mode. Keep Cognito self-registration
+disabled and TOTP MFA required. Tokens remain server-side; browsers receive opaque httpOnly session
+cookies. Sessions are re-read on requests, expire in at most one hour in OIDC mode, and are revocable.
+Email alone cannot link an existing account to an external identity. Agency roles come only from
+server-stored memberships and single-use invitations. See [deployment notes](deploy/aws/README.md)
+for provider enforcement, account removal, email changes and the required live acceptance tests.
 
-## Authorization — IMPLEMENTED (library level)
+## Authorization — IMPLEMENTED
 
 `src/lib/rbac/authorize.ts` is a pure default-deny decision function:
 - no principal -> deny
@@ -29,7 +35,8 @@ application has no authenticated users and must not be exposed to real data.
 - permission not granted by any assigned role -> deny
 - otherwise allow, with the reason recorded (`role_permission` | `active_share`)
 
-It is unit tested but **not yet wired into request handling**, because no data endpoints exist yet.
+Protected server operations resolve sessions, organization membership and authorization before
+accessing data. Integration tests exercise the real PostgreSQL RLS and invitation paths.
 
 ## Roles implemented
 
@@ -37,10 +44,11 @@ Agency Administrator, Airspace Supervisor, Remote Pilot in Command, Visual Obser
 Dispatcher / RTCC Operator, Incident Commander, Intelligence Analyst, Partner-Agency User,
 System Auditor. Definitions: `src/lib/rbac/roles.ts` and `db/migrations/0002_roles_seed.sql`.
 
-## Audit logging — SCHEMA ONLY
+## Audit logging — IMPLEMENTED
 
-`airs.audit_events` exists and is immutable to the app role (no UPDATE/DELETE policy). The
-`AuditSink` interface is defined. Nothing writes to it yet.
+`airs.audit_events` is immutable to the app role (no UPDATE/DELETE policy). Protected operations
+and session events write through the audit writer. Identity events are scoped to active memberships.
+Provider failures before identity resolution are logged generically without codes, tokens or cookies.
 
 ## Data retention — SCHEMA ONLY
 
@@ -53,13 +61,13 @@ terminated by the deployment platform or a reverse proxy — **NOT YET IMPLEMENT
 
 ## Known gaps
 
-1. No authentication, no sessions, no CSRF-protected login flow.
-2. `authorize()` is not yet enforced on any data path (there are no data paths).
-3. No audit writes, no retention purge, no key rotation, no rate limiting.
-4. No password/MFA policy, no account lockout.
+1. Live Cognito login, TOTP enrollment, logout and invitation acceptance must be verified on the final HTTPS hostname.
+2. Cognito provisioning is operator-managed; application invitations do not create Cognito users automatically.
+3. No retention purge or automatic key rotation. Configure provider and ingress abuse controls before operational use.
+4. Local authentication has no MFA. AWS production relies on the required-MFA Cognito pool configuration.
 5. No encryption at rest beyond what the PostgreSQL host provides.
-6. Migrations are applied manually; no version ledger.
-7. `/api/public/health` is unauthenticated by design; it exposes only reachability, no data.
+6. Migrations are ledger-backed but still require an operator deployment step.
+7. `/api/public/health` is unauthenticated by design; it exposes readiness only, no tenant data.
 ## Foundation Portability Verification — 2026-07-29
 
 ### Permission matrix (PROVISIONAL — subject to change before any operational use)

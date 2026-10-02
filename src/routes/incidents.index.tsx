@@ -54,9 +54,10 @@ function IncidentsPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
-  const rooms = useQuery({ queryKey: ["incidents"], queryFn: () => list({ data: {} }) });
+  const rooms = useQuery({ refetchInterval: 3000, queryKey: ["incidents"], queryFn: () => list({ data: {} }) });
   const inbox = useQuery({
     queryKey: ["incident-invitations"],
+    refetchInterval: 3000,
     queryFn: () => invitations({ data: {} }),
   });
 

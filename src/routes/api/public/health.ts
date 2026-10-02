@@ -11,18 +11,11 @@ export const Route = createFileRoute("/api/public/health")({
           return Response.json({ status: "degraded", database: "unconfigured" }, { status: 503 });
         }
         try {
-          const { getDatabase } = await import("@/lib/adapters/index.server");
-          const db = getDatabase();
-          await db.withTenant(
-            {
-              orgId: "00000000-0000-4000-8000-000000000000",
-              userId: "00000000-0000-4000-8000-000000000000",
-            },
-            (q) => q.query("SELECT 1"),
-          );
+          const { checkReadiness } = await import("@/lib/readiness.server");
+          await checkReadiness();
           return Response.json({ status: "ok", database: "reachable" });
-        } catch (error) {
-          console.error("health check failed", error);
+        } catch {
+          console.warn("Application readiness check failed");
           return Response.json({ status: "degraded", database: "unreachable" }, { status: 503 });
         }
       },

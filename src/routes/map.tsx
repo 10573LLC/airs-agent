@@ -1,3 +1,4 @@
+import { IncidentWorkspace } from "@/components/operations/incident-workspace";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
@@ -69,7 +70,8 @@ export const Route = createFileRoute("/map")({
   // The renderer needs the browser; the whole route is client-rendered so no
   // map SDK is ever evaluated during SSR.
   ssr: false,
-  component: MapPage,
+  validateSearch: (search: Record<string, unknown>) => ({ tools: search.tools === true || search.tools === "true", incident: typeof search.incident === "string" ? search.incident : "" }),
+  component: MapRoute,
 });
 
 const inputClass =
@@ -141,7 +143,7 @@ function squareAround([lng, lat]: [number, number], radiusDeg: number) {
 const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
 const mapAttribution = (import.meta.env.VITE_MAP_ATTRIBUTION as string | undefined) || undefined;
 
-function MapPage() {
+function MapToolsPage() {
   const qc = useQueryClient();
   const me = useServerFn(getMe);
   const incidentsFn = useServerFn(listIncidentsFn);
@@ -163,7 +165,7 @@ function MapPage() {
 
   const [notice, setNotice] = useState<string | null>(null);
   const [picked, setPicked] = useState<[number, number] | null>(null);
-  const [incidentId, setIncidentId] = useState<string>("");
+  const [incidentId, setIncidentId] = useState<string>(Route.useSearch().incident);
   const [featureType, setFeatureType] = useState<MapFeatureType>("staging_area");
   const [featureName, setFeatureName] = useState("");
   const [featurePrecision, setFeaturePrecision] = useState<PrecisionPolicy>("generalized");
@@ -185,7 +187,7 @@ function MapPage() {
   const session = useQuery({ queryKey: ["me"], queryFn: () => me() });
   const signedIn = session.data?.ok === true;
 
-  const incidents = useQuery({
+  const incidents = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["incidents"],
     queryFn: () => incidentsFn({ data: {} }),
     enabled: signedIn,
@@ -195,22 +197,22 @@ function MapPage() {
     queryFn: () => resourcesFn({ data: {} }),
     enabled: signedIn,
   });
-  const assignments = useQuery({
+  const assignments = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["incident-resource-assignments", incidentId],
     queryFn: () => assignmentsFn({ data: { incidentId } }),
     enabled: signedIn && Boolean(incidentId),
   });
-  const features = useQuery({
+  const features = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["map-features", incidentId],
     queryFn: () => featuresFn({ data: { incidentId: incidentId || null } }),
     enabled: signedIn,
   });
-  const areas = useQuery({
+  const areas = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["operating-areas", incidentId],
     queryFn: () => areasFn({ data: { incidentId: incidentId || null } }),
     enabled: signedIn,
   });
-  const locations = useQuery({
+  const locations = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["resource-locations", incidentId],
     queryFn: () =>
       incidentId
@@ -219,7 +221,7 @@ function MapPage() {
     enabled: signedIn,
   });
 
-  const observations = useQuery({
+  const observations = useQuery({ refetchInterval: 3000, refetchIntervalInBackground: false,
     queryKey: ["observations", "map", incidentId],
     queryFn: () => observationsFn({ data: { incidentId: incidentId || null } }),
     enabled: signedIn,
@@ -390,7 +392,8 @@ function MapPage() {
     <PageShell>
       <PageHeading
         eyebrow="Common operating picture"
-        title="Incident map and operating areas"
+        title="Map editing tools"
+        actions={<a className="text-sm underline" href={`/map?incident=${incidentId}`}>Back to operational workspace</a>}
         description="Every shape belongs to one agency. Partners see only what an active incident room released, reduced to the precision the owner chose. Nothing here tracks anything: positions are entered by hand and age visibly."
       />
 
@@ -840,4 +843,21 @@ function MapPage() {
       </div>
     </PageShell>
   );
+}
+
+function MapRoute() {
+  const search=Route.useSearch();
+  return search.tools ? <MapToolsPage/> : <ProductionMapPage/>;
+}
+function ProductionMapPage() {
+  const search=Route.useSearch();
+  const [selected,setSelected]=useState(search.incident);
+  const list=useServerFn(listIncidentsFn);
+  const incidents=useQuery({queryKey:["incidents"],queryFn:()=>list({data:{}}),refetchInterval:3000,refetchIntervalInBackground:false});
+  const rows=incidents.data?.ok?incidents.data.data:[];
+  const incidentId=selected || (rows.length===1?rows[0].id:"");
+  return <PageShell width="full" viewport><div className="flex h-full min-h-0 flex-col gap-2">
+    <div className="flex shrink-0 flex-wrap items-center gap-3"><h1 className="text-lg font-semibold">Common Operating Picture</h1><label className="text-xs">Incident <select className="ml-2 rounded border bg-background px-2 py-1" value={incidentId} onChange={e=>setSelected(e.target.value)}><option value="">Select incident</option>{rows.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label></div>
+    {incidents.data?.ok===false?<p role="alert">Select an authorized agency in the organization menu to load its incident workspace.</p>:incidentId?<div className="min-h-0 flex-1"><IncidentWorkspace key={incidentId} incidentId={incidentId}/></div>:<p>{incidents.isPending?"Loading incidents…":"Select an incident to view its command post, agencies, resources, map and decision log."}</p>}
+  </div></PageShell>;
 }

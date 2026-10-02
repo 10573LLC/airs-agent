@@ -1,7 +1,8 @@
+import { IncidentWorkspace } from "@/components/operations/incident-workspace";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { PageShell, StatusPill, type StatusTone } from "@/components/brand";
 import { CopMap, type MapLayerItem } from "@/components/map/cop-map";
@@ -17,7 +18,8 @@ import { MAP_FEATURE_LABELS, MAP_FEATURE_TYPES, type MapFeatureType } from "@/li
 export const Route = createFileRoute("/incidents/$incidentId/command")({
   head: () => ({ meta: [{ title: "Incident command console — AIRS Agent" }] }),
   ssr: false,
-  component: IncidentCommandConsole,
+  validateSearch: (search: Record<string, unknown>) => ({ edit: search.edit === true || search.edit === "true" }),
+  component: IncidentCommandRoute,
 });
 
 const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
@@ -85,6 +87,8 @@ function IncidentCommandConsole() {
   const threatStatus = useServerFn(setThreatHypothesisStatusFn);
   const createFeature = useServerFn(createMapFeatureFn);
 
+  const [liveUpdates, setLiveUpdates] = useState(true);
+  const profileLoadedFor = useRef<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [picked, setPicked] = useState<[number, number] | null>(null);
   const [featureType, setFeatureType] = useState<MapFeatureType>("command_post");
@@ -128,14 +132,14 @@ function IncidentCommandConsole() {
   const [threatConfidence, setThreatConfidence] = useState<ThreatConfidenceValue>("unknown");
   const [threatRationale, setThreatRationale] = useState("");
 
-  const room = useQuery({ queryKey: ["incident", incidentId], queryFn: () => readIncident({ data: { incidentId } }) });
-  const roster = useQuery({ queryKey: ["incident-participants", incidentId], queryFn: () => listParticipants({ data: { incidentId } }) });
-  const ics = useQuery({ queryKey: ["incident-ics", incidentId], queryFn: () => readIcs({ data: { incidentId } }) });
-  const assignments = useQuery({ queryKey: ["incident-assignments", incidentId], queryFn: () => listAssignments({ data: { incidentId } }) });
-  const features = useQuery({ queryKey: ["map-features", incidentId], queryFn: () => listFeatures({ data: { incidentId } }) });
-  const areas = useQuery({ queryKey: ["operating-areas", incidentId], queryFn: () => listAreas({ data: { incidentId } }) });
-  const locations = useQuery({ queryKey: ["incident-resource-locations", incidentId], queryFn: () => listLocations({ data: { incidentId } }) });
-  const observations = useQuery({ queryKey: ["observations", "command", incidentId], queryFn: () => listObservations({ data: { incidentId, limit: 100 } }) });
+  const room = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["incident", incidentId], queryFn: () => readIncident({ data: { incidentId } }) });
+  const roster = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["incident-participants", incidentId], queryFn: () => listParticipants({ data: { incidentId } }) });
+  const ics = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["incident-ics", incidentId], queryFn: () => readIcs({ data: { incidentId } }) });
+  const assignments = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["incident-assignments", incidentId], queryFn: () => listAssignments({ data: { incidentId } }) });
+  const features = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["map-features", incidentId], queryFn: () => listFeatures({ data: { incidentId } }) });
+  const areas = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["operating-areas", incidentId], queryFn: () => listAreas({ data: { incidentId } }) });
+  const locations = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["incident-resource-locations", incidentId], queryFn: () => listLocations({ data: { incidentId } }) });
+  const observations = useQuery({ refetchInterval: liveUpdates ? 3000 : false, refetchIntervalInBackground: false, queryKey: ["observations", "command", incidentId], queryFn: () => listObservations({ data: { incidentId, limit: 100 } }) });
 
   const refresh = (...keys: string[]) => keys.forEach((key) => void qc.invalidateQueries({ queryKey: [key, incidentId] }));
   const report = (result: { ok: boolean; code?: string }, success: string) => setNotice(result.ok ? success : (DENY_MESSAGES[result.code ?? ""] ?? `Denied (${result.code ?? "unknown"}).`));
@@ -224,7 +228,8 @@ function IncidentCommandConsole() {
     !threatRows.some((row) => row.hypothesisType === item.hypothesisType && row.status !== "ruled_out")), [inferenceText, threatRows]);
 
   useEffect(() => {
-    if (!loadedProfile) return;
+    if (!loadedProfile || profileLoadedFor.current === incidentId) return;
+    profileLoadedFor.current = incidentId;
     setCommandMode(loadedProfile.commandMode);
     setOperationalCondition((loadedProfile.operationalCondition || "nominal") as OperationalCondition);
     setCommander(loadedProfile.incidentCommander);
@@ -233,7 +238,7 @@ function IncidentCommandConsole() {
     setSafety(loadedProfile.safetyMessage);
     setPeriodStart(localInputTime(loadedProfile.operationalPeriodStart));
     setPeriodEnd(localInputTime(loadedProfile.operationalPeriodEnd));
-  }, [loadedProfile?.version]);
+  }, [incidentId, loadedProfile]);
 
   const mapItems = useMemo<MapLayerItem[]>(() => {
     const items: MapLayerItem[] = [];
@@ -264,6 +269,9 @@ function IncidentCommandConsole() {
   return (
     <PageShell width="full" viewport>
       <div className="flex h-full min-h-0 flex-col gap-2">
+        <a className="shrink-0 text-sm underline" href={`/incidents/${incidentId}/command`}>Back to operational workspace</a>
+        {roomData.incident.name.startsWith("EXERCISE") && <p className="rounded border border-amber-500 bg-amber-50 p-2 text-sm font-semibold text-amber-950">EXERCISE ONLY — simulated agencies and activity; not a live emergency.</p>}
+        <div className="flex shrink-0 flex-wrap items-center gap-3 text-xs"><button className={smallButton} onClick={() => setLiveUpdates((v) => !v)}>{liveUpdates ? "Pause updates" : "Resume updates"}</button><span role="status">{!liveUpdates ? "Updates paused" : [room, roster, ics, assignments, features, areas, locations, observations].some((q) => q.isError || q.data?.ok === false) ? "Some updates failed — displayed information may be out of date" : "Checking for updates every 3 seconds while this tab is visible"}</span><span>Room checked: {room.dataUpdatedAt ? new Date(room.dataUpdatedAt).toLocaleTimeString() : "Waiting"}</span></div>
         <header className="flex shrink-0 flex-wrap items-center gap-3 rounded-md border border-border bg-card px-3 py-2 shadow-panel">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2"><StatusPill tone={operationTone}>{operationLabel}</StatusPill><StatusPill tone={operationTone}>CONDITION · {label(currentCondition).toUpperCase()}</StatusPill><StatusPill tone="neutral">MANUAL + AIRS DATA</StatusPill></div>
@@ -379,4 +387,10 @@ function IncidentCommandConsole() {
 
 function Metric({ label: text, value }: { label: string; value: string }) {
   return <div className="rounded-md border border-border bg-card px-3 py-2 shadow-panel"><p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{text}</p><p className="mt-1 truncate text-sm font-semibold text-foreground">{value}</p></div>;
+}
+
+function IncidentCommandRoute() {
+  const {incidentId}=Route.useParams();
+  const {edit}=Route.useSearch();
+  return edit ? <IncidentCommandConsole/> : <PageShell width="full" viewport><IncidentWorkspace key={incidentId} incidentId={incidentId}/></PageShell>;
 }

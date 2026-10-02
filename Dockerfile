@@ -1,8 +1,8 @@
 # Portable production image. No builder-hosted service is required at build or run time.
-FROM node:22-alpine AS build
+FROM --platform=$BUILDPLATFORM node:22-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json* bun.lock* ./
-RUN npm install --legacy-peer-deps
+COPY package.json package-lock.json ./
+RUN --mount=type=cache,target=/root/.npm npm ci --legacy-peer-deps --no-audit --maxsockets=10
 COPY . .
 # Vite inlines VITE_* variables at build time, so the operator's map style must
 # be present during `npm run build`. Passed explicitly as build args — .env is
@@ -14,7 +14,17 @@ ENV VITE_MAP_STYLE_URL=$VITE_MAP_STYLE_URL \
 ENV NITRO_PRESET=node-server
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+# Install runtime dependencies on the target architecture. Vite/Nitro compilation
+# runs natively above; target-native dependencies must not come from that stage.
+FROM node:22-alpine AS production-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --legacy-peer-deps
+RUN npm prune --omit=dev --legacy-peer-deps --no-audit --offline
+
+# Shared production filesystem. Keeping this separate lets AWS build a normal
+# runtime image and an operator-only image without putting psql in the app image.
+FROM node:22-alpine AS runtime-base
 WORKDIR /app
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -22,10 +32,27 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /app/.output ./.output
 COPY --from=build --chown=node:node /app/db ./db
 COPY --from=build --chown=node:node /app/scripts ./scripts
-COPY --from=build --chown=node:node /app/node_modules ./node_modules
-# Run as the unprivileged `node` user shipped with the base image.
+COPY --from=build --chown=node:node /app/deploy/aws/us-east-1-bundle.pem ./certs/rds-us-east-1.pem
+COPY --from=build --chown=node:node /app/deploy/aws/us-east-2-bundle.pem ./certs/rds-us-east-2.pem
+COPY --from=build --chown=node:node /app/package.json ./package.json
+COPY --from=production-deps --chown=node:node /app/node_modules ./node_modules
+
+# Operator image for one-off database migration/bootstrap tasks. The existing
+# migration runner intentionally requires psql when Docker Compose is absent;
+# ECS has no Docker daemon, so psql is present only in this explicit target.
+FROM runtime-base AS ops
+USER root
+RUN --mount=type=secret,id=build_ca \
+    if [ -f /run/secrets/build_ca ]; then \
+      SSL_CERT_FILE=/run/secrets/build_ca apk add --no-cache postgresql-client; \
+    else apk add --no-cache postgresql-client; fi
+USER node
+
+# Default production application image remains minimal and does not contain
+# PostgreSQL client tools.
+FROM runtime-base AS runtime
 USER node
 EXPOSE 3000
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
-  CMD wget -qO- http://127.0.0.1:3000/api/public/health | grep -q '"status":"ok"' || exit 1
+  CMD wget -qO- http://127.0.0.1:3000/api/public/health | grep -q '\"status\":\"ok\"' || exit 1
 CMD ["node", ".output/server/index.mjs"]

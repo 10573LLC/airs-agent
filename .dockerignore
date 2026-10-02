@@ -16,3 +16,6 @@ dist
 .idea
 .lovable
 .workspace
+
+# Workstation-only enrollment tools must not ship in app/ops images.
+scripts/*-local.mjs

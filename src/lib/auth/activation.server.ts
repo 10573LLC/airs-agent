@@ -20,6 +20,7 @@
 //     taken over with a link.
 import { getDatabase } from "@/lib/adapters/index.server";
 import { getAuthAdapter } from "@/lib/auth/index.server";
+import { authDriver } from "./oidc-config.server";
 import type { RoleKey } from "@/lib/rbac/roles";
 
 import { AccessError } from "./errors";
@@ -73,6 +74,7 @@ export interface ActivationPreview {
   maskedEmail: string;
   /** True when an account already exists: the recipient must sign in instead. */
   accountExists: boolean;
+  managedLogin: boolean;
 }
 
 export async function previewActivation(inviteToken: string): Promise<ActivationPreview> {
@@ -84,6 +86,7 @@ export async function previewActivation(inviteToken: string): Promise<Activation
     expiresAt: invite.expires_at,
     maskedEmail: maskEmail(invite.email),
     accountExists: exists,
+    managedLogin: authDriver() === "oidc",
   };
 }
 
@@ -112,6 +115,7 @@ export async function activateInvitation(
   input: { displayName: string; password: string },
   meta: RequestMeta,
 ): Promise<ActivationResult> {
+  if (authDriver() === "oidc") throw new AccessError("unauthenticated", "Use managed sign-in");
   const displayName = input.displayName.trim();
   if (displayName.length < 2 || displayName.length > 120) {
     throw new AccessError("invalid_input", "display name must be 2-120 characters");

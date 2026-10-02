@@ -63,6 +63,7 @@ export function ResourceTasking({
       {children({
         picking,
         onPickPoint: (p) => {
+          if (!picking) return;
           setPoint(p);
           setPicking(false);
           setOpen(true);

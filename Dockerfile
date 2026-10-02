@@ -14,7 +14,7 @@ ARG VITE_MAP_ATTRIBUTION=""
 ENV VITE_MAP_STYLE_URL=$VITE_MAP_STYLE_URL \
     VITE_MAP_ATTRIBUTION=$VITE_MAP_ATTRIBUTION
 ENV NITRO_PRESET=node-server
-RUN npm run build
+RUN npm run build && node scripts/build-exercise-agents.mjs
 
 # Install runtime dependencies on the target architecture. Vite/Nitro compilation
 # runs natively above; target-native dependencies must not come from that stage.
@@ -34,6 +34,7 @@ ENV NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0
 COPY --from=build --chown=node:node /app/.output ./.output
+COPY --from=build --chown=node:node /app/.exercise-agent ./.exercise-agent
 COPY --from=build --chown=node:node /app/db ./db
 COPY --from=build --chown=node:node /app/scripts ./scripts
 COPY --from=build --chown=node:node /app/deploy/aws/us-east-1-bundle.pem ./certs/rds-us-east-1.pem

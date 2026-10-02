@@ -45,5 +45,11 @@ describe('isolated staging infrastructure', () => {
     expect(JSON.stringify(template)).toContain('repository/airs-agent-staging');
     expect(()=>stagingRuntime({...cfg,foundation:{...cfg.foundation,Vpc:live.foundation.Vpc}},live)).toThrow('production Vpc');
     expect(runtimeTemplate(live).Resources.Service.Properties.ServiceName).toBe('airs-agent-prod');
+    const exercise=stagingRuntime({...cfg,enableExerciseAgents:true},live);
+    expect(exercise.Parameters.ExerciseAgentsEnabled.Default).toBe(0);
+    expect(exercise.Resources.ExerciseTask.Properties.ContainerDefinitions[0].PortMappings).toBeUndefined();
+    expect(JSON.stringify(exercise.Resources.ExerciseExecutionRole)).not.toContain(cfg.foundation.MasterSecretArn);
+    expect(exercise.Resources.ExerciseTask.Properties.ContainerDefinitions[0].Secrets.map((s:any)=>s.Name)).toEqual(['PGPASSWORD','EXERCISE_SEED']);
+    expect(exercise.Resources.WebTask.Properties.ContainerDefinitions[0].Environment).toContainEqual({Name:'AUTH_DRIVER',Value:'oidc'});
   });
 });

@@ -19,3 +19,4 @@
 0019_friend_profiles.sql
 0020_locked_framework.sql
 0021_framework_participant_lock.sql
+0022_agency_request_responses.sql

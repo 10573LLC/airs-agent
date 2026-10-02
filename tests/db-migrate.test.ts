@@ -57,7 +57,7 @@ describe("canonical manifest", () => {
   it("is the single source of migration order for both execution paths", () => {
     expect(readManifest()).toEqual(MIGRATION_FILES);
     expect(MIGRATION_FILES[0]).toBe("db/migrations/0001_init.sql");
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0021_framework_participant_lock.sql");
+    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0022_agency_request_responses.sql");
     expect(dockerInit).toContain("manifest.txt");
     expect(dockerInit).toContain("airs_migrations.record_applied");
   });
@@ -85,6 +85,7 @@ describe("canonical manifest", () => {
       "0019",
       "0020",
       "0021",
+      "0022",
     ]);
     expect(parseVersion("db/migrations/0012_fix_platform_org_display_name.sql")).toBe("0012");
   });

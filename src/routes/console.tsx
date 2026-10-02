@@ -195,6 +195,15 @@ function ConsolePage() {
         </p>
       ) : null}
 
+      {memberships.some(m=>m.orgSlug==="anconison-exercise-requester"&&m.status==="active")&&<Panel title="Operational workflow test">
+        <p className="text-sm">Run your requesting agency on the real operational platform. Request aid from multiple fictional Anconison agencies and watch their automated responses, assignments and reports.</p>
+        <button className="mt-3 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground" onClick={async()=>{
+          const membership=memberships.find(m=>m.orgSlug==="anconison-exercise-requester"&&m.status==="active")!;
+          const result=await selectOrgFn({data:{orgId:membership.orgId}});
+          if(result.ok){await refreshAll();await navigate({to:"/incidents"});}else setNotice(DENY_MESSAGES[result.code]??"Unable to select requesting agency.");
+        }}>Open requesting agency</button>
+      </Panel>}
+
       {orgResult?.ok ? (isPlatformAdmin ? (
         <Panel title="Platform tools">
           <div className="flex flex-wrap items-center justify-between gap-4">

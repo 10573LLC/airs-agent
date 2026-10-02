@@ -1,4 +1,5 @@
 import { FrameworkPanel } from "./framework-panel";
+import { AidRequests } from "./aid-requests";
 import { readFrameworkFn } from "@/lib/api/framework.functions";
 import { projectObservations } from "@/lib/operations/framework";
 import { buildOperationalPicture } from "@/lib/operational/completeness";
@@ -313,6 +314,10 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
           EXERCISE ONLY — simulated participants; no live emergency dispatch.
         </p>
       )}
+      <details open className="shrink-0 max-h-[45vh] overflow-auto">
+        <summary className="cursor-pointer text-sm font-semibold">Request aid and agency responses</summary>
+        <AidRequests incidentId={incidentId} />
+      </details>
       <details className="shrink-0 max-h-[45vh] overflow-auto">
         <summary className="cursor-pointer text-sm font-semibold">
           Incident sharing, observations, and supplemental access

@@ -90,7 +90,7 @@ export function OperationalWorkspace({ projection: suppliedProjection, viewport 
           <Metric label="Priority" value={projection.priority} />
           <Metric label="Coordination picture" value={`${projection.agencies.length} organizations · ${projection.resources.length} resources`} />
         </div>
-        <OperationalPictureSummary picture={projection.operationalPicture} />
+        <OperationalPictureSummary picture={projection.operationalPicture ?? EMPTY_OPERATIONAL_PROJECTION.operationalPicture!} />
       </div>
 
       <div className="xl:hidden">
@@ -147,7 +147,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function OperationalPictureSummary({ picture }: { picture: SimOperationalProjection["operationalPicture"] }) {
+function OperationalPictureSummary({ picture }: { picture: NonNullable<SimOperationalProjection["operationalPicture"]> }) {
   const compact = (items: string[]) => items.slice(0, 3).join(" · ");
   return (
     <div className="mt-3 rounded-md border border-border bg-background/80 p-3">

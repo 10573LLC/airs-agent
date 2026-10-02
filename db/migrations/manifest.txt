@@ -16,3 +16,4 @@
 0016_planned_operations.sql
 0017_information_path_model.sql
 0018_incident_owner_partner_resources.sql
+0019_friend_profiles.sql

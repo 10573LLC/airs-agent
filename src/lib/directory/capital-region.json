@@ -1,0 +1,3650 @@
+[
+  {
+    "id": "fire-42037",
+    "name": "TABORTON VOLUNTEER FIRE COMPANY",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186742915",
+    "contactType": "Published department contact",
+    "address": "PO BOX 295, SAND LAKE, NY 12153",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01001",
+    "name": "ALBANY FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / EMS / paramedics",
+    "phone": "5184477879",
+    "contactType": "Published department contact",
+    "address": "26 BROAD STREET, ALBANY, NY 12202-0000",
+    "source": "https://albanyny.gov/274/Fire-Emergency-Services",
+    "checkedAt": "2026-10-02",
+    "verification": "Service role verified on city website; telephone not re-confirmed",
+    "notes": "City of Albany: primary EMS response and paramedic / advanced-life-support care. Ambulance transport is a separate operational role. Role verified against the City Fire & Emergency Services page; published phone remains from the state dataset."
+  },
+  {
+    "id": "fire-47028",
+    "name": "THOMAS CORNERS FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183995621",
+    "contactType": "Published department contact",
+    "address": "5 AIRPORT ROAD, GLENVILLE, NY 12302",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42026",
+    "name": "PLEASANTDALE FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182378812",
+    "contactType": "Published department contact",
+    "address": "1178 RIVER ROAD PO BOX 223, TROY, NY 12182",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47020",
+    "name": "ROTTERDAM JUNCTION VOL FIRE DEPT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188875570",
+    "contactType": "Published department contact",
+    "address": "1215 MAIN STREET, ROTTERDAM JUNCTION, NY 12150",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01006",
+    "name": "COEYMANS HOLLOW FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187566310",
+    "contactType": "Published department contact",
+    "address": "1290 ROUTE 143, COEYMANS HOLLOW, NY 12046",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42009",
+    "name": "DEFREESTVILLE FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182863612",
+    "contactType": "Published department contact",
+    "address": "480 NORTH GREENBUSH ROAD, RENSSELAER, NY 12144",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42042",
+    "name": "WYNANTSKILL VOLUNTEER FIRE DEPT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182835506",
+    "contactType": "Published department contact",
+    "address": "PO BOX 174, WYNANTSKILL, NY 12198",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01011",
+    "name": "FORT HUNTER FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183552434",
+    "contactType": "Published department contact",
+    "address": "3525 CARMAN ROAD, SCHENECTADY, NY 12303",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42032",
+    "name": "SCHODACK VALLEY FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184774215",
+    "contactType": "Published department contact",
+    "address": "1553 SCHODACK VALLEY ROAD, CASTLETON, NY 12033",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47001",
+    "name": "ALPLAUS FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183992288",
+    "contactType": "Published department contact",
+    "address": "308 ALPLAUS AVENUE, ALPLAUS, NY 12008",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01025",
+    "name": "ONESQUETHAW FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184682823",
+    "contactType": "Published department contact",
+    "address": "2178 TARRYTOWN RD PO BOX E, CLARKSVILLE, NY 12041",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01039",
+    "name": "WESTERLO FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187973321",
+    "contactType": "Published department contact",
+    "address": "591 ST RTE 143 PO BOX 87, WESTERLO, NY 12193",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01026",
+    "name": "RAVENA FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187562089",
+    "contactType": "Published department contact",
+    "address": "116 MAIN STREET PO BOX 207, RAVENA, NY 12143",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47016",
+    "name": "PLOTTERKILL FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183773111",
+    "contactType": "Published department contact",
+    "address": "3985 PUTNAM ROAD, SCHENECTADY, NY 12306",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01015",
+    "name": "GUILDERLAND CENTER FIRE DEPT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188618871",
+    "contactType": "Published department contact",
+    "address": "30 SCHOOL ROAD, GUILDERLAND CENTER, NY 12085",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47005",
+    "name": "DUANESBURG FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182653086",
+    "contactType": "Published department contact",
+    "address": "418 THOUSAND ACRE ROAD, DELANSON, NY 12053",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01021",
+    "name": "MENANDS FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184639494",
+    "contactType": "Published department contact",
+    "address": "250 BROADWAY, MENANDS, NY 12204",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42014",
+    "name": "HEMSTREET PARK FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186644249",
+    "contactType": "Published department contact",
+    "address": "133 S LINDEN ST PO BOX 667, MECHANICVILLE, NY 12118",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01030",
+    "name": "SHAKER RD-LOUDONVILLE FIRE DEPT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184581499",
+    "contactType": "Published department contact",
+    "address": "550 ALBANY-SHAKER ROAD, LOUDONVILLE, NY 12211",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42004",
+    "name": "BRUNSWICK NO 1 FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182729393",
+    "contactType": "Published department contact",
+    "address": "566 HOOSICK ROAD, TROY, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42018",
+    "name": "HOOSIC VALLEY FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187534664",
+    "contactType": "Published department contact",
+    "address": "69 STILLWATER BRIDGE ROAD, SCHAGHTICOKE, NY 12154",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47012",
+    "name": "MARIAVILLE VOL FIRE DEPT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188645793",
+    "contactType": "Published department contact",
+    "address": "9284 MARIAVILLE ROAD, PATTERSONVILLE, NY 12137",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42038",
+    "name": "TSATSAWASSA (BRAINARD) FIRE DEPT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187948280",
+    "contactType": "Published department contact",
+    "address": "PO BOX 62, BRAINARD, NY 12024",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01002",
+    "name": "ALTAMONT FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188618171",
+    "contactType": "Published department contact",
+    "address": "115 MAIN STREET PO BOX 642, ALTAMONT, NY 12009",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01007",
+    "name": "COHOES FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182372125",
+    "contactType": "Published department contact",
+    "address": "97 MOHAWK STREET, COHOES, NY 12047",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42020",
+    "name": "MELROSE FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182359860",
+    "contactType": "Published department contact",
+    "address": "PO BOX 34, MELROSE, NY 12121",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42031",
+    "name": "SCHODACK LANDING VOL FIRE DEPT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187327579",
+    "contactType": "Published department contact",
+    "address": "346 FIRE HOUSE LANE, SCHODACK LANDING, NY 12156",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42043",
+    "name": "WEST SAND LAKE VOL  FIRE CO NO 1",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186743611",
+    "contactType": "Published department contact",
+    "address": "PO BOX 386, WEST SAND LAKE, NY 12196",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01029",
+    "name": "SELKIRK FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184360534",
+    "contactType": "Published department contact",
+    "address": "126 MAPLE AVENUE, SELKIRK, NY 12158",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01040",
+    "name": "WESTMERE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184566734",
+    "contactType": "Published department contact",
+    "address": "1732 WESTERN AVENUE, ALBANY, NY 12203",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01022",
+    "name": "MIDWAY FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184561993",
+    "contactType": "Published department contact",
+    "address": "1956 CENTRAL AVENUE, ALBANY, NY 12205",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01034",
+    "name": "VERDOY FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187857291",
+    "contactType": "Published department contact",
+    "address": "988 TROY SCHENECTADY ROAD, LATHAM, NY 12110",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42023",
+    "name": "NORTH HOOSICK FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186865322",
+    "contactType": "Published department contact",
+    "address": "PO BOX 94, NORTH HOOSICK, NY 12133",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47029",
+    "name": "WEST GLENVILLE FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183990567",
+    "contactType": "Published department contact",
+    "address": "2024 WEST GLENVILLE ROAD, AMSTERDAM, NY 12010",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42027",
+    "name": "POESTENKILL FIRE COMPANY",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182831649",
+    "contactType": "Published department contact",
+    "address": "PO BOX 14, POESTENKILL, NY 12140",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47008",
+    "name": "GLENVILLE HILLS FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183773002",
+    "contactType": "Published department contact",
+    "address": "1086 CHURCH ROAD, GLENVILLE, NY 12302",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47021",
+    "name": "SCHENECTADY FIRE DEPT (CITY)",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183825141",
+    "contactType": "Published department contact",
+    "address": "360 VEEDER AVENUE, SCHENECTADY, NY 12305",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42010",
+    "name": "EAGLE MILLS VOLUNTEER FIRE CO",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182793332",
+    "contactType": "Published department contact",
+    "address": "627 BRUNSWICK ROAD, TROY, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01010",
+    "name": "ELSMERE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184399144",
+    "contactType": "Published department contact",
+    "address": "15 WEST POPLAR DRIVE, DELMAR, NY 12054",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42005",
+    "name": "BUSKIRK VOLUNTEER FIRE DEPT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186869966",
+    "contactType": "Published department contact",
+    "address": "3388 NY 67, BUSKIRK, NY 12028",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42028",
+    "name": "RAYMERTOWN FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186639953",
+    "contactType": "Published department contact",
+    "address": "43 MASON LANE, TROY, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47023",
+    "name": "SCHONOWE FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183770939",
+    "contactType": "Published department contact",
+    "address": "112 GORDON ROAD, SCHENECTADY, NY 12306",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42022",
+    "name": "NASSAU HOSE COMPANY NO 1",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187663343",
+    "contactType": "Published department contact",
+    "address": "26 CHATHAM STREET, NASSAU, NY 12123",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42017",
+    "name": "HOOSICK FALLS FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186867427",
+    "contactType": "Published department contact",
+    "address": "2 GRIFFIN AVE PO BOX 312, HOOSICK FALLS, NY 12090",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01014",
+    "name": "GUILDERLAND FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184565000",
+    "contactType": "Published department contact",
+    "address": "2303 WESTERN AVE, GUILDERLAND, NY 12084",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01003",
+    "name": "BERNE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188720470",
+    "contactType": "Published department contact",
+    "address": "CANADAY ROAD, BERNE, NY 12023",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42039",
+    "name": "TROY FIRE DEPARTMENT (CITY)",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182704471",
+    "contactType": "Published department contact",
+    "address": "2175 SIXTH AVENUE, TROY, NY 12180-9841",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47015",
+    "name": "ROTTERDAM DIST #5 (PINE GROVE)",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183559430",
+    "contactType": "Published department contact",
+    "address": "144 DUNNSVILLE ROAD, SCHENECTADY, NY 12306",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42036",
+    "name": "STEPHENTOWN VOLUNTEER FIRE DEPT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187335151",
+    "contactType": "Published department contact",
+    "address": "PO BOX 208, STEPHENTOWN, NY 12168",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47004",
+    "name": "DELANSON FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188952100",
+    "contactType": "Published department contact",
+    "address": "PO BOX 153, DUANESBURG, NY 12056",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42003",
+    "name": "BEST LUTHER VOL FIRE CO",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182835641",
+    "contactType": "Published department contact",
+    "address": "303 OLD BEST ROAD, WEST SAND LAKE, NY 12196",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42013",
+    "name": "GRAFTON VOL FIRE DEPT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182793606",
+    "contactType": "Published department contact",
+    "address": "2385 RTE 2, GRAFTON, NY 12082",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01033",
+    "name": "TRI-VILLAGE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182396780",
+    "contactType": "Published department contact",
+    "address": "3096 CO RTE 145 PO BOX 575, PRESTON HOLLOW, NY 12469",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01035",
+    "name": "VOORHEESVILLE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187654048",
+    "contactType": "Published department contact",
+    "address": "12 ALTAMONT RD PO BOX 525, VOORHEESVILLE, NY 12186",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01018",
+    "name": "MEDUSA FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182396006",
+    "contactType": "Published department contact",
+    "address": "458 CR 351, MEDUSA, NY 12120",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42021",
+    "name": "MOUNTAIN VIEW FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182834530",
+    "contactType": "Published department contact",
+    "address": "2 SHAFTER AVENUE, TROY, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01023",
+    "name": "NEW SALEM FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187652244",
+    "contactType": "Published department contact",
+    "address": "694 NEW SALEM ROAD, VOORHEESVILLE, NY 12186",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01028",
+    "name": "SCHUYLER HEIGHTS FIRE DEPT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182717851",
+    "contactType": "Published department contact",
+    "address": "900 FIRST STREET, WATERVLIET, NY 12189",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42006",
+    "name": "CASTLETON FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187324342",
+    "contactType": "Published department contact",
+    "address": "11 GREEN AVENUE, CASTLETON, NY 12033",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01013",
+    "name": "GREEN ISLAND FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182731041",
+    "contactType": "Published department contact",
+    "address": "7  CLINTON STREET, GREEN ISLAND, NY 12183",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47009",
+    "name": "NISKAYUNA FIRE DISTRICT #2",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187856033",
+    "contactType": "Published department contact",
+    "address": "2772 TROY ROAD, SCHENECTADY, NY 12309",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01008",
+    "name": "COLONIE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188699306",
+    "contactType": "Published department contact",
+    "address": "1631 CENTRAL AVENUE, ALBANY, NY 12205",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42011",
+    "name": "EAST GREENBUSH FIRE COMPANY",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184794168",
+    "contactType": "Published department contact",
+    "address": "68 PHILLIPS ROAD, RENSSELAER, NY 12144",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42030",
+    "name": "SCHAGHTICOKE FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187534631",
+    "contactType": "Published department contact",
+    "address": "31 SCHOOL ST PO BOX 67, SCHAGHTICOKE, NY 12154",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42016",
+    "name": "HOOSICK VOL FIRE COMPANY",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186867919",
+    "contactType": "Published department contact",
+    "address": "664 SOUTH ST, PO BOX 167, HOOSICK, NY 12089",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47024",
+    "name": "SCOTIA FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183816115",
+    "contactType": "Published department contact",
+    "address": "148 MOHAWK AVENUE, SCOTIA, NY 12302",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42040",
+    "name": "VALLEY FALLS FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187534525",
+    "contactType": "Published department contact",
+    "address": "CHARLES STREET, PO BOX 245, VALLEY FALLS, NY 12185",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01004",
+    "name": "BOGHT COMMUNITY FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187850339",
+    "contactType": "Published department contact",
+    "address": "1095 LOUDON ROAD, COHOES, NY 12047",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01036",
+    "name": "WATERVLIET FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182703826",
+    "contactType": "Published department contact",
+    "address": "FIRE HEADQRTRS 116 13TH ST, WATERVLIET, NY 12189",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42035",
+    "name": "SPEIGLETOWN VOLUNTEER FIRE CO",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182355431",
+    "contactType": "Published department contact",
+    "address": "146 SPEIGLETOWN ROAD, TROY, NY 12182",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47003",
+    "name": "CARMAN FIRE DEPT ROTTERDAM #3",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183556425",
+    "contactType": "Published department contact",
+    "address": "2435 HAMBURG STREET, SCHENECTADY, NY 12303",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42002",
+    "name": "BERLIN VOLUNTEER FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186582890",
+    "contactType": "Published department contact",
+    "address": "PO BOX 1, BERLIN, NY 12022",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42012",
+    "name": "EAST SCHODACK FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184793366",
+    "contactType": "Published department contact",
+    "address": "ROUTE 150, EAST SCHODACK, NY 12061",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01019",
+    "name": "MAPLEWOOD FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182731200",
+    "contactType": "Published department contact",
+    "address": "61 COHOES ROAD, WATERVLIET, NY 12189",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42024",
+    "name": "PETERSBURGH VOLUNTEER FIRE CO",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186583560",
+    "contactType": "Published department contact",
+    "address": "PO BOX 280, PETERSBURGH, NY 12138",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01017",
+    "name": "LATHAM FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187855060",
+    "contactType": "Published department contact",
+    "address": "226 OLD LOUDON ROAD, LATHAM, NY 12110",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47014",
+    "name": "PATTERSONVILLE FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188875111",
+    "contactType": "Published department contact",
+    "address": "5279 RYNEX CORNERS ROAD, PATTERSONVILLE, NY 12137",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01032",
+    "name": "STANFORD HEIGHTS FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183467948",
+    "contactType": "Published department contact",
+    "address": "2240 CENTRAL AVENUE, SCHENECTADY, NY 12304",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42008",
+    "name": "CLINTON HEIGHTS FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184653990",
+    "contactType": "Published department contact",
+    "address": "PO BOX 332, RENSSELAER, NY 12144",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47013",
+    "name": "NISKAYUNA FIRE DISTRICT NO 1",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183748386",
+    "contactType": "Published department contact",
+    "address": "1079 BALLTOWN ROAD, SCHENECTADY, NY 12309",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01012",
+    "name": "FULLER ROAD FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184894421",
+    "contactType": "Published department contact",
+    "address": "1342 CENTRAL AVENUE, ALBANY, NY 12205",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42007",
+    "name": "CENTER BRUNSWICK VOL FIRE CO",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5182793878",
+    "contactType": "Published department contact",
+    "address": "1045 HOOSICK ROAD, TROY, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42025",
+    "name": "PITTSTOWN VOLUNTEER FIRE COMPANY",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186635773",
+    "contactType": "Published department contact",
+    "address": "134 PARKER SCHOOL ROAD, JOHNSONVILLE, NY 12094",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47019",
+    "name": "ROTTERDAM FIRE DISTRICT #2",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183551341",
+    "contactType": "Published department contact",
+    "address": "1400 CURRY ROAD, SCHENECTADY, NY 12303",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47002",
+    "name": "BEUKENDAAL FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183771788",
+    "contactType": "Published department contact",
+    "address": "501 SACANDAGA ROAD, GLENVILLE, NY 12303",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01027",
+    "name": "RENSSELAERVILLE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187975269",
+    "contactType": "Published department contact",
+    "address": "21 RICE RD PO BOX 134, RENSSELAERVILLE, NY 12147",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01024",
+    "name": "NORTH BETHLEHEM FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184896556",
+    "contactType": "Published department contact",
+    "address": "589 RUSSELL ROAD, ALBANY, NY 12203",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01009",
+    "name": "DELMAR FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184757310",
+    "contactType": "Published department contact",
+    "address": "145 ADAMS STREET, DELMAR, NY 12054",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47026",
+    "name": "SOUTH SCHENECTADY FIRE DEPT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183557722",
+    "contactType": "Published department contact",
+    "address": "6 OLD MARIAVILLE ROAD, SCHENECTADY, NY 12306",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42029",
+    "name": "RENSSELAER FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184653243",
+    "contactType": "Published department contact",
+    "address": "62 WASHINGTON STREET, RENSSELAER, NY 12144",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42001",
+    "name": "AVERILL PARK FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186743077",
+    "contactType": "Published department contact",
+    "address": "10 SUNSET ROAD BOX 116, AVERILL PARK, NY 12018",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47006",
+    "name": "EAST GLENVILLE FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5183991641",
+    "contactType": "Published department contact",
+    "address": "433 SARATOGA ROAD, GLENVILLE, NY 12302",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01038",
+    "name": "WEST ALBANY FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184216624",
+    "contactType": "Published department contact",
+    "address": "113 SAND CREEK ROAD, ALBANY, NY 12205",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01031",
+    "name": "SLINGERLANDS FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184394734",
+    "contactType": "Published department contact",
+    "address": "PO BOX 99, SLINGERLANDS, NY 12159",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01020",
+    "name": "MC KOWNVILLE FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5184894340",
+    "contactType": "Published department contact",
+    "address": "1250 WESTERN AVENUE, ALBANY, NY 12203",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42015",
+    "name": "HOAGS CORNERS VOL FIRE DEPT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187665474",
+    "contactType": "Published department contact",
+    "address": "7237 STATE ROUTE 66, EAST NASSAU, NY 12062",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01005",
+    "name": "COEYMANS FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187562027",
+    "contactType": "Published department contact",
+    "address": "67 CHURCH STREET, COEYMANS, NY 12045",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42041",
+    "name": "WEST HOOSICK FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5186864031",
+    "contactType": "Published department contact",
+    "address": "1270 PINE VALLEY RD BOX 134, HOOSICK FALLS, NY 12090",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-47017",
+    "name": "QUAKER STREET FIRE DEPARTMENT",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188952121",
+    "contactType": "Published department contact",
+    "address": "PO BOX 93, QUAKER STREET, NY 12141",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42034",
+    "name": "SOUTH SCHODACK FIRE DEPARTMENT",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187320536",
+    "contactType": "Published department contact",
+    "address": "1567 BAME ROAD, CASTLETON, NY 12033",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-42019",
+    "name": "JOHNSONVILLE VOL FIRE COMPANY",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5187534843",
+    "contactType": "Published department contact",
+    "address": "PO BOX 190, JOHNSONVILLE, NY 12094",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "fire-01016",
+    "name": "KNOX FIRE DEPARTMENT",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Fire / rescue",
+    "phone": "5188720368",
+    "contactType": "Published department contact",
+    "address": "2198 BERNE ALTAMONT ROAD, KNOX, NY 12107",
+    "source": "https://data.ny.gov/Public-Safety/Fire-Department-Directory-for-New-York-State/qfsu-zcpv",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2024-12-20. County listing does not establish a response boundary or mutual-aid agreement."
+  },
+  {
+    "id": "police-7",
+    "name": "Albany City Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 462-8013",
+    "contactType": "Published department contact",
+    "address": "165 Henry Johnson Boulevard, Albany, NY 12210",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-16",
+    "name": "Albany County Sheriff's Office",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 487-5440",
+    "contactType": "Published department contact",
+    "address": "16 Eagle Street, Albany, NY 12207",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-34",
+    "name": "Altamont Village Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 861-5480",
+    "contactType": "Published department contact",
+    "address": "113 Main Street, Altamont, NY 12009",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-77",
+    "name": "Bethlehem Town Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 439-9973",
+    "contactType": "Published department contact",
+    "address": "447 Delaware Avenue, Delmar, NY 12054",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-217",
+    "name": "Coeymans Town Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 756-2059",
+    "contactType": "Published department contact",
+    "address": "18 Russell Avenue, Ravena, NY 12143",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-220",
+    "name": "Cohoes City Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 237-5333",
+    "contactType": "Published department contact",
+    "address": "97 Mohawk Street, Cohoes, NY 12047",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-225",
+    "name": "Colonie Town Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 783-2744",
+    "contactType": "Published department contact",
+    "address": "312 Wolf Road, Latham, NY 12110",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-262",
+    "name": "CSX Railroad Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 767-6252",
+    "contactType": "Published department contact",
+    "address": "1 Bell Crossing Road, Selkirk, NY 12158",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-300",
+    "name": "East Greenbush Town Police Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 479-2525",
+    "contactType": "Published department contact",
+    "address": "225 Columbia Turnpike, Rensselaer, NY 12144",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-414",
+    "name": "Glenville Town Police Department",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 384-0123",
+    "contactType": "Published department contact",
+    "address": "18 Glenridge Road, Glenville, NY 12302",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-431",
+    "name": "Green Island Village Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 273-2401",
+    "contactType": "Published department contact",
+    "address": "73 George Street, Green Island, NY 12183",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-449",
+    "name": "Guilderland Town Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 356-1980",
+    "contactType": "Published department contact",
+    "address": "5209 Western Turnpike, Guilderland, NY 12084",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-488",
+    "name": "Hoosick Falls Village Police Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 686-7651",
+    "contactType": "Published department contact",
+    "address": "24 Main Street, Hoosick Falls, NY 12090",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-498",
+    "name": "Hudson Valley Community College",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 629-7210",
+    "contactType": "Published department contact",
+    "address": "80 Vandenburgh Avenue, Troy, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-628",
+    "name": "Menands Village Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 463-1681",
+    "contactType": "Published department contact",
+    "address": "250 Broadway, Menands, NY 12204",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-691",
+    "name": "Nassau Village Police Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 766-9293",
+    "contactType": "Published department contact",
+    "address": "40 Malden Street, Nassau, NY 12123",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-732",
+    "name": "New York State Police - Troop G",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "518-783-3211",
+    "contactType": "Published department contact",
+    "address": "760 Troy Schenectady Road, Latham, NY 12110",
+    "source": "https://troopers.ny.gov/location/troop-g",
+    "checkedAt": "2026-10-02",
+    "verification": "Official troop page reviewed; not directly agency-confirmed",
+    "notes": "Serves all three counties. Official source lists zone/station contacts; headquarters number shown."
+  },
+  {
+    "id": "police-736",
+    "name": "New York State Police - Troop T",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 436-2825",
+    "contactType": "Published department contact",
+    "address": "200 Southern Boulevard, Albany, NY 12209",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-766",
+    "name": "Niskayuna Town Police Department",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 386-4585",
+    "contactType": "Published department contact",
+    "address": "1 Niskayuna Circle, Niskayuna, NY 12309",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-771",
+    "name": "North Greenbush Town Police Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 283-5323",
+    "contactType": "Published department contact",
+    "address": "133 Bloomingrove Drive, Troy, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1021",
+    "name": "Rensselaer City Police Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 462-7451",
+    "contactType": "Published department contact",
+    "address": "201 Broadway, Rensselaer, NY 12144",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1032",
+    "name": "Rensselaer County Sheriff's Office",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 270-5448",
+    "contactType": "Published department contact",
+    "address": "4000 Main Street, Troy, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1035",
+    "name": "Rensselaer Polytechnic Institute Department of Public Safety",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 276-8527",
+    "contactType": "Published department contact",
+    "address": "110 8th Street, Troy, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1062",
+    "name": "Rotterdam Town Police Department",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 355-7739",
+    "contactType": "Published department contact",
+    "address": "101 Princetown Road, Rotterdam, NY 12306",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1090",
+    "name": "Schenectady City Police Department",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 382-5201",
+    "contactType": "Published department contact",
+    "address": "531 Liberty Street, Schenectady, NY 12305",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1099",
+    "name": "Schenectady County Sheriff's Office",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 388-4300",
+    "contactType": "Published department contact",
+    "address": "320 Veeder Avenue, Schenectady, NY 12307",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1102",
+    "name": "Schodack Town Police Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 477-7973",
+    "contactType": "Published department contact",
+    "address": "1797 Columbia Turnpike, Castleton, NY 12033",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1122",
+    "name": "Scotia Village Police Department",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 374-3110",
+    "contactType": "Published department contact",
+    "address": "4 North Ten Broeck Street, Scotia, NY 12302",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1220",
+    "name": "SUNY at Albany PD",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 442-3131",
+    "contactType": "Published department contact",
+    "address": "1 Justice Drive, Albany, NY 12222",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1249",
+    "name": "SUNY Systems Administration",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 443-5894",
+    "contactType": "Published department contact",
+    "address": "353 Broadway, Albany, NY 12246",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1301",
+    "name": "Troy City Police Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 270-4525",
+    "contactType": "Published department contact",
+    "address": "55 State Street, Troy, NY 12180",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "police-1437",
+    "name": "Watervliet City Police Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Law enforcement",
+    "phone": "(518) 270-3833",
+    "contactType": "Published department contact",
+    "address": "15th Street and Broadway, Watervliet, NY 12189",
+    "source": "https://data.ny.gov/Public-Safety/Directory-of-Criminal-Justice-Agencies/gugp-n5ip",
+    "checkedAt": "2026-10-02",
+    "verification": "Historical state dataset; current contact not confirmed",
+    "notes": "Source dataset updated 2022-09-15. DCJS cautions that agencies may not report updated contact information. County listing is not a jurisdiction boundary."
+  },
+  {
+    "id": "fbi-albany",
+    "name": "FBI Albany Field Office",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Federal / aviation",
+    "phone": "518-465-7551",
+    "address": "200 McCarty Avenue, Albany, NY 12209",
+    "source": "https://www.fbi.gov/contact-us/field-offices/albany",
+    "notes": "Published 24/7 field-office contact; serves northern New York and Vermont.",
+    "contactType": "Field office / reporting",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "dhses",
+    "name": "NYS DHSES",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Emergency management",
+    "phone": "518-242-5000",
+    "address": "1220 Washington Avenue, Building 7A, Albany, NY 12226",
+    "source": "https://www.dhses.ny.gov/contact-us",
+    "notes": "Statewide agency; headquarters in Albany.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "state-fire",
+    "name": "NYS Office of Fire Prevention and Control — State Fire",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Fire / rescue",
+    "phone": "518-474-6746",
+    "address": "1220 Washington Avenue, Building 7A, Floor 2, Albany, NY 12226",
+    "source": "https://www.dhses.ny.gov/contact-us",
+    "notes": "Statewide fire prevention, training and response support.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "dhses-oem",
+    "name": "NYS Office of Emergency Management",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Emergency management",
+    "phone": "518-242-5000",
+    "address": "1220 Washington Avenue, Building 22, Albany, NY 12226",
+    "source": "https://www.dhses.ny.gov/contact-us",
+    "notes": "Administrative contact; incident resource requests follow established coordination procedures.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "dhses-comms",
+    "name": "NYS Office of Interoperable and Emergency Communications",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Communications",
+    "phone": "518-322-4911",
+    "address": "1220 Washington Avenue, Building 7A, Albany, NY 12226",
+    "source": "https://www.dhses.ny.gov/contact-us",
+    "notes": "Interoperability coordination; does not establish an incident channel assignment.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "faa-leap",
+    "name": "FAA LEAP — local representative pending verification",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Federal / aviation",
+    "phone": "",
+    "address": "New York service area; local assigned agent not verified",
+    "source": "https://www.faa.gov/uas/public_safety_gov/contacts",
+    "notes": "Use the official FAA law-enforcement contact route to identify the assigned LEAP special agent. No named local agent or direct telephone has been verified.",
+    "contactType": "Law-enforcement liaison",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "faa-uas",
+    "name": "FAA UAS Support Center",
+    "counties": [
+      "Albany",
+      "Schenectady",
+      "Rensselaer"
+    ],
+    "service": "Federal / aviation",
+    "phone": "844-359-6982",
+    "address": "National support",
+    "source": "https://www.faa.gov/uas/contact_us",
+    "notes": "UASHelp@faa.gov. General drone support; not the local LEAP representative or emergency dispatch.",
+    "contactType": "General UAS support",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "schenectady-emo",
+    "name": "Schenectady County Emergency Management / Fire Coordination",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "Emergency management",
+    "phone": "518-370-3113",
+    "address": "130 Princetown Plaza, Princetown, NY 12306",
+    "source": "https://www.schenectadycountyny.gov/emo",
+    "notes": "County coordination office.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "rensselaer-public-safety",
+    "name": "Rensselaer County Bureau of Public Safety",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "Emergency management",
+    "phone": "518-906-4180",
+    "address": "99 Troy Road, East Greenbush, NY 12061",
+    "source": "https://www.rensco.com/m/directory/department?did=42",
+    "notes": "PublicSafety@rensco.com. Office hours Monday–Friday 8 am–4 pm. Published non-emergency communications number: 518-270-5252.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "colonie-ems",
+    "name": "Town of Colonie EMS",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS",
+    "phone": "518-782-2645",
+    "address": "312 Wolf Road, Latham, NY 12110",
+    "source": "https://www.colonieems.org/contact-us/",
+    "notes": "Business hours Monday–Friday 8 am–4 pm.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "guilderland-ems",
+    "name": "Town of Guilderland EMS",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS",
+    "phone": "518-456-3600",
+    "address": "200 Centre Drive, Albany, NY 12203",
+    "source": "https://www.townofguilderland.org/Directory.aspx?DID=14",
+    "notes": "Published after-hours dispatch: 518-356-1501.",
+    "contactType": "Administrative / coordination",
+    "checkedAt": "2026-10-02",
+    "verification": "Official contact page reviewed; not directly agency-confirmed"
+  },
+  {
+    "id": "mohawk-albany-transport",
+    "name": "Mohawk Ambulance — City of Albany transport",
+    "counties": [
+      "Albany"
+    ],
+    "service": "Ambulance transport",
+    "phone": "518-434-4151",
+    "contactType": "Provider-published Albany-area contact",
+    "address": "City of Albany service role",
+    "source": "https://mohawkambulanceservice.com/contact/",
+    "checkedAt": "2026-10-02",
+    "verification": "Contact verified on provider website; Albany role supplied by user",
+    "notes": "City of Albany: ambulance transport role, per user correction. Albany Fire provides EMS response and paramedic care. This entry does not imply Mohawk lacks clinical capabilities or has the same role in other jurisdictions. For emergencies use 911."
+  },
+  {
+    "id": "remo-albany-1",
+    "name": "Air Methods LLC",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.airmethods.com/"
+  },
+  {
+    "id": "remo-albany-2",
+    "name": "Albany County Sheriff’s Office EMS Unit",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/ACSOEMS/"
+  },
+  {
+    "id": "remo-albany-4",
+    "name": "Altamont Fair EMS",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-albany-5",
+    "name": "Boght Community Fire District",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.boghtfire.org"
+  },
+  {
+    "id": "remo-albany-6",
+    "name": "Coeymans Hollow Volunteer Fire Corporation, Inc.",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/CoeymansHollowFire/?ref=embed_page#"
+  },
+  {
+    "id": "remo-albany-7",
+    "name": "Cohoes Fire Department, City of",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.cohoesfire.com/"
+  },
+  {
+    "id": "remo-albany-9",
+    "name": "Delmar-Bethlehem EMS",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.delmarems.org"
+  },
+  {
+    "id": "remo-albany-10",
+    "name": "Five Quad Volunteer Ambulance Service, Inc",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.albany.edu/five-quad"
+  },
+  {
+    "id": "remo-albany-11",
+    "name": "Green Island Fire Department, Village of",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/gifdL3418/"
+  },
+  {
+    "id": "remo-albany-13",
+    "name": "Helderberg Ambulance Squad, Inc.",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/HelderbergAmbulance/"
+  },
+  {
+    "id": "remo-albany-14",
+    "name": "Knox, Town of",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.knoxny.org/"
+  },
+  {
+    "id": "remo-albany-15",
+    "name": "Maplewood Fire Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.mvfd-ems.org/"
+  },
+  {
+    "id": "remo-albany-16",
+    "name": "Menands Fire Company #1, Inc.",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.menandsfiredepartment.org/"
+  },
+  {
+    "id": "remo-albany-18",
+    "name": "MVP Arena EMS (SMG Worldwide Entertainment)",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-albany-19",
+    "name": "New York State Office of Fire Prevention and Control",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-albany-20",
+    "name": "New York State Police - Aviation Unit",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-albany-21",
+    "name": "New York State Police - Special Operations Response",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-albany-22",
+    "name": "North Bethlehem Fire Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/NBFDNY/"
+  },
+  {
+    "id": "remo-albany-23",
+    "name": "NYS Dept. of Corrections & Community Supervision",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-albany-24",
+    "name": "NYS DOH Bureau of EMS & Trauma Systems",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.health.ny.gov/professionals/ems/"
+  },
+  {
+    "id": "remo-albany-25",
+    "name": "Onesquethaw Volunteer Fire Company, Inc",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.onesquethaw.com"
+  },
+  {
+    "id": "remo-albany-26",
+    "name": "Ravena Rescue Squad, Inc.",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.Ravenarescue.com"
+  },
+  {
+    "id": "remo-albany-27",
+    "name": "SABIC Innovative Plastics, US, LLC",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-albany-28",
+    "name": "Schuyler Heights Fire District",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/SHFC8/"
+  },
+  {
+    "id": "remo-albany-29",
+    "name": "Shaker Road Loudonville Fire Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.shakerroadfire.com"
+  },
+  {
+    "id": "remo-albany-30",
+    "name": "Stanford Heights Fire Department, Inc.",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.stanfordheightsfire.org/"
+  },
+  {
+    "id": "remo-albany-31",
+    "name": "The S.W. Pitts Hose Company of Latham, NY, Inc.",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.lathamfd.org"
+  },
+  {
+    "id": "remo-albany-32",
+    "name": "Verdoy Fire Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.verdoyfd.org"
+  },
+  {
+    "id": "remo-albany-33",
+    "name": "Watervliet Arsenal Fire Department",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/ArsenalIAFFlocalF256/"
+  },
+  {
+    "id": "remo-albany-34",
+    "name": "Watervliet Fire Department, City of",
+    "counties": [
+      "Albany"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Albany County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/WatervlietFireDepartment/"
+  },
+  {
+    "id": "remo-rensselaer-1",
+    "name": "Averill Park Fire Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/Averill-Park-Sand-Lake-Fire-Department-100069330488842/"
+  },
+  {
+    "id": "remo-rensselaer-2",
+    "name": "Berlin, Town of (Taconic Valley Ambulance)",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/TaconicValleyAmbulance"
+  },
+  {
+    "id": "remo-rensselaer-3",
+    "name": "Best Luther Fire Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.bestlutherfire.com"
+  },
+  {
+    "id": "remo-rensselaer-4",
+    "name": "Brunswick Volunteer Fire Company No. 1, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/BrunswickFireCoNo1/"
+  },
+  {
+    "id": "remo-rensselaer-5",
+    "name": "Castleton Fire Company, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/profile.php?id=100057791734405"
+  },
+  {
+    "id": "remo-rensselaer-6",
+    "name": "Castleton Volunteer Ambulance Service, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/Castleton-Volunteer-Ambulance-100090014221630/"
+  },
+  {
+    "id": "remo-rensselaer-7",
+    "name": "Defreestville Fire Department, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.defreestvillefire.org/"
+  },
+  {
+    "id": "remo-rensselaer-8",
+    "name": "Eagle Mills Fire District No. 1",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://eaglemillsfd.org/"
+  },
+  {
+    "id": "remo-rensselaer-9",
+    "name": "East Greenbush Fire District #3",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/East-Greenbush-Fire-CompanyInc-100064441400059/"
+  },
+  {
+    "id": "remo-rensselaer-10",
+    "name": "East Schodack Fire Company, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.eastschodackfire.com/"
+  },
+  {
+    "id": "remo-rensselaer-11",
+    "name": "Grafton Rescue Squad, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/Grafton-Rescue-Squad-100064493600739/"
+  },
+  {
+    "id": "remo-rensselaer-12",
+    "name": "Hemstreet Park Fire Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.hemstreetparkfiredepartment.org"
+  },
+  {
+    "id": "remo-rensselaer-13",
+    "name": "Hoags Corners Fire District",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/hoagscornersfireco/"
+  },
+  {
+    "id": "remo-rensselaer-14",
+    "name": "Hoags Corners Volunteer Ambulance",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.hcamb.org"
+  },
+  {
+    "id": "remo-rensselaer-15",
+    "name": "Hoosic Valley Rescue Squad, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/Hoosic-Valley-Rescue-Squad-Inc-100064142042976/"
+  },
+  {
+    "id": "remo-rensselaer-16",
+    "name": "Hoosic Valley Volunteer Fire Company",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/Hoosic-Valley-Vol-Fire-Co-100064870472791/"
+  },
+  {
+    "id": "remo-rensselaer-17",
+    "name": "Hoosick Rescue Squad, Inc., Town of",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.thrsems.org"
+  },
+  {
+    "id": "remo-rensselaer-18",
+    "name": "Johnsonville Fire District",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/jvillefirestation19/"
+  },
+  {
+    "id": "remo-rensselaer-19",
+    "name": "Melrose Fire District",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.melrosefireco.org/"
+  },
+  {
+    "id": "remo-rensselaer-20",
+    "name": "Mohawk Ambulance Service",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-rensselaer-21",
+    "name": "Mountain View Volunteer Fire Company, Inc",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/mountainview21/"
+  },
+  {
+    "id": "remo-rensselaer-22",
+    "name": "Nassau Ambulance Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.nassauambulance.org"
+  },
+  {
+    "id": "remo-rensselaer-23",
+    "name": "Nassau Fire District #1",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/nassaufire/"
+  },
+  {
+    "id": "remo-rensselaer-24",
+    "name": "North Greenbush Ambulance Association, Inc",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.NGambulance.org"
+  },
+  {
+    "id": "remo-rensselaer-25",
+    "name": "Petersburgh Rescue Ambulance Squad, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/petersburghambulance/"
+  },
+  {
+    "id": "remo-rensselaer-26",
+    "name": "Pittstown Volunteer Emergency Corps, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/Pittstown-Volunteer-Emergency-Corps-100052652659251/"
+  },
+  {
+    "id": "remo-rensselaer-27",
+    "name": "Pleasantdale Volunteer Fire District # 5",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/pleasantdalefire/"
+  },
+  {
+    "id": "remo-rensselaer-28",
+    "name": "Poestenkill Fire Company, Inc",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/PFC27"
+  },
+  {
+    "id": "remo-rensselaer-29",
+    "name": "Rensselaer County Sheriff’s Department",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-rensselaer-30",
+    "name": "Rensselaer Fire Department, City of",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/RensselaerFD/"
+  },
+  {
+    "id": "remo-rensselaer-31",
+    "name": "Rensselaer Polytechnic Institute Ambulance",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.rpiambulance.com"
+  },
+  {
+    "id": "remo-rensselaer-32",
+    "name": "Sand Lake Ambulance, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.sandlakeambulance.org/"
+  },
+  {
+    "id": "remo-rensselaer-33",
+    "name": "Schodack Valley Fire Company, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://svfd32.org/"
+  },
+  {
+    "id": "remo-rensselaer-34",
+    "name": "South Schodack Volunteer Fire Company, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/South-Schodack-Fire-Company-100091518863885/"
+  },
+  {
+    "id": "remo-rensselaer-35",
+    "name": "Speigletown Fire District",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.Speigletownfire.org"
+  },
+  {
+    "id": "remo-rensselaer-36",
+    "name": "Stephentown Fire District #1",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.svfd1.org/"
+  },
+  {
+    "id": "remo-rensselaer-37",
+    "name": "Troy Bureau of Fire, City of",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/troy.firefighters/"
+  },
+  {
+    "id": "remo-rensselaer-38",
+    "name": "Tsatsawassa Protective Fire Company, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/p/Tsatsawassa-Fire-Company-100076008678990/"
+  },
+  {
+    "id": "remo-rensselaer-39",
+    "name": "Volunteer Fire Company of Center Brunswick",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://centerbrunswickfire.com/"
+  },
+  {
+    "id": "remo-rensselaer-40",
+    "name": "West Sand Lake Volunteer Fire Company, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.wslfd.org"
+  },
+  {
+    "id": "remo-rensselaer-41",
+    "name": "WF Bruen Emergency Squad, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.bruenrescue.org"
+  },
+  {
+    "id": "remo-rensselaer-42",
+    "name": "Wynantskill Fire Department, Inc.",
+    "counties": [
+      "Rensselaer"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Rensselaer County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/WynantskillFire/"
+  },
+  {
+    "id": "remo-schenectady-1",
+    "name": "Alplaus Volunteer Fire Company #1, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.alplausfiredepartment.us/"
+  },
+  {
+    "id": "remo-schenectady-2",
+    "name": "Beukendaal Fire Department",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/bfddist5/"
+  },
+  {
+    "id": "remo-schenectady-3",
+    "name": "Delanson Fire Company, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.delansonfire.org"
+  },
+  {
+    "id": "remo-schenectady-4",
+    "name": "Duanesburg Volunteer Ambulance Corps, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.duanesburgambulance.org"
+  },
+  {
+    "id": "remo-schenectady-5",
+    "name": "Duanesburg Volunteer Fire Company, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/profile.php?id=61573413934209#"
+  },
+  {
+    "id": "remo-schenectady-6",
+    "name": "East Glenville Fire District #3",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.eastglenvillefd.com/"
+  },
+  {
+    "id": "remo-schenectady-7",
+    "name": "Glenville Hill Volunteer Fire Company, Inc",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://ghfd8.org/"
+  },
+  {
+    "id": "remo-schenectady-8",
+    "name": "Knolls Atomic Power Lab Ambulance",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing."
+  },
+  {
+    "id": "remo-schenectady-9",
+    "name": "Mariaville Volunteer Fire Department, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/groups/mariavillefire/"
+  },
+  {
+    "id": "remo-schenectady-10",
+    "name": "Mohawk Ambulance Service",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://mohawk-ambulance-service.breezy.hr/"
+  },
+  {
+    "id": "remo-schenectady-11",
+    "name": "Niskayuna Fire District #1",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.niskayunafire1.org"
+  },
+  {
+    "id": "remo-schenectady-12",
+    "name": "Niskayuna Fire District #2",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.nfd2.com"
+  },
+  {
+    "id": "remo-schenectady-13",
+    "name": "Pine Grove Volunteer Fire Department, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/PGVFD5/"
+  },
+  {
+    "id": "remo-schenectady-14",
+    "name": "Plotterkill Volunteer Fire Company, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.plotterkillfiredistrict.org/"
+  },
+  {
+    "id": "remo-schenectady-15",
+    "name": "Quaker Street Volunteer Fire District #1",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/QSVFD304/"
+  },
+  {
+    "id": "remo-schenectady-16",
+    "name": "Rotterdam Emergency Medical Services, Inc",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://rotterdam-ems.com/"
+  },
+  {
+    "id": "remo-schenectady-17",
+    "name": "Rotterdam Fire District #1 (Rotterdam Junction)",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/rjvfd/"
+  },
+  {
+    "id": "remo-schenectady-18",
+    "name": "Rotterdam Fire District #4 (Pattersonville)",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/profile.php?id=61575624807915#"
+  },
+  {
+    "id": "remo-schenectady-19",
+    "name": "Schenectady Fire Department",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/SchenectadyFireDepartment/"
+  },
+  {
+    "id": "remo-schenectady-20",
+    "name": "Scotia Fire Department, Village of",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.facebook.com/ScotiaFD/"
+  },
+  {
+    "id": "remo-schenectady-21",
+    "name": "Thomas Corners Fire Department, Inc.",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.tcfd7.com"
+  },
+  {
+    "id": "remo-schenectady-22",
+    "name": "Union College Emergency Medical Services",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.muse.union.edu/ems/"
+  },
+  {
+    "id": "remo-schenectady-23",
+    "name": "West Glenville Volunteer Fire Company, Inc. (Dist. 6)",
+    "counties": [
+      "Schenectady"
+    ],
+    "service": "EMS roster — role to verify",
+    "phone": "",
+    "contactType": "Agency contact pending verification",
+    "address": "Schenectady County service listing",
+    "source": "https://www.remo-ems.com/emergency-medical-services/agencies/",
+    "checkedAt": "2026-10-02",
+    "verification": "Regional program roster reviewed; direct contact and service role pending",
+    "notes": "Listed by the state-designated regional EMS program. EMS listing does not establish transport capability, current staffing or response jurisdiction. May also have a fire-service listing. Agency website listed by REMO: https://www.westglenvillefirecompany.com/"
+  }
+]

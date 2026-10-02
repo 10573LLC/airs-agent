@@ -1,6 +1,6 @@
 {
-  "release": "gauntlet-8fb194f-20261002",
-  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:6d2ff2962d18997ffabbd078e9946805021ca49ae3ac9beaaf05dc3dbdcbed62",
+  "release": "friends-directory-20261002",
+  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:c1d4cfb05ed78bb53cb257b72c6a5ab461cbce5d8578c9fd878e2b5e2f2ccfc2",
   "account": "578856792953",
   "oidcSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-prod/oidc-client-nkrLpu",
   "certificateArn": "arn:aws:acm:us-east-2:578856792953:certificate/b8c80d75-26d9-425d-915d-4a571539c978",
@@ -26,5 +26,6 @@
   },
   "maintenanceImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:936ab8912e94cf6afb6ff2355d65ca1328463922be230cfcbbdc1df54e16d960",
   "exerciseImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:b9083f9ee76b9e3cbfa09301b75ace9caaef318f6e63e08c229e2e42441f71da",
-  "exerciseTaskDefinition": "airs-agent-prod-exercise:1"
+  "exerciseTaskDefinition": "airs-agent-prod-exercise:1",
+  "friendMigrationImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:d9a4781cbba9df47d042976846e684327ca3cba0991a7957e229a7fd505eb0a2"
 }

@@ -61,6 +61,8 @@ const column = (t, c) =>
  * are neither present nor part of the same plan.
  */
 export const CANONICAL_OBJECTS = [
+  {version: '0019', id:'airs.friend_briefings()', label:'reciprocal friend briefings', probe: fn('friend_briefings')},
+  {version:'0019',id:'col:trusted_agencies.relationship_level',label:'Friend relationship level',probe:column('trusted_agencies','relationship_level')},
   // ---- 0001 tenancy foundation ------------------------------------------
   { version: "0001", id: "airs.organizations", label: "organizations table", probe: table("organizations") },
   { version: "0001", id: "airs.users", label: "users table", probe: table("users") },

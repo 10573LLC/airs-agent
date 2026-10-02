@@ -349,7 +349,7 @@
         "ContainerDefinitions": [
           {
             "Name": "airs-agent",
-            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:6d2ff2962d18997ffabbd078e9946805021ca49ae3ac9beaaf05dc3dbdcbed62",
+            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:c1d4cfb05ed78bb53cb257b72c6a5ab461cbce5d8578c9fd878e2b5e2f2ccfc2",
             "Essential": true,
             "User": "node",
             "Environment": [
@@ -391,7 +391,7 @@
               },
               {
                 "Name": "AIRS_APP_RELEASE",
-                "Value": "gauntlet-8fb194f-20261002"
+                "Value": "friends-directory-20261002"
               },
               {
                 "Name": "DATABASE_URL",

@@ -5,6 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageHeading, PageShell } from "@/components/brand";
 import { getMe, getOrganization } from "@/lib/api/auth.functions";
 import { AgencySystemsIntegrationsPanel } from "@/lib/resources/agency-systems-integrations-panel";
+import { EmergencyDirectory } from '@/components/operations/emergency-directory';
+import { AgencyRelationships } from '@/components/operations/agency-relationships';
 
 export const Route = createFileRoute("/agency/systems")({
   head: () => ({
@@ -86,6 +88,8 @@ function AgencySystemsPage() {
       <div className="mt-8">
         <AgencySystemsIntegrationsPanel canManage={canManage} />
       </div>
+      {orgResult?.ok&&<div className="mt-8"><AgencyRelationships orgId={orgResult.data.orgId} canManage={canManage}/></div>}
+      <div className="mt-8"><EmergencyDirectory/></div>
     </PageShell>
   );
 }

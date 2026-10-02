@@ -9,6 +9,7 @@ import { listIncidentAssignmentsFn } from '@/lib/api/resources.functions';
 import { listMapFeaturesFn, listOperatingAreasFn, listIncidentResourceLocationsFn } from '@/lib/api/map.functions';
 import { listObservationsFn } from '@/lib/api/awareness.functions';
 import type { WorkspaceProjection } from '@/lib/operations/workspace-model';
+import { AgencyRelationships } from './agency-relationships';
 
 export function IncidentWorkspace({incidentId}:{incidentId:string}) {
   const [live,setLive]=useState(true);
@@ -62,11 +63,13 @@ export function IncidentWorkspace({incidentId}:{incidentId:string}) {
       <button className="rounded border px-3 py-1.5 font-semibold" onClick={()=>setLive(!live)}>{live?'Pause updates':'Resume updates'}</button>
       <span role="status">{failed?'Some panels are unavailable or out of date. Access restrictions are still enforced.':loading?'Loading panels…':live?'Updates every 3 seconds while visible':'Updates paused'}</span>
       {checked>0&&<span>Last complete refresh: {new Date(checked).toLocaleTimeString()}</span>}
+      <a className="underline" href="/agency/systems">Agency relationships and directory</a>
       <a className="underline" href={`/incidents/${incidentId}`}>Manage room and assignments</a>
       <a className="underline" href={`/incidents/${incidentId}/command?edit=true`}>Command tools</a>
       <a className="underline" href={`/map?tools=true&incident=${incidentId}`}>Map tools</a>
     </div>
     {exercise&&<p className="shrink-0 rounded border border-amber-500 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-950">EXERCISE ONLY — simulated participants; no live emergency dispatch.</p>}
+    <details className="shrink-0 max-h-[45vh] overflow-auto"><summary className="cursor-pointer text-sm font-semibold">Pre-incident Friend equipment and sharing arrangements</summary><AgencyRelationships orgId={org.data.data.orgId} canManage={false} participantOrgIds={rosterRows.map(p=>p.partnerOrgId)}/></details>
     <div className="min-h-0 flex-1"><OperationalWorkspace projection={projection} viewport mode="production" exercise={exercise}/></div>
   </div>;
 }

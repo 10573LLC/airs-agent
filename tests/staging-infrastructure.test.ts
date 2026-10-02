@@ -51,5 +51,11 @@ describe('isolated staging infrastructure', () => {
     expect(JSON.stringify(exercise.Resources.ExerciseExecutionRole)).not.toContain(cfg.foundation.MasterSecretArn);
     expect(exercise.Resources.ExerciseTask.Properties.ContainerDefinitions[0].Secrets.map((s:any)=>s.Name)).toEqual(['PGPASSWORD','EXERCISE_SEED']);
     expect(exercise.Resources.WebTask.Properties.ContainerDefinitions[0].Environment).toContainEqual({Name:'AUTH_DRIVER',Value:'oidc'});
+    const secret=`arn:aws:secretsmanager:${cfg.region}:${cfg.account}:secret:airs-agent-staging/exercise-model-test`;
+    const intelligent=stagingRuntime({...cfg,enableExerciseAgents:true,exerciseModelSecretArn:secret},live);
+    expect(JSON.stringify(intelligent.Resources.ExerciseTask)).toContain(secret);
+    expect(JSON.stringify(intelligent.Resources.ExerciseExecutionRole)).toContain(secret);
+    for(const id of ['WebTask','WebExecutionRole','ExerciseProvisionTask','BootstrapExecutionRole']) expect(JSON.stringify(intelligent.Resources[id])).not.toContain(secret);
+    expect(()=>stagingRuntime({...cfg,enableExerciseAgents:true,exerciseModelSecretArn:'arn:wrong-account-or-production-secret'},live)).toThrow();
   });
 });

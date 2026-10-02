@@ -14,6 +14,8 @@ Migration 0022 adds an addressed recipient and append-only agency response recor
 
 ## Boundaries
 
+The original deterministic mode described below remains available when model configuration is absent. The staging upgrade adds model-driven fictional assumptions and timed updates; see [intelligent exercise agencies](intelligent-exercise-agencies.md) for its behavior and limits. Original requests retain their recorded history.
+
 The automated responders use deterministic capability/capacity policies. They are not generative AI agents and do not interpret arbitrary prose as operational orders. Description, priority and staging are retained; allocation follows the selected capability and quantity. Each agency starts with two available units. No real dispatch, provider connection, external message, autonomous flight, invented arrival time or inferred coordinates is performed. Location is explicitly unknown until reported. Service-specific specialist systems such as clinical records, fire dispatch software or live UAS telemetry are not emulated by this fixture.
 
 ## Verification

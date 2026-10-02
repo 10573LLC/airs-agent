@@ -40,6 +40,15 @@ After sign-in, use **Platform Console → Open requesting agency**, create and a
 
 ## Remaining gates
 
+### 2026-10-02 map and intelligent responder update
+
+Release `intelligence-aa3a5a9-20261002` uses web/worker image digest `sha256:25bc3b97b839fc5d7d1aad0250545ae3fc1b65003b764fc01a5c25ade9e72513`. Web task `airs-agent-staging:5` and responder task `airs-agent-staging-responders:4` each reached one running task, zero pending, deployment COMPLETED. The runtime stack reached UPDATE_COMPLETE and HTTPS health reports the database reachable. No database migration was needed; operator image stays unchanged.
+
+- Map restored: the prior staging build omitted its map style. A separate map-only, staging-origin AWS Location key is configured; actual vector tile requests returned 200 for staging and 403 for an unrelated origin. Descriptor responses alone do not test the origin restriction. The Albany basemap and AWS/HERE attribution were visually verified in the browser.
+- 467 tests in 43 files, all 14 SQL suites, TypeScript, ARM64 web/worker build passed. Six targeted planner/infrastructure tests also passed after adding model-secret isolation assertions.
+- The user's renewed session reached the requesting agency. Browser requests to Fire and EMS verified real automatic participation, commitments and response history. A subsequent fictional school-evacuation/power-outage request to Emergency Management and Utilities produced distinct model-generated replies, explicit assumptions, unresolved needs and two labeled simulated staging points. The Utilities follow-up appeared automatically at T+60 exercise seconds, explicitly labeled SIMULATED; browser verification passed.
+- The model follows reviewed NIMS coordination guidance, available inventory and structured validation. Details and limits are in `docs/intelligent-exercise-agencies.md`. Historical facts are not rewritten. Existing deterministic response history is preserved.
+
 The user authorized a staging login invitation to admin@airsagent.com. Cognito accepted the email invitation request and returned FORCE_CHANGE_PASSWORD. The user completed password setup, authenticator enrollment, email verification and acceptance of the separate application invitation. The temporary enrollment client was removed; only the staging web client remains. No email was sent before authorization, and no password or MFA credential was set on the user's behalf.
 
 Live Dedrone ingestion/revocation, authenticated browser concurrency, backup/restore and rollback drills remain unverified. Provider specifications, approved credentials and representative payloads remain prerequisites for live integration. Public-site PR #5 remains unpublished; production release and main merges have not occurred.

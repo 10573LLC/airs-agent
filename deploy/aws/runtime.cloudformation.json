@@ -349,7 +349,7 @@
         "ContainerDefinitions": [
           {
             "Name": "airs-agent",
-            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:5944db28060ebc9620a31ee6456568f18290d8638aac14312cb74cc98d2d6b58",
+            "Image": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent@sha256:4dc2cc32bd54fb11320f3d72860d1b8e64a13cf3c3139178f996c8fe9660b67e",
             "Essential": true,
             "User": "node",
             "Environment": [
@@ -391,7 +391,7 @@
               },
               {
                 "Name": "AIRS_APP_RELEASE",
-                "Value": "command-a511ae8-20261002"
+                "Value": "workspace-7bd1248-20261002"
               },
               {
                 "Name": "DATABASE_URL",

@@ -26,6 +26,18 @@ Generate the foundation with `build-staging.mjs` and runtime with `build-staging
 
 Docker on this workstation requires its configured HTTP/HTTPS build proxy. Optional `build_ca` supplies trusted roots only during dependency installation. TLS verification remains enabled and the CA is not copied into the runtime image. Web/ops images use linux/arm64; the test image uses linux/amd64 and its task explicitly uses X86_64.
 
+## Automatic agency aid rollout
+
+Release `aid-6e5b0ff-20261002` is deployed from feature commit `6e5b0ffc8916e3b246ddb7bc1e91b9a1c0c9345a`. Runtime stack UPDATE_COMPLETE; web task definition `airs-agent-staging:3` and responder task definition `airs-agent-staging-responders:2` each have one running task, zero pending tasks and completed deployments. HTTPS health reports the database reachable.
+
+- Bootstrap task `a852223824fd4faeacce8438bda65a5f` exited 0, applied migration 0022, and reported zero pending migrations/checksum conflicts.
+- Provision task `9d1fe49b499542559dfe57f05ffaf744` exited 0 and created twelve fictional responding agencies plus the separate requesting agency `4d2c5de6-5e33-4551-bdce-c454cd87999d`. The existing human account has an incident-commander membership in that requesting agency. Password and MFA were not changed.
+- Responder task `c4f6759465b848c683ee6834f52da8a4` logged readiness for all twelve agency identities. The web retains OIDC/MFA; the separate worker has no HTTP listener or master database credential.
+- Latest local validation passed 463 tests in 42 files, all 14 SQL suites, TypeScript and ARM64 web/operator builds. The integration test covers multi-recipient requests, automatic participation, actual assignments and reports, response attribution, capacity limits, retry handling, wrong-entity denial and closeout release.
+- Browser acceptance of this new workflow remains pending: the earlier human session expired, and the browser is on managed sign-in awaiting the user's credentials/MFA. Cloud readiness and local integration success do not substitute for this browser check.
+
+After sign-in, use **Platform Console → Open requesting agency**, create and activate an incident, then open **Request aid and agency responses** in its operational workspace. Select multiple Anconison agencies and send the request. Responders follow structured capability/capacity rules; they do not interpret arbitrary prose or emulate specialist vendor systems. See `docs/automatic-agency-workflow.md` for exact limits.
+
 ## Remaining gates
 
 The user authorized a staging login invitation to admin@airsagent.com. Cognito accepted the email invitation request and returned FORCE_CHANGE_PASSWORD. The user completed password setup, authenticator enrollment, email verification and acceptance of the separate application invitation. The temporary enrollment client was removed; only the staging web client remains. No email was sent before authorization, and no password or MFA credential was set on the user's behalf.

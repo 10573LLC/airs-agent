@@ -167,7 +167,7 @@ export async function listIncidentAssignments(
                     AND s.classification <> 'originating_org_only'
                     AND (s.classification <> 'named_recipients' OR $2 = ANY (s.named_recipient_org_ids))
                     AND r.status NOT IN ('closed','archived')
-                    AND airs.has_incident_access(s.incident_id)
+                    AND (r.org_id = $2 OR airs.has_incident_access(s.incident_id))
                 )
               )
             )

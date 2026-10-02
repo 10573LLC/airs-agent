@@ -207,6 +207,7 @@ describe("adoption of the live reconciled state", () => {
       "0015",
       "0016",
       "0017",
+      "0018",
     ]);
     for (const m of migrations) expect(script).toContain(m.checksum);
     expect(script).toContain("no migration body is executed during adoption");
@@ -225,7 +226,7 @@ describe("adoption of the live reconciled state", () => {
     }));
     const { applied, pending, conflicts } = diffMigrations(migrations, rows);
     expect(applied.length).toBe(migrations.length);
-    expect(applied.at(-1)!.version).toBe("0017");
+    expect(applied.at(-1)!.version).toBe("0018");
     expect(pending.length).toBe(0);
     expect(conflicts.length).toBe(0);
     // `npm run db:migrate` then applies nothing

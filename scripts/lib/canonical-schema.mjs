@@ -1,5 +1,5 @@
 // AIRS Agent - canonical cumulative schema description (the schema that must
-// exist AFTER migration 0017), expressed as concrete, individually probeable
+// exist AFTER migration 0018), expressed as concrete, individually probeable
 // database objects.
 //
 // Why this file exists
@@ -316,6 +316,9 @@ export const CANONICAL_OBJECTS = [
   { version: "0016", id: "policy:incident_coordination_partners", label: "coordination partner RLS policy", probe: policy("incident_coordination_partners"), requires: ["airs.incident_coordination_partners"] },
   { version: "0016", id: "rlsforce:incident_coordination_partners", label: "forced RLS on coordination partners", probe: forced("incident_coordination_partners"), requires: ["airs.incident_coordination_partners"] },
 
+  { version: "0018", id: "guard:incident_owner_resource_shares", label: "incident owner sharing and per-share disclosure guards", probe: "EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='has_shared_resource' AND position('r.org_id=airs.current_org_id()' in pg_get_functiondef(p.oid))>0)", requires: ["airs.resources", "airs.incident_rooms"] },
+  { version: "0018", id: "guard:per_share_disclosure", label: "each disclosure share must be live and authorized", probe: "EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='effective_disclosure' AND position('s.revoked_at is null' in lower(pg_get_functiondef(p.oid)))>0)", requires: ["airs.resources"] },
+  { version: "0018", id: "guard:incident_owner_assignments", label: "incident owner assignment read policy", probe: "EXISTS(SELECT 1 FROM pg_policies WHERE schemaname='airs' AND tablename='incident_assignments' AND policyname='assignment_read' AND qual LIKE '%incident_rooms%')", requires: ["airs.incident_assignments"] },
   // ---- 0017 information-path semantic correction -------------------------
   { version: "0017", id: "col:incident_coordination_partners.information_path", label: "coordination information-path column", probe: column("incident_coordination_partners", "information_path"), requires: ["airs.incident_coordination_partners"] },
   { version: "0017", id: "guard:no_incident_coordination_connection_mode", label: "legacy agency-connectivity column removed", probe: "NOT " + column("incident_coordination_partners", "connection_mode"), requires: ["airs.incident_coordination_partners"] },

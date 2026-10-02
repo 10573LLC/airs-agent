@@ -44,6 +44,7 @@ export const VERIFICATION_FILES = [
   "db/tests/incident_rls.sql",
   "db/tests/incident_expiration.sql",
   "db/tests/resource_registry_rls.sql",
+  "db/tests/incident_owner_resources.sql",
   "db/tests/disclosure_projection.sql",
   "db/tests/map_geography_rls.sql",
   "db/tests/awareness_observations_rls.sql",

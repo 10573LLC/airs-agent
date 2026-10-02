@@ -10,7 +10,7 @@ const systemCatalog = readFileSync(`${REPO_ROOT}/src/lib/resources/technology-ec
 
 describe("organization representation and information-path model", () => {
   it("migrates the roster away from agency connectivity semantics", () => {
-    expect(MIGRATION_FILES.at(-1)).toBe("db/migrations/0017_information_path_model.sql");
+    expect(MIGRATION_FILES).toContain("db/migrations/0017_information_path_model.sql");
     expect(migration).toContain("RENAME COLUMN connection_mode TO information_path");
     expect(migration).toContain("system_integration");
     expect(migration).toContain("command_post_liaison");

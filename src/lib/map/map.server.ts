@@ -452,7 +452,7 @@ export async function listIncidentResourceLocations(
                 AND (s.classification <> 'named_recipients'
                      OR $1 = ANY (s.named_recipient_org_ids))
                 AND ir.status NOT IN ('closed','archived')
-                AND airs.has_incident_access(a.incident_id)
+                AND (ir.org_id = $1 OR airs.has_incident_access(a.incident_id))
               )
             )
           ORDER BY l.reported_at DESC`,

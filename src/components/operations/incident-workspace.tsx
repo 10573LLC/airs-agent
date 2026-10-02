@@ -1,6 +1,15 @@
+import { ResourceTasking } from "./resource-tasking";
+import { readResourceOrdersFn } from "@/lib/api/resource-orders.functions";
 import { FrameworkPanel } from "./framework-panel";
 import { AidRequests } from "./aid-requests";
-import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 import { readFrameworkFn } from "@/lib/api/framework.functions";
 import { projectObservations } from "@/lib/operations/framework";
 import { buildOperationalPicture } from "@/lib/operational/completeness";
@@ -86,6 +95,12 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     queryKey: ["workspace", "incident-resource-locations", orgId, incidentId],
     queryFn: () => listLocations({ data: scope }),
   });
+  const readOrders = useServerFn(readResourceOrdersFn);
+  const orders = useQuery({
+    ...polling,
+    queryKey: ["resource-orders", incidentId, orgId],
+    queryFn: () => readOrders({ data: { incidentId } }),
+  });
   const readFramework = useServerFn(readFrameworkFn);
   const framework = useQuery({
     ...polling,
@@ -152,7 +167,13 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     Date.now(),
   );
   for (const item of normalized)
-    if (item.latest.latitude !== null && item.latest.longitude !== null)
+    if (
+      !(
+        item.latest.dataClass === "resource_status" && item.latest.platform.startsWith("Anconison")
+      ) &&
+      item.latest.latitude !== null &&
+      item.latest.longitude !== null
+    )
       mapItems.push({
         id: "normalized-" + item.id,
         label: item.latest.label,
@@ -167,6 +188,23 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
           " · " +
           item.latest.sourceTimestamp,
       });
+  const commandBoard = orders.data?.ok ? orders.data.data : null;
+  for (const order of commandBoard?.orders ?? []) {
+    const assignment = commandBoard?.assignments.find((a) => a.id === order.assignmentId);
+    if (
+      !assignment ||
+      locationRows.some((l) => l.resourceId === assignment.resourceId && l.geometry)
+    )
+      continue;
+    if (order.latitude !== null && order.longitude !== null)
+      mapItems.push({
+        id: `destination-${order.id}`,
+        label: `${assignment.label || "Resource"} · assigned destination`,
+        geometry: { type: "Point", coordinates: [order.longitude, order.latitude] },
+        tone: "own",
+        detail: `${order.destination} · ${order.mission} · ${order.status.replaceAll("_", " ")} · ${order.message || "Not a reported position"}`,
+      });
+  }
   const actions: WorkspaceProjection["actions"] = (audit.data?.ok ? audit.data.data : []).map(
     (a) => ({
       id: "audit-" + a.id,
@@ -190,13 +228,24 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
       channel: "Incident workspace",
       status: r.status,
     });
+  for (const order of commandBoard?.orders ?? [])
+    actions.push({
+      id: `order-${order.id}`,
+      atSeconds: 0,
+      occurredAt: order.reportedAt || order.createdAt,
+      actor: order.status === "ordered" ? "Requesting agency command" : "Owning agency",
+      action: order.mission,
+      target: order.destination,
+      channel: "Resource assignment",
+      status: order.status,
+    });
   actions.sort((a, b) => Date.parse(a.occurredAt!) - Date.parse(b.occurredAt!));
   const agencies: WorkspaceProjection["agencies"] = [
     {
       id: incident.orgId,
       name:
         incident.orgName || (incident.orgId === orgId ? org.data.data.name : "Originating agency"),
-      role: "Incident owner",
+      role: "Command and Coordination",
       informationPath: "manual_entry",
       status: incident.status,
       sinceSeconds: 0,
@@ -229,7 +278,8 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
   const projection: WorkspaceProjection = {
     incidentName: incident.name,
     incidentStatus: incident.status,
-    commandLead: board?.profile?.incidentCommander || "Not entered",
+    commandLead:
+      incident.orgName || (incident.orgId === orgId ? org.data.data.name : "Requesting agency"),
     priority: pending.some((r) => r.priority === "immediate")
       ? "Immediate"
       : pending.some((r) => r.priority === "high")
@@ -247,11 +297,13 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
         name: a.label || "Name not disclosed",
         owner: a.ownerOrgName || "Owner not disclosed",
         category: a.assignedRole || a.assignmentType,
-        status: a.status,
+        status: commandBoard?.orders.find((o) => o.assignmentId === a.id)?.status ?? a.status,
         sinceSeconds: 0,
         location: l?.geometry
           ? `Reported position · ${l.freshness}`
-          : "Unknown or withheld position",
+          : commandBoard?.orders.find((o) => o.assignmentId === a.id)?.destination
+            ? `Assigned destination: ${commandBoard.orders.find((o) => o.assignmentId === a.id)!.destination}; current position unknown`
+            : "Unknown or withheld position",
       };
     }),
   };
@@ -275,6 +327,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     locations,
     observations,
     framework,
+    orders,
   ];
   const failed = queries.some((q) => q.isError || q.data?.ok === false);
   const loading = queries.some((q) => q.isPending);
@@ -310,28 +363,46 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
         <a className="underline" href={`/map?tools=true&incident=${incidentId}`}>
           Map tools
         </a>
-        <Sheet modal={false} open={toolPanel === "aid"} onOpenChange={(open) => setToolPanel(open ? "aid" : null)}>
+        <Sheet
+          modal={false}
+          open={toolPanel === "aid"}
+          onOpenChange={(open) => setToolPanel(open ? "aid" : null)}
+        >
           <SheetTrigger asChild>
-            <button className="rounded border border-primary px-3 py-1.5 font-semibold text-primary">Request aid / agency responses</button>
+            <button className="rounded border border-primary px-3 py-1.5 font-semibold text-primary">
+              Request aid / agency responses
+            </button>
           </SheetTrigger>
           <SheetContent className="flex w-full flex-col gap-4 sm:w-[42rem] sm:max-w-[min(42rem,90vw)]">
             <SheetHeader className="shrink-0 pr-8">
               <SheetTitle>Request aid and agency responses</SheetTitle>
-              <SheetDescription>Send requests and review agency replies alongside the incident picture.</SheetDescription>
+              <SheetDescription>
+                Send requests and review agency replies alongside the incident picture.
+              </SheetDescription>
             </SheetHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2"><AidRequests incidentId={incidentId} /></div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2">
+              <AidRequests incidentId={incidentId} />
+            </div>
           </SheetContent>
         </Sheet>
-        <Sheet modal={false} open={toolPanel === "sources"} onOpenChange={(open) => setToolPanel(open ? "sources" : null)}>
+        <Sheet
+          modal={false}
+          open={toolPanel === "sources"}
+          onOpenChange={(open) => setToolPanel(open ? "sources" : null)}
+        >
           <SheetTrigger asChild>
             <button className="rounded border px-3 py-1.5 font-semibold">Sources / sharing</button>
           </SheetTrigger>
           <SheetContent className="flex w-full flex-col gap-4 sm:w-[42rem] sm:max-w-[min(42rem,90vw)]">
             <SheetHeader className="shrink-0 pr-8">
               <SheetTitle>Incident sources and sharing</SheetTitle>
-              <SheetDescription>Review observations, source access and sharing details.</SheetDescription>
+              <SheetDescription>
+                Review observations, source access and sharing details.
+              </SheetDescription>
             </SheetHeader>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2"><FrameworkPanel incidentId={incidentId} orgId={orgId!} /></div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-2">
+              <FrameworkPanel incidentId={incidentId} orgId={orgId!} />
+            </div>
           </SheetContent>
         </Sheet>
       </div>
@@ -341,11 +412,22 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
         </p>
       )}
       <div className="min-h-0 flex-1">
-        <OperationalWorkspace
-          projection={projection}
-          mode="production"
-          exercise={exercise}
-        />
+        <ResourceTasking
+          incidentId={incidentId}
+          board={commandBoard}
+          locatedAssignmentIds={(commandBoard?.assignments ?? [])
+            .filter((a) => locationRows.some((l) => l.resourceId === a.resourceId && l.geometry))
+            .map((a) => a.id)}
+        >
+          {(mapControls) => (
+            <OperationalWorkspace
+              mapControls={mapControls}
+              projection={projection}
+              mode="production"
+              exercise={exercise}
+            />
+          )}
+        </ResourceTasking>
       </div>
     </div>
   );

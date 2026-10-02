@@ -20,3 +20,4 @@
 0020_locked_framework.sql
 0021_framework_participant_lock.sql
 0022_agency_request_responses.sql
+0023_command_destinations.sql

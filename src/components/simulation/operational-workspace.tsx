@@ -2,6 +2,8 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from "re
 import { SectionCard, StatusPill, type StatusTone } from "@/components/brand";
 import { CopMap, type MapLayerItem } from "@/components/map/cop-map";
 import type { WorkspaceProjection } from "@/lib/operations/workspace-model";
+import type { CommandMapControls } from "@/components/operations/resource-tasking";
+const CommandMap = createContext<CommandMapControls>({});
 const WorkspaceMode = createContext<"simulation" | "production">("simulation");
 
 const mapStyleUrl = (import.meta.env.VITE_MAP_STYLE_URL as string | undefined) || undefined;
@@ -30,12 +32,20 @@ function informationPathLabel(value: string) {
   return value.replaceAll("_", " ");
 }
 function informationPathTone(value: string): StatusTone {
-  return value === "system_integration" ? "active" : ["command_post_liaison", "mutual_aid_coordination", "dispatch", "manual_entry"].includes(value) ? "info" : "neutral";
+  return value === "system_integration"
+    ? "active"
+    : ["command_post_liaison", "mutual_aid_coordination", "dispatch", "manual_entry"].includes(
+          value,
+        )
+      ? "info"
+      : "neutral";
 }
 
 function clock(seconds: number) {
   const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60).toString().padStart(2, "0");
+  const minutes = Math.floor((seconds % 3600) / 60)
+    .toString()
+    .padStart(2, "0");
   return `T+${hours}:${minutes}`;
 }
 
@@ -67,7 +77,19 @@ const views: { id: View; label: string }[] = [
   { id: "timeline", label: "Decision Log" },
 ];
 
-export function OperationalWorkspace({ projection: suppliedProjection, viewport = false, mode = "simulation", exercise = false }: { projection: WorkspaceProjection | null; viewport?: boolean; mode?: "simulation" | "production"; exercise?: boolean }) {
+export function OperationalWorkspace({
+  projection: suppliedProjection,
+  viewport = false,
+  mode = "simulation",
+  exercise = false,
+  mapControls = {},
+}: {
+  mapControls?: CommandMapControls;
+  projection: WorkspaceProjection | null;
+  viewport?: boolean;
+  mode?: "simulation" | "production";
+  exercise?: boolean;
+}) {
   const projection = suppliedProjection ?? EMPTY_OPERATIONAL_PROJECTION;
   const [view, setView] = useState<View>("command");
   const mapItems = useMemo<MapLayerItem[]>(
@@ -76,62 +98,120 @@ export function OperationalWorkspace({ projection: suppliedProjection, viewport 
   );
 
   return (
-    <WorkspaceMode.Provider value={mode}><section className={viewport ? "mt-5 space-y-4 xl:mt-0 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-2 xl:space-y-0" : "mt-5 space-y-4"}>
-      <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{mode === "production" ? "Incident operational workspace" : "Simulated operational workspace"}</p>
-            <h2 className="mt-1 text-lg font-semibold text-foreground">{projection.incidentName}</h2>
+    <WorkspaceMode.Provider value={mode}>
+      <CommandMap.Provider value={mapControls}>
+        <section
+          className={
+            viewport
+              ? "mt-5 space-y-4 xl:mt-0 xl:flex xl:h-full xl:min-h-0 xl:flex-col xl:gap-2 xl:space-y-0"
+              : "mt-5 space-y-4"
+          }
+        >
+          <div className="rounded-md border border-primary/30 bg-primary/5 p-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  {mode === "production"
+                    ? "Incident operational workspace"
+                    : "Simulated operational workspace"}
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-foreground">
+                  {projection.incidentName}
+                </h2>
+              </div>
+              <StatusPill tone={exercise || mode === "simulation" ? "caution" : "info"}>
+                {exercise || mode === "simulation"
+                  ? "EXERCISE DATA ONLY"
+                  : "AUTHORIZED INCIDENT DATA"}
+              </StatusPill>
+            </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <Metric label="Incident state" value={projection.incidentStatus} />
+              <Metric
+                label={mode === "production" ? "Command and Coordination" : "Command lead"}
+                value={projection.commandLead}
+              />
+              <Metric label="Priority" value={projection.priority} />
+              <Metric
+                label="Coordination picture"
+                value={`${projection.agencies.length} organizations · ${projection.resources.length} resources`}
+              />
+            </div>
+            <OperationalPictureSummary
+              picture={
+                projection.operationalPicture ?? EMPTY_OPERATIONAL_PROJECTION.operationalPicture!
+              }
+            />
           </div>
-          <StatusPill tone={exercise || mode === "simulation" ? "caution" : "info"}>{exercise || mode === "simulation" ? "EXERCISE DATA ONLY" : "AUTHORIZED INCIDENT DATA"}</StatusPill>
-        </div>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label="Incident state" value={projection.incidentStatus} />
-          <Metric label="Command lead" value={projection.commandLead} />
-          <Metric label="Priority" value={projection.priority} />
-          <Metric label="Coordination picture" value={`${projection.agencies.length} organizations · ${projection.resources.length} resources`} />
-        </div>
-        <OperationalPictureSummary picture={projection.operationalPicture ?? EMPTY_OPERATIONAL_PROJECTION.operationalPicture!} />
-      </div>
 
-      <div className="xl:hidden">
-        <div className="flex flex-wrap gap-2 border-b border-border pb-3">
-          {views.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setView(item.id)}
-              className={view === item.id
-                ? "rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
-                : "rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted"}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <div className="mt-4">
-          {view === "command" ? <CommandView projection={projection} /> : null}
-          {view === "agencies" ? <AgencyView projection={projection} /> : null}
-          {view === "resources" ? <ResourceView projection={projection} /> : null}
-          {view === "map" ? <MapView projection={projection} mapItems={mapItems} /> : null}
-          {view === "timeline" ? <DecisionLog projection={projection} /> : null}
-        </div>
-      </div>
+          <div className="xl:hidden">
+            <div className="flex flex-wrap gap-2 border-b border-border pb-3">
+              {views.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setView(item.id)}
+                  className={
+                    view === item.id
+                      ? "rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+                      : "rounded-md border border-border px-3 py-2 text-sm font-semibold text-foreground hover:bg-muted"
+                  }
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4">
+              {view === "command" ? <CommandView projection={projection} /> : null}
+              {view === "agencies" ? <AgencyView projection={projection} /> : null}
+              {view === "resources" ? <ResourceView projection={projection} /> : null}
+              {view === "map" ? <MapView projection={projection} mapItems={mapItems} /> : null}
+              {view === "timeline" ? <DecisionLog projection={projection} /> : null}
+            </div>
+          </div>
 
-      <DesktopConsole projection={projection} mapItems={mapItems} viewport={viewport} />
-    </section></WorkspaceMode.Provider>
+          <DesktopConsole projection={projection} mapItems={mapItems} viewport={viewport} />
+        </section>
+      </CommandMap.Provider>
+    </WorkspaceMode.Provider>
   );
 }
 
-function DesktopConsole({ projection, mapItems, viewport }: { projection: WorkspaceProjection; mapItems: MapLayerItem[]; viewport: boolean }) {
+function DesktopConsole({
+  projection,
+  mapItems,
+  viewport,
+}: {
+  projection: WorkspaceProjection;
+  mapItems: MapLayerItem[];
+  viewport: boolean;
+}) {
   return (
-    <div className={viewport ? "hidden min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(260px,360px)_minmax(560px,1fr)_minmax(280px,400px)] xl:gap-3" : "hidden xl:grid xl:grid-cols-[minmax(260px,360px)_minmax(560px,1fr)_minmax(280px,400px)] xl:gap-3"}>
-      <div className={viewport ? "grid min-h-0 min-w-0 grid-rows-2 gap-3" : "grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3"}>
+    <div
+      className={
+        viewport
+          ? "hidden min-h-0 flex-1 xl:grid xl:grid-cols-[minmax(260px,360px)_minmax(560px,1fr)_minmax(280px,400px)] xl:gap-3"
+          : "hidden xl:grid xl:grid-cols-[minmax(260px,360px)_minmax(560px,1fr)_minmax(280px,400px)] xl:gap-3"
+      }
+    >
+      <div
+        className={
+          viewport
+            ? "grid min-h-0 min-w-0 grid-rows-2 gap-3"
+            : "grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3"
+        }
+      >
         <DesktopCommandPanel projection={projection} />
         <DesktopAgencyPanel projection={projection} />
       </div>
       <DesktopMapPanel projection={projection} mapItems={mapItems} viewport={viewport} />
-      <div className={viewport ? "grid min-h-0 min-w-0 grid-rows-2 gap-3" : "grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3"}>
+      <div
+        className={
+          viewport
+            ? "grid min-h-0 min-w-0 grid-rows-2 gap-3"
+            : "grid h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 grid-rows-2 gap-3"
+        }
+      >
         <DesktopResourcePanel projection={projection} />
         <DesktopDecisionPanel projection={projection} />
       </div>
@@ -142,22 +222,38 @@ function DesktopConsole({ projection, mapItems, viewport }: { projection: Worksp
 function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-background/70 px-3 py-2">
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
       <p className="mt-1 text-sm font-medium text-foreground">{value}</p>
     </div>
   );
 }
 
-function OperationalPictureSummary({ picture }: { picture: NonNullable<WorkspaceProjection["operationalPicture"]> }) {
+function OperationalPictureSummary({
+  picture,
+}: {
+  picture: NonNullable<WorkspaceProjection["operationalPicture"]>;
+}) {
   const compact = (items: string[]) => items.slice(0, 3).join(" · ");
   return (
     <div className="mt-3 rounded-md border border-border bg-background/80 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Operational picture</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">Current situation, locations, information gaps, and next actions.</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Operational picture
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            Current situation, locations, information gaps, and next actions.
+          </p>
         </div>
-        {picture.gaps.length ? <StatusPill tone="caution">{picture.gaps.length} information gap{picture.gaps.length === 1 ? "" : "s"}</StatusPill> : <StatusPill tone="active">No gaps detected by available checks</StatusPill>}
+        {picture.gaps.length ? (
+          <StatusPill tone="caution">
+            {picture.gaps.length} information gap{picture.gaps.length === 1 ? "" : "s"}
+          </StatusPill>
+        ) : (
+          <StatusPill tone="active">No gaps detected by available checks</StatusPill>
+        )}
       </div>
       <div className="mt-3 grid gap-2 md:grid-cols-2 xl:grid-cols-3">
         <Metric label="Situation" value={picture.situation} />
@@ -177,7 +273,15 @@ function OperationalPictureSummary({ picture }: { picture: NonNullable<Workspace
   );
 }
 
-function DesktopPanel({ title, description, children }: { title: string; description: string; children: ReactNode }) {
+function DesktopPanel({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: ReactNode;
+}) {
   return (
     <section className="flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel">
       <div className="border-b border-border px-3 py-2.5">
@@ -197,15 +301,37 @@ function DesktopCommandPanel({ projection }: { projection: WorkspaceProjection }
         {active.map((item) => (
           <div key={item.id} className="py-2 first:pt-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-mono text-[11px] text-muted-foreground">{item.occurredAt ? new Date(item.occurredAt).toLocaleTimeString() : clock(item.atSeconds)}</span>
-              <StatusPill tone={item.status === "active" ? "active" : item.status === "pending" ? "caution" : "info"}>{item.status}</StatusPill>
-              <StatusPill tone={item.channel === "Incident workspace" ? "active" : "neutral"}>{item.channel}</StatusPill>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {item.occurredAt
+                  ? new Date(item.occurredAt).toLocaleTimeString()
+                  : clock(item.atSeconds)}
+              </span>
+              <StatusPill
+                tone={
+                  item.status === "active"
+                    ? "active"
+                    : item.status === "pending"
+                      ? "caution"
+                      : "info"
+                }
+              >
+                {item.status}
+              </StatusPill>
+              <StatusPill tone={item.channel === "Incident workspace" ? "active" : "neutral"}>
+                {item.channel}
+              </StatusPill>
             </div>
             <p className="mt-1 text-sm font-semibold text-foreground">{item.action}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{item.actor} → {item.target}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {item.actor} → {item.target}
+            </p>
           </div>
         ))}
-        {active.length === 0 ? <p className="text-sm text-muted-foreground">No command-post actions have been triggered yet.</p> : null}
+        {active.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No command-post actions have been triggered yet.
+          </p>
+        ) : null}
       </div>
     </DesktopPanel>
   );
@@ -213,19 +339,28 @@ function DesktopCommandPanel({ projection }: { projection: WorkspaceProjection }
 
 function DesktopAgencyPanel({ projection }: { projection: WorkspaceProjection }) {
   return (
-    <DesktopPanel title="Agency Coordination" description="Organizations represented through their current operational information paths.">
+    <DesktopPanel
+      title="Agency Coordination"
+      description="Organizations represented through their current operational information paths."
+    >
       <div className="divide-y divide-border">
         {projection.agencies.map((item) => (
           <div key={item.id} className="py-2 first:pt-0">
             <div className="flex flex-wrap items-center gap-1.5">
               <p className="text-sm font-semibold text-foreground">{item.name}</p>
-              <StatusPill tone={informationPathTone(item.informationPath)}>{informationPathLabel(item.informationPath)}</StatusPill>
+              <StatusPill tone={informationPathTone(item.informationPath)}>
+                {informationPathLabel(item.informationPath)}
+              </StatusPill>
               <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
             </div>
             <p className="mt-0.5 text-xs text-muted-foreground">{item.role}</p>
           </div>
         ))}
-        {projection.agencies.length === 0 ? <p className="text-sm text-muted-foreground">No agency coordination has been established yet.</p> : null}
+        {projection.agencies.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No agency coordination has been established yet.
+          </p>
+        ) : null}
       </div>
     </DesktopPanel>
   );
@@ -233,19 +368,28 @@ function DesktopAgencyPanel({ projection }: { projection: WorkspaceProjection })
 
 function DesktopResourcePanel({ projection }: { projection: WorkspaceProjection }) {
   return (
-    <DesktopPanel title="Resources / Assignments" description="Status and location without fabricated positions.">
+    <DesktopPanel
+      title="Resources / Assignments"
+      description="Status and location without fabricated positions."
+    >
       <div className="divide-y divide-border">
         {projection.resources.map((item) => (
           <div key={item.id} className="py-2 first:pt-0">
             <div className="flex flex-wrap items-center gap-1.5">
               <p className="text-sm font-semibold text-foreground">{item.name}</p>
-              <StatusPill tone={resourceTone[item.status] ?? "neutral"}>{item.status.replaceAll("_", " ")}</StatusPill>
+              <StatusPill tone={resourceTone[item.status] ?? "neutral"}>
+                {item.status.replaceAll("_", " ")}
+              </StatusPill>
             </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">{item.owner} · {item.category}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {item.owner} · {item.category}
+            </p>
             <p className="mt-0.5 text-xs text-foreground">{item.location}</p>
           </div>
         ))}
-        {projection.resources.length === 0 ? <p className="text-sm text-muted-foreground">No resources are available in this view.</p> : null}
+        {projection.resources.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No resources are available in this view.</p>
+        ) : null}
       </div>
     </DesktopPanel>
   );
@@ -253,61 +397,135 @@ function DesktopResourcePanel({ projection }: { projection: WorkspaceProjection 
 
 function DesktopDecisionPanel({ projection }: { projection: WorkspaceProjection }) {
   return (
-    <DesktopPanel title="Decision Log" description="Recorded incident activity and coordination decisions.">
+    <DesktopPanel
+      title="Decision Log"
+      description="Recorded incident activity and coordination decisions."
+    >
       <div className="divide-y divide-border">
         {projection.actions.map((item) => (
           <div key={item.id} className="py-2 first:pt-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-mono text-[11px] text-muted-foreground">{item.occurredAt ? new Date(item.occurredAt).toLocaleTimeString() : clock(item.atSeconds)}</span>
-              <StatusPill tone={item.channel === "Incident workspace" ? "active" : item.channel === "System" ? "info" : "neutral"}>{item.channel}</StatusPill>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {item.occurredAt
+                  ? new Date(item.occurredAt).toLocaleTimeString()
+                  : clock(item.atSeconds)}
+              </span>
+              <StatusPill
+                tone={
+                  item.channel === "Incident workspace"
+                    ? "active"
+                    : item.channel === "System"
+                      ? "info"
+                      : "neutral"
+                }
+              >
+                {item.channel}
+              </StatusPill>
             </div>
             <p className="mt-1 text-sm font-semibold text-foreground">{item.action}</p>
-            <p className="mt-0.5 text-xs text-muted-foreground">{item.actor} → {item.target}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              {item.actor} → {item.target}
+            </p>
           </div>
         ))}
-        {projection.actions.length === 0 ? <p className="text-sm text-muted-foreground">No command-post decisions have been generated yet.</p> : null}
+        {projection.actions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No command-post decisions have been generated yet.
+          </p>
+        ) : null}
       </div>
     </DesktopPanel>
   );
 }
 
-function DesktopMapPanel({ projection, mapItems, viewport }: { projection: WorkspaceProjection; mapItems: MapLayerItem[]; viewport: boolean }) {
+function DesktopMapPanel({
+  projection,
+  mapItems,
+  viewport,
+}: {
+  projection: WorkspaceProjection;
+  mapItems: MapLayerItem[];
+  viewport: boolean;
+}) {
+  const controls = useContext(CommandMap);
   return (
-    <section className={viewport ? "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel" : "flex h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel"}>
+    <section
+      className={
+        viewport
+          ? "flex min-h-0 min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel"
+          : "flex h-[min(64rem,calc(100vh-14rem))] min-h-[38rem] min-w-0 flex-col overflow-hidden rounded-md border border-border bg-card shadow-panel"
+      }
+    >
       <div className="flex items-start justify-between gap-3 border-b border-border px-3 py-2.5">
         <div>
-          <h3 className="text-sm font-semibold text-card-foreground">Airspace / Common Operating Picture</h3>
-          <p className="mt-0.5 text-[11px] text-muted-foreground">{useContext(WorkspaceMode) === "production" ? "Authorized incident geography; location precision is controlled by the owning agency." : "Live exercise geography from facts released at the current clock."}</p>
+          <h3 className="text-sm font-semibold text-card-foreground">
+            Airspace / Common Operating Picture
+          </h3>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            {useContext(WorkspaceMode) === "production"
+              ? "Authorized incident geography; location precision is controlled by the owning agency."
+              : "Live exercise geography from facts released at the current clock."}
+          </p>
         </div>
         <StatusPill tone="info">{projection.mapItems.length} plotted</StatusPill>
       </div>
-      <div className="min-h-0 flex-1 p-2.5">
-        <CopMap items={mapItems} styleUrl={mapStyleUrl} attribution={mapAttribution} className="h-full w-full overflow-hidden rounded-md border border-border" />
+      <div className="relative min-h-0 flex-1 p-2.5">
+        <CopMap
+          items={mapItems}
+          styleUrl={mapStyleUrl}
+          attribution={mapAttribution}
+          className="h-full w-full overflow-hidden rounded-md border border-border"
+          picking={controls.picking}
+          onPickPoint={controls.onPickPoint}
+        />
+        {controls.tray && <div className="absolute bottom-12 left-5 z-10">{controls.tray}</div>}
       </div>
       <div className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
-        {mapItems.length === 0 ? "No incident geography recorded. Basemap only; no incident location is implied." : "Unknown or withheld positions remain unplotted."}
+        {mapItems.length === 0
+          ? "No incident geography recorded. Basemap only; no incident location is implied."
+          : "Unknown or withheld positions remain unplotted."}
       </div>
     </section>
   );
 }
 
-function MapView({ projection, mapItems, desktop = false }: { projection: WorkspaceProjection; mapItems: MapLayerItem[]; desktop?: boolean }) {
+function MapView({
+  projection,
+  mapItems,
+  desktop = false,
+}: {
+  projection: WorkspaceProjection;
+  mapItems: MapLayerItem[];
+  desktop?: boolean;
+}) {
+  const controls = useContext(CommandMap);
   return (
     <SectionCard
       title="Airspace / Common Operating Picture"
-      description={useContext(WorkspaceMode) === "production" ? "Authorized incident geography and reported positions." : "Exercise geography supported by facts released at the current clock."}
+      description={
+        useContext(WorkspaceMode) === "production"
+          ? "Authorized incident geography and reported positions."
+          : "Exercise geography supported by facts released at the current clock."
+      }
       className={desktop ? "min-w-0" : undefined}
     >
-      <CopMap
-        items={mapItems}
-        styleUrl={mapStyleUrl}
-        attribution={mapAttribution}
-        className={`${desktop ? "h-[44rem]" : "h-[34rem]"} overflow-hidden rounded-md border border-border`}
-      />
+      <div className="relative">
+        <CopMap
+          picking={controls.picking}
+          onPickPoint={controls.onPickPoint}
+          items={mapItems}
+          styleUrl={mapStyleUrl}
+          attribution={mapAttribution}
+          className={`${desktop ? "h-[44rem]" : "h-[34rem]"} overflow-hidden rounded-md border border-border`}
+        />
+        <div className="absolute bottom-12 left-3 z-10">{controls.tray}</div>
+      </div>
       {desktop ? (
         <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
           <StatusPill tone="info">{projection.mapItems.length} plotted items</StatusPill>
-          <span>Approximate exercise geometry remains labeled; unknown positions stay unplotted.</span>
+          <span>
+            Approximate exercise geometry remains labeled; unknown positions stay unplotted.
+          </span>
         </div>
       ) : (
         <div className="mt-4 grid gap-2 md:grid-cols-2">
@@ -317,7 +535,11 @@ function MapView({ projection, mapItems, desktop = false }: { projection: Worksp
               <p className="mt-1 text-xs text-muted-foreground">{item.detail}</p>
             </div>
           ))}
-          {projection.mapItems.length === 0 ? <p className="text-sm text-muted-foreground">No authorized geography has been established yet.</p> : null}
+          {projection.mapItems.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No authorized geography has been established yet.
+            </p>
+          ) : null}
         </div>
       )}
     </SectionCard>
@@ -328,35 +550,73 @@ function CommandView({ projection }: { projection: WorkspaceProjection }) {
   const active = projection.actions.slice(-6).reverse();
   return (
     <div className="grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
-      <SectionCard title="Command Post Activity" description={useContext(WorkspaceMode) === "production" ? "Recorded command activity and resource requests." : "What command leaders and AIRS are doing at the current exercise time."}>
+      <SectionCard
+        title="Command Post Activity"
+        description={
+          useContext(WorkspaceMode) === "production"
+            ? "Recorded command activity and resource requests."
+            : "What command leaders and AIRS are doing at the current exercise time."
+        }
+      >
         <div className="space-y-3">
           {active.map((item) => (
             <div key={item.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-xs text-muted-foreground">{item.occurredAt ? new Date(item.occurredAt).toLocaleTimeString() : clock(item.atSeconds)}</span>
-                <StatusPill tone={item.status === "active" ? "active" : item.status === "pending" ? "caution" : "info"}>{item.status}</StatusPill>
-                <StatusPill tone={item.channel === "Incident workspace" ? "active" : "neutral"}>{item.channel}</StatusPill>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {item.occurredAt
+                    ? new Date(item.occurredAt).toLocaleTimeString()
+                    : clock(item.atSeconds)}
+                </span>
+                <StatusPill
+                  tone={
+                    item.status === "active"
+                      ? "active"
+                      : item.status === "pending"
+                        ? "caution"
+                        : "info"
+                  }
+                >
+                  {item.status}
+                </StatusPill>
+                <StatusPill tone={item.channel === "Incident workspace" ? "active" : "neutral"}>
+                  {item.channel}
+                </StatusPill>
               </div>
               <p className="mt-2 text-sm font-semibold text-foreground">{item.action}</p>
-              <p className="mt-1 text-sm text-muted-foreground">{item.actor} → {item.target}</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {item.actor} → {item.target}
+              </p>
             </div>
           ))}
-          {active.length === 0 ? <p className="text-sm text-muted-foreground">No command-post actions have been triggered yet.</p> : null}
+          {active.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No command-post actions have been triggered yet.
+            </p>
+          ) : null}
         </div>
       </SectionCard>
-      <SectionCard title="Current Participants" description="Information path is distinct from incident workspace access and technical system integration.">
+      <SectionCard
+        title="Current Participants"
+        description="Information path is distinct from incident workspace access and technical system integration."
+      >
         <div className="space-y-2">
           {projection.agencies.slice(0, 8).map((item) => (
             <div key={item.id} className="rounded-md border border-border p-3">
               <div className="flex flex-wrap items-center gap-2">
                 <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                <StatusPill tone={informationPathTone(item.informationPath)}>{informationPathLabel(item.informationPath)}</StatusPill>
+                <StatusPill tone={informationPathTone(item.informationPath)}>
+                  {informationPathLabel(item.informationPath)}
+                </StatusPill>
                 <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
               </div>
               <p className="mt-1 text-xs text-muted-foreground">{item.role}</p>
             </div>
           ))}
-          {projection.agencies.length === 0 ? <p className="text-sm text-muted-foreground">No agency coordination has been established yet.</p> : null}
+          {projection.agencies.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No agency coordination has been established yet.
+            </p>
+          ) : null}
         </div>
       </SectionCard>
     </div>
@@ -366,21 +626,34 @@ function CommandView({ projection }: { projection: WorkspaceProjection }) {
 function AgencyView({ projection }: { projection: WorkspaceProjection }) {
   const mode = useContext(WorkspaceMode);
   return (
-    <SectionCard title="Agency Coordination" description="Organizations are represented through information paths; workspace access and technical system integrations remain separate.">
+    <SectionCard
+      title="Agency Coordination"
+      description="Organizations are represented through information paths; workspace access and technical system integrations remain separate."
+    >
       <div className="grid gap-3 md:grid-cols-2">
         {projection.agencies.map((item) => (
           <article key={item.id} className="rounded-md border border-border p-4">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-sm font-semibold text-foreground">{item.name}</h3>
-              <StatusPill tone={informationPathTone(item.informationPath)}>{informationPathLabel(item.informationPath)}</StatusPill>
+              <StatusPill tone={informationPathTone(item.informationPath)}>
+                {informationPathLabel(item.informationPath)}
+              </StatusPill>
               <StatusPill tone={agencyTone[item.status] ?? "neutral"}>{item.status}</StatusPill>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">{item.role}</p>
             <p className="mt-2 text-xs text-muted-foreground">{item.coordination}</p>
-            {mode === "simulation" ? <p className="mt-2 font-mono text-xs text-muted-foreground">Added {clock(item.sinceSeconds)}</p> : null}
+            {mode === "simulation" ? (
+              <p className="mt-2 font-mono text-xs text-muted-foreground">
+                Added {clock(item.sinceSeconds)}
+              </p>
+            ) : null}
           </article>
         ))}
-        {projection.agencies.length === 0 ? <p className="text-sm text-muted-foreground">No agency coordination has been established yet.</p> : null}
+        {projection.agencies.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No agency coordination has been established yet.
+          </p>
+        ) : null}
       </div>
     </SectionCard>
   );
@@ -389,25 +662,43 @@ function AgencyView({ projection }: { projection: WorkspaceProjection }) {
 function ResourceView({ projection }: { projection: WorkspaceProjection }) {
   const mode = useContext(WorkspaceMode);
   return (
-    <SectionCard title="Resources / Assignments" description="Recorded assignments and reported positions. Unknown or withheld locations stay unplotted.">
+    <SectionCard
+      title="Resources / Assignments"
+      description="Recorded assignments and reported positions. Unknown or withheld locations stay unplotted."
+    >
       <div className="space-y-3">
         {projection.resources.map((item) => (
-          <div key={item.id} className="grid gap-2 rounded-md border border-border p-4 md:grid-cols-[1.2fr_.8fr_.8fr]">
+          <div
+            key={item.id}
+            className="grid gap-2 rounded-md border border-border p-4 md:grid-cols-[1.2fr_.8fr_.8fr]"
+          >
             <div>
               <p className="text-sm font-semibold text-foreground">{item.name}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{item.owner} · {item.category}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {item.owner} · {item.category}
+              </p>
             </div>
             <div>
-              <StatusPill tone={resourceTone[item.status] ?? "neutral"}>{item.status.replaceAll("_", " ")}</StatusPill>
-              {mode === "simulation" ? <p className="mt-2 font-mono text-xs text-muted-foreground">Since {clock(item.sinceSeconds)}</p> : null}
+              <StatusPill tone={resourceTone[item.status] ?? "neutral"}>
+                {item.status.replaceAll("_", " ")}
+              </StatusPill>
+              {mode === "simulation" ? (
+                <p className="mt-2 font-mono text-xs text-muted-foreground">
+                  Since {clock(item.sinceSeconds)}
+                </p>
+              ) : null}
             </div>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Location
+              </p>
               <p className="mt-1 text-sm text-foreground">{item.location}</p>
             </div>
           </div>
         ))}
-        {projection.resources.length === 0 ? <p className="text-sm text-muted-foreground">No resources are available in this view.</p> : null}
+        {projection.resources.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No resources are available in this view.</p>
+        ) : null}
       </div>
     </SectionCard>
   );
@@ -416,20 +707,57 @@ function ResourceView({ projection }: { projection: WorkspaceProjection }) {
 function DecisionLog({ projection }: { projection: WorkspaceProjection }) {
   const mode = useContext(WorkspaceMode);
   return (
-    <SectionCard title="Coordination / Decision Log" description={mode === "production" ? "Recorded incident activity and coordination decisions." : "Simulated command-post workflow from released exercise facts, not the controller's future timeline."}>
+    <SectionCard
+      title="Coordination / Decision Log"
+      description={
+        mode === "production"
+          ? "Recorded incident activity and coordination decisions."
+          : "Simulated command-post workflow from released exercise facts, not the controller's future timeline."
+      }
+    >
       <ol className="space-y-3">
         {projection.actions.map((item) => (
           <li key={item.id} className="rounded-md border border-border p-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-xs text-muted-foreground">{item.occurredAt ? new Date(item.occurredAt).toLocaleTimeString() : clock(item.atSeconds)}</span>
-              <StatusPill tone={item.channel === "Incident workspace" ? "active" : item.channel === "System" ? "info" : "neutral"}>{item.channel}</StatusPill>
-              <StatusPill tone={item.status === "active" ? "active" : item.status === "pending" ? "caution" : "info"}>{item.status}</StatusPill>
+              <span className="font-mono text-xs text-muted-foreground">
+                {item.occurredAt
+                  ? new Date(item.occurredAt).toLocaleTimeString()
+                  : clock(item.atSeconds)}
+              </span>
+              <StatusPill
+                tone={
+                  item.channel === "Incident workspace"
+                    ? "active"
+                    : item.channel === "System"
+                      ? "info"
+                      : "neutral"
+                }
+              >
+                {item.channel}
+              </StatusPill>
+              <StatusPill
+                tone={
+                  item.status === "active"
+                    ? "active"
+                    : item.status === "pending"
+                      ? "caution"
+                      : "info"
+                }
+              >
+                {item.status}
+              </StatusPill>
             </div>
             <p className="mt-2 text-sm font-semibold text-foreground">{item.action}</p>
-            <p className="mt-1 text-sm text-muted-foreground">{item.actor} → {item.target}</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {item.actor} → {item.target}
+            </p>
           </li>
         ))}
-        {projection.actions.length === 0 ? <li className="text-sm text-muted-foreground">No command-post decisions have been generated yet.</li> : null}
+        {projection.actions.length === 0 ? (
+          <li className="text-sm text-muted-foreground">
+            No command-post decisions have been generated yet.
+          </li>
+        ) : null}
       </ol>
     </SectionCard>
   );

@@ -1,3 +1,8 @@
+import {
+  issueResourceOrder,
+  readResourceOrders,
+  reportResourceOrder,
+} from "@/lib/incidents/resource-orders.server";
 import { Client } from "pg";
 import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
@@ -58,29 +63,91 @@ describe("agency capability decisions", () => {
   });
 });
 describe.skipIf(!enabled)("real automatic agency workflow", () => {
-  it("persists intelligent assumptions, plots labeled simulated staging and publishes timed updates once",async()=>{
-    let room=await createIncident(token,requesterOrgId,{name:"EXERCISE intelligent planning",incidentType:"training",description:"Fictional",geographicDescription:"Albany exercise",tempDataRetentionHours:1},{});
-    room=await activateIncident(token,requesterOrgId,room.id,room.version,{});
-    const agency=agents.find(a=>a.agency.key==='utilities')!;
-    await sendAgencyAidRequest(token,requesterOrgId,{incidentId:room.id,batchId:randomUUID(),recipients:[agency.orgId],description:"Assess fictional outage",resourceKind:"other",quantity:1,priority:"high",stagingLocation:""});
-    const plan={units:1,response:"Utility crew committed for a fictional assessment",assumptions:["Simulated Albany location"],unmetNeeds:["Command contact"],staging:{label:"Fictional staging",latitude:42.65,longitude:-73.75},updates:[{afterSeconds:15,message:"Simulated crew checks in; assessment still pending"}]};
-    vi.stubEnv('EXERCISE_INTELLIGENCE','openai');vi.stubEnv('EXERCISE_OPENAI_API_KEY','test-only');
-    const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(plan)}]}]}),{status:200}));vi.stubGlobal('fetch',fetcher);
+  it("persists intelligent assumptions without assigning locations and publishes timed updates once", async () => {
+    let room = await createIncident(
+      token,
+      requesterOrgId,
+      {
+        name: "EXERCISE intelligent planning",
+        incidentType: "training",
+        description: "Fictional",
+        geographicDescription: "Albany exercise",
+        tempDataRetentionHours: 1,
+      },
+      {},
+    );
+    room = await activateIncident(token, requesterOrgId, room.id, room.version, {});
+    const agency = agents.find((a) => a.agency.key === "utilities")!;
+    await sendAgencyAidRequest(token, requesterOrgId, {
+      incidentId: room.id,
+      batchId: randomUUID(),
+      recipients: [agency.orgId],
+      description: "Assess fictional outage",
+      resourceKind: "other",
+      quantity: 1,
+      priority: "high",
+      stagingLocation: "",
+    });
+    const plan = {
+      units: 1,
+      response: "Utility crew committed for a fictional assessment",
+      assumptions: ["Simulated Albany location"],
+      unmetNeeds: ["Command contact"],
+      staging: { label: "Fictional staging", latitude: 42.65, longitude: -73.75 },
+      updates: [
+        { afterSeconds: 15, message: "Simulated crew checks in; assessment still pending" },
+      ],
+    };
+    vi.stubEnv("EXERCISE_INTELLIGENCE", "openai");
+    vi.stubEnv("EXERCISE_OPENAI_API_KEY", "test-only");
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            status: "completed",
+            output: [{ content: [{ type: "output_text", text: JSON.stringify(plan) }] }],
+          }),
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetcher);
     try {
       await runAgencyCycle(agency);
-      let fw=await readFramework(token,room.id);
-      expect(fw.observations.some(o=>o.dataClass==='exercise_plan')).toBe(true);
-      expect(fw.observations.find(o=>o.latitude!==null)).toMatchObject({verification:'unverified',geographicPrecision:'approximate'});
-      expect((await readAgencyRequests(token,requesterOrgId,room.id)).exerciseUpdates).toHaveLength(0);
-      await db.query(`UPDATE airs.operational_observations SET observation=jsonb_set(observation,'{sourceTimestamp}',to_jsonb((now()-interval '30 seconds')::text)) WHERE incident_id=$1 AND observation->>'dataClass'='exercise_plan'`,[room.id]);
-      await runAgencyCycle(agency);await runAgencyCycle(agency);
-      expect((await readAgencyRequests(token,requesterOrgId,room.id)).exerciseUpdates).toHaveLength(1);
-      expect(fetcher).toHaveBeenCalledTimes(1);
-      await beginClosure(token,requesterOrgId,room.id,{reason:'Exercise completed',expectedVersion:room.version},{});
+      let fw = await readFramework(token, room.id);
+      expect(fw.observations.some((o) => o.dataClass === "exercise_plan")).toBe(true);
+      expect(fw.observations.every((o) => o.latitude === null && o.longitude === null)).toBe(true);
+      expect(
+        (await readAgencyRequests(token, requesterOrgId, room.id)).exerciseUpdates,
+      ).toHaveLength(0);
+      await db.query(
+        `UPDATE airs.operational_observations SET observation=jsonb_set(observation,'{sourceTimestamp}',to_jsonb((now()-interval '30 seconds')::text)) WHERE incident_id=$1 AND observation->>'dataClass'='exercise_plan'`,
+        [room.id],
+      );
       await runAgencyCycle(agency);
-      expect((await listResources(agency.adminToken,agency.orgId)).every(r=>r.readinessStatus==='available')).toBe(true);
-    } finally {vi.unstubAllGlobals();vi.unstubAllEnvs();}
-  },120000);
+      await runAgencyCycle(agency);
+      expect(
+        (await readAgencyRequests(token, requesterOrgId, room.id)).exerciseUpdates,
+      ).toHaveLength(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      await beginClosure(
+        token,
+        requesterOrgId,
+        room.id,
+        { reason: "Exercise completed", expectedVersion: room.version },
+        {},
+      );
+      await runAgencyCycle(agency);
+      expect(
+        (await listResources(agency.adminToken, agency.orgId)).every(
+          (r) => r.readinessStatus === "available",
+        ),
+      ).toBe(true);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.unstubAllEnvs();
+    }
+  }, 120000);
   it("routes to multiple agencies, accepts participation, assigns owned resources, reports back and enforces boundaries", async () => {
     let room = await createIncident(
       token,
@@ -163,6 +230,140 @@ describe.skipIf(!enabled)("real automatic agency workflow", () => {
       }),
     ).rejects.toThrow();
     await runAgencyCycle(fire);
-    expect((await listResources(fire.adminToken,fire.orgId)).every(r=>r.readinessStatus==='available')).toBe(true);
+    expect(
+      (await listResources(fire.adminToken, fire.orgId)).every(
+        (r) => r.readinessStatus === "available",
+      ),
+    ).toBe(true);
+  }, 120000);
+});
+
+describe.skipIf(!enabled)("requesting agency resource direction", () => {
+  it("requires command orders, preserves owner reporting and supersedes prior destinations", async () => {
+    let room = await createIncident(
+      token,
+      requesterOrgId,
+      {
+        name: "EXERCISE command destinations",
+        incidentType: "training",
+        description: "Fictional",
+        tempDataRetentionHours: 1,
+      },
+      {},
+    );
+    room = await activateIncident(token, requesterOrgId, room.id, room.version, {});
+    const agency = agents.find((a) => a.agency.key === "sar") ?? agents[0];
+    await sendAgencyAidRequest(token, requesterOrgId, {
+      incidentId: room.id,
+      batchId: randomUUID(),
+      recipients: [agency.orgId],
+      description: "Provide a team for command assignment",
+      resourceKind: "other",
+      quantity: 1,
+      priority: "high",
+      stagingLocation: "",
+    });
+    await runAgencyCycle(agency);
+    let board = await readResourceOrders(token, requesterOrgId, room.id);
+    expect(board.orders).toHaveLength(0);
+    expect(board.assignments).toHaveLength(1);
+    const input = {
+      id: randomUUID(),
+      incidentId: room.id,
+      assignmentId: board.assignments[0].id,
+      previousOrderId: null,
+      destination: "Command designated north staging",
+      mission: "Check in with staging manager and await tasking",
+      latitude: 42.66,
+      longitude: -73.76,
+    };
+    await expect(issueResourceOrder(agency.commandToken, agency.orgId, input)).rejects.toThrow();
+    await issueResourceOrder(token, requesterOrgId, input);
+    await issueResourceOrder(token, requesterOrgId, input);
+    board = await readResourceOrders(token, requesterOrgId, room.id);
+    expect(board.orders).toHaveLength(1);
+    expect(board.orders[0].status).toBe("ordered");
+    await expect(
+      reportResourceOrder(token, requesterOrgId, {
+        incidentId: room.id,
+        orderId: input.id,
+        status: "arrived",
+        message: "Cannot report for another agency",
+      }),
+    ).rejects.toThrow();
+    await expect(
+      reportResourceOrder(agency.commandToken, agency.orgId, {
+        incidentId: room.id,
+        orderId: input.id,
+        status: "arrived",
+        message: "Cannot skip acknowledgment",
+      }),
+    ).rejects.toThrow();
+    await runAgencyCycle(agency);
+    expect((await readResourceOrders(token, requesterOrgId, room.id)).orders[0].status).toBe(
+      "acknowledged",
+    );
+    await db.query(
+      "UPDATE airs.resource_order_reports SET created_at=now()-interval '40 seconds' WHERE order_id=$1",
+      [input.id],
+    );
+    await runAgencyCycle(agency);
+    expect((await readResourceOrders(token, requesterOrgId, room.id)).orders[0].status).toBe(
+      "en_route",
+    );
+    await db.query(
+      "UPDATE airs.resource_order_reports SET created_at=created_at-interval '40 seconds' WHERE order_id=$1",
+      [input.id],
+    );
+    await runAgencyCycle(agency);
+    expect((await readResourceOrders(token, requesterOrgId, room.id)).orders[0]).toMatchObject({
+      status: "arrived",
+      latitude: 42.66,
+      longitude: -73.76,
+    });
+    const redirect = {
+      ...input,
+      id: randomUUID(),
+      previousOrderId: input.id,
+      destination: "South staging",
+    };
+    await issueResourceOrder(token, requesterOrgId, redirect);
+    expect((await readResourceOrders(token, requesterOrgId, room.id)).orders[0]).toMatchObject({
+      id: redirect.id,
+      status: "ordered",
+    });
+    await expect(
+      issueResourceOrder(token, requesterOrgId, { ...input, id: randomUUID() }),
+    ).rejects.toThrow();
+    await expect(
+      reportResourceOrder(agency.commandToken, agency.orgId, {
+        incidentId: room.id,
+        orderId: input.id,
+        status: "arrived",
+        message: "Old order",
+      }),
+    ).rejects.toThrow();
+    await beginClosure(
+      token,
+      requesterOrgId,
+      room.id,
+      { reason: "Exercise complete", expectedVersion: room.version },
+      {},
+    );
+    await expect(
+      issueResourceOrder(token, requesterOrgId, {
+        ...redirect,
+        id: randomUUID(),
+        previousOrderId: redirect.id,
+      }),
+    ).rejects.toThrow();
+    await expect(
+      reportResourceOrder(agency.commandToken, agency.orgId, {
+        incidentId: room.id,
+        orderId: redirect.id,
+        status: "acknowledged",
+        message: "After closure",
+      }),
+    ).rejects.toThrow();
   }, 120000);
 });

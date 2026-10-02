@@ -52,3 +52,23 @@ Release `intelligence-aa3a5a9-20261002` uses web/worker image digest `sha256:25b
 The user authorized a staging login invitation to admin@airsagent.com. Cognito accepted the email invitation request and returned FORCE_CHANGE_PASSWORD. The user completed password setup, authenticator enrollment, email verification and acceptance of the separate application invitation. The temporary enrollment client was removed; only the staging web client remains. No email was sent before authorization, and no password or MFA credential was set on the user's behalf.
 
 Live Dedrone ingestion/revocation, authenticated browser concurrency, backup/restore and rollback drills remain unverified. Provider specifications, approved credentials and representative payloads remain prerequisites for live integration. Public-site PR #5 remains unpublished; production release and main merges have not occurred.
+
+### 2026-10-02 command-directed COP and resource tray
+
+The operational COP now uses the Simulation Lab's tall map layout instead of shrinking the map into the remaining viewport. Request history and source/sharing tools open in side panels. The requesting agency is displayed as Command and Coordination. A lower-left tray holds active committed resources without command tasks or shared geolocation. Command can select a resource, enter a task and destination, choose a map point and send or replace the order. Assigned destinations are labeled separately from reported positions; shared locations take precedence. Model staging proposals are no longer plotted as resources.
+
+Migration 0023 was applied by staging bootstrap task `9f50a5514b1e4e8ca57059fdf0709abe`, which exited 0 and reported 23 applied migrations, highest 0023, zero pending and zero checksum conflicts. Orders and owning-agency progress reports are persisted separately with forced RLS and incident locking. The same command workflow supports human responders and Anconison exercise agents. The exercise worker acknowledges orders and uses two separate 30-second intervals for simulated en-route and arrival reports; these are not observed positions or real travel estimates.
+
+Seven targeted workflow/planner tests and all 14 SQL suites passed against disposable PostgreSQL; TypeScript and ARM64 web/operator builds passed. Tests cover command-only issuance, owning-agency acknowledgment/reporting, no skipped arrival, idempotency, redirection, stale-order denial and closure denial. Browser verification showed the requesting agency command label, all four committed resources in the tray, no autonomous staging points on the map, the task/destination form, and map-point selection populating the draft. No command order was submitted during browser verification; existing resources remain for the user to assign. The final build adds an explicit picking-mode guard so ordinary map clicks do not open task forms.
+
+Release `command-orders-e9a7803-20261002` uses web/worker digest `sha256:0e80752912fc0c4394ed9f8e0dea92121ba36a6278e9ed2eba310396009dc8c3` and migration operator digest `sha256:991bd23400483cb662e9410dbee3af6c5a9a5e8200ff4b135a60818da1bc86e6`. Final cloud rollout verification is recorded below.
+
+### Final command map build
+
+Release `command-marker-40e193c-20261002` supersedes the intermediate command builds above. Its web/worker digest is `sha256:d19f346f41027b63b4597a8030273f5b75e034d0b0827b6acbe48b21a99d15e4`. It adds drag-and-drop from the waiting-resource tray into an assignment draft, an incident-address editor, known-coordinate map entry and the narrowly scoped own-active-incident POI permission for incident command.
+
+The final permission change passed four targeted workflow integration tests and all 14 SQL suites; TypeScript and the ARM64 runtime build passed. Earlier seven-test command/planner results remain applicable to that earlier validation stage; the complete 467-test suite was not rerun for this final change.
+
+Browser verification saved `99 Slingerland St, Albany, NY 12202` as the current exercise incident address. The map feature attempt was denied before the scoped permission correction, so no incident marker was created. The user session subsequently expired. Final marker placement and actual drag-and-drop browser acceptance remain pending renewed sign-in; implemented behavior is not claimed as browser-verified. No command order was issued during these checks.
+
+Final cloud verification: runtime stack UPDATE_COMPLETE; web task revision 11 and responder revision 10 both have one running task, zero pending and COMPLETED deployments. The load balancer reported healthy targets, and the worker logged readiness for all twelve agency identities. Production and main were not deployed or merged.

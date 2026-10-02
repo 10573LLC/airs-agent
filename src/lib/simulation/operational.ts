@@ -1,4 +1,5 @@
 import type { Geometry } from "@/lib/map/model";
+import { buildOperationalPicture, type OperationalPicture } from "@/lib/operational/completeness";
 import type { CompiledScenario } from "./model";
 
 export type SimAgencyInformationPath = "system_integration" | "command_post_liaison" | "dispatch" | "radio" | "phone" | "email" | "manual_entry" | "mutual_aid_coordination" | "other";
@@ -50,6 +51,7 @@ export interface SimOperationalProjection {
   resources: SimResource[];
   mapItems: SimMapItem[];
   actions: SimCoordinationAction[];
+  operationalPicture: OperationalPicture;
 }
 
 const PORT: [number, number] = [-73.75611, 42.626389];
@@ -215,6 +217,18 @@ function buildActions(text: string): SimCoordinationAction[] {
     priority = "Evidence recovery, residual hazards, security, and consequence management";
   }
 
+  const operationalPicture = buildOperationalPicture({
+    incidentName: scenario.title,
+    incidentStatus,
+    commandLead,
+    priority,
+    agencies,
+    resources,
+    mapItems,
+    actions,
+    sourceText: text,
+  });
+
   return {
     incidentName: scenario.title,
     incidentStatus,
@@ -224,5 +238,6 @@ function buildActions(text: string): SimCoordinationAction[] {
     resources,
     mapItems,
     actions,
+    operationalPicture,
   };
 }

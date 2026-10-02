@@ -199,10 +199,10 @@ function ConsolePage() {
         <Panel title="Platform tools">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-foreground">Agency exercise — Anconison responders</p>
-              <p className="mt-1 text-xs text-muted-foreground">Operate as your requesting agency. Send requests to fictional Anconison emergency-service entities, control each entity’s replies, and review the shared incident picture.</p>
+              <p className="text-sm font-medium text-foreground">Simulation Lab</p>
+              <p className="mt-1 text-xs text-muted-foreground">Run synthetic exercises without receiving agency operational permissions or live agency data access.</p>
             </div>
-            <Link to="/simulation" className="rounded-md border border-input px-3 py-2 text-xs font-semibold hover:bg-muted">Open agency exercise</Link>
+            <Link to="/simulation" className="rounded-md border border-input px-3 py-2 text-xs font-semibold hover:bg-muted">Open Simulation Lab</Link>
           </div>
         </Panel>
       ) : (

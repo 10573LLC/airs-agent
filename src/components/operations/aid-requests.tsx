@@ -218,12 +218,13 @@ export function AidRequests({ incidentId }: { incidentId: string }) {
                   <strong>
                     {p.orgName} · {p.status.replaceAll("_", " ")}
                   </strong>
-                  <p>{p.message}</p>
+                  <p className="whitespace-pre-line">{p.message}</p>
                   <time className="text-xs text-muted-foreground">
                     {new Date(p.createdAt).toLocaleString()}
                   </time>
                 </div>
               ))}
+              {data.exerciseUpdates.filter(p=>p.requestId===r.id).map(p=>(<div key={p.id} className="mt-2 border-l-2 border-amber-500 pl-3"><strong>{p.orgName} · simulated update</strong><p>{p.summary}</p><time className="text-xs text-muted-foreground">{new Date(p.createdAt).toLocaleString()}</time></div>))}
               {data.canRespond &&
                 data.orgId === r.recipientOrgId &&
                 data.active &&

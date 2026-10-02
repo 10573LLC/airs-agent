@@ -63,9 +63,12 @@ export async function readAgencyRequests(
         "SELECT * FROM airs.framework_entity_directory() WHERE id<>$1 ORDER BY name",
         [ctx.orgId],
       );
+      const exerciseUpdates = await q.query<{id:string;requestId:string;orgName:string;summary:string;createdAt:string}>(
+        `SELECT id,split_part(observation->>'sourceRecordId',':',1) AS "requestId",airs.related_org_name(org_id) AS "orgName",observation->>'summary' AS summary,received_at::text AS "createdAt" FROM airs.operational_observations WHERE incident_id=$1 AND expires_at>now() AND airs.framework_incident_active(incident_id) AND (grant_id IS NULL OR airs.framework_grant_valid(grant_id)) AND observation->>'dataClass'='exercise_update' ORDER BY received_at DESC LIMIT 100`, [incidentId]);
       return {
         requests,
         responses,
+        exerciseUpdates,
         directory,
         orgId: ctx.orgId,
         canRequest:

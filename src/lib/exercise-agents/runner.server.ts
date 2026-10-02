@@ -14,6 +14,7 @@ import { listPersonnel, setPersonnelAvailability } from "@/lib/resources/personn
 import { readFramework, writeFramework } from "@/lib/operations/framework.server";
 import { observationSchema } from "@/lib/operations/framework";
 import { aidDecision, type ExerciseAgency } from "./model";
+import { planExercise, validatePlan, EXERCISE_GUIDANCE, type ExercisePlan } from "./planner.server";
 
 export async function runAgencyCycle(input: {
   agency: ExerciseAgency;
@@ -37,6 +38,25 @@ export async function runAgencyCycle(input: {
   const rooms = await listIncidents(commandToken, orgId, meta);
   for (const room of rooms.filter((r) => r.orgId === requesterOrgId && r.status === "active")) {
     const board = await readAgencyRequests(commandToken, orgId, room.id, meta);
+    // Persisted plans survive worker restarts. Follow-up reports stay inside the
+    // same active incident and agency permissions, including after commitment.
+    const exerciseBoard = await readFramework(commandToken, room.id);
+    for (const receipt of exerciseBoard.observations.filter(o => o.orgId === orgId && o.dataClass === "exercise_plan")) {
+      const requestId = receipt.sourceRecordId.split(":")[0];
+      const request = board.requests.find(r => r.id === requestId);
+      if (!request || ["cancelled", "denied"].includes(request.status) || !board.responses.some(r => r.requestId === requestId && ["filled", "partially_filled"].includes(r.status))) continue;
+      const plan = validatePlan(JSON.parse(receipt.summary), request.quantity);
+      for (const [index, update] of plan.updates.entries()) {
+        const sourceRecordId = `${requestId}:progress-${index}`;
+        if (Date.now() < Date.parse(receipt.sourceTimestamp) + update.afterSeconds * 1000 || exerciseBoard.observations.some(o => o.orgId === orgId && o.sourceRecordId === sourceRecordId)) continue;
+        await writeFramework(commandToken, { action: "report", value: observationSchema.parse({
+          incidentId: room.id, originatingEntity: agency.name, platform: "Anconison intelligent exercise responder",
+          sourceRecordId, sourceTimestamp: new Date().toISOString(), dataClass: "exercise_update", entityType: "responder",
+          label: `EXERCISE ${agency.name} update`, summary: `SIMULATED — generated exercise update, not an observed event. T+${update.afterSeconds}s (compressed exercise time): ${update.message}`,
+          state: "unverified", verification: "unverified", confidence: null, geographicPrecision: "unknown", latitude: null, longitude: null, staleAfterSeconds: 3600,
+        }) });
+      }
+    }
     for (const request of board.requests.filter(
       (r) => r.recipientOrgId === orgId && !["cancelled", "filled", "denied"].includes(r.status),
     )) {
@@ -68,12 +88,34 @@ export async function runAgencyCycle(input: {
       const candidates = resources.filter(
         (r) => r.readinessStatus === "available" || already.has(r.id),
       );
-      const decision = aidDecision(
+      let decision = aidDecision(
         agency,
         request.resourceKind,
         request.quantity,
         candidates.length,
       );
+      let plan: ExercisePlan | null = null;
+      if (process.env.EXERCISE_INTELLIGENCE === "openai") {
+        const receipt = prior.find(o => o.dataClass === "exercise_plan");
+        try {
+          plan = receipt ? validatePlan(JSON.parse(receipt.summary), decision.count) : await planExercise(`${orgId}:${request.id}`, {
+            agency, incidentName: room.name, description: request.description, stagingLocation: request.stagingLocation,
+            requestedUnits: request.quantity, maxUnits: decision.count,
+            observations: framework.observations.filter(o => o.dataClass !== "exercise_plan").slice(0, 12).map(o => `${o.label}: ${o.summary}`),
+          });
+        } catch {
+          if (!board.responses.some(r => r.requestId === request.id && r.message.includes("Intelligent planning is delayed")))
+            await respondToAgencyRequest(commandToken, orgId, { incidentId: room.id, requestId: request.id, status: "acknowledged", message: "EXERCISE — Intelligent planning is delayed or unavailable. This request remains unresolved; no model-generated commitment is being claimed." }, meta);
+          continue;
+        }
+        if (plan && !receipt) await writeFramework(commandToken, { action: "report", value: observationSchema.parse({
+          incidentId: room.id, originatingEntity: agency.name, platform: "Anconison intelligent exercise responder",
+          sourceRecordId: `${request.id}:plan`, sourceTimestamp: new Date().toISOString(), dataClass: "exercise_plan", entityType: "responder",
+          label: `EXERCISE plan: ${agency.name}`, summary: JSON.stringify(plan), state: "unverified", verification: "unverified", confidence: null,
+          geographicPrecision: "unknown", latitude: null, longitude: null, staleAfterSeconds: 86400,
+        }) });
+        if (plan) decision = { count: plan.units, status: plan.units === 0 ? "denied" : plan.units < request.quantity ? "partially_filled" : "filled", reason: plan.response };
+      }
       const committed: string[] = [];
       for (const resource of candidates.slice(0, decision.count)) {
         await shareResource(
@@ -119,19 +161,19 @@ export async function runAgencyCycle(input: {
             value: observationSchema.parse({
               incidentId: room.id,
               originatingEntity: agency.name,
-              platform: "Anconison automated exercise responder",
+              platform: plan ? "Anconison intelligent exercise responder" : "Anconison automated exercise responder",
               sourceRecordId: `${request.id}:${resource.id}`,
               sourceTimestamp: new Date().toISOString(),
               dataClass: "resource_status",
               entityType: agency.key === "uas" ? "uas" : "ground_unit",
-              label: resource.displayName,
-              summary: `EXERCISE ${prefix} ${resource.displayName} committed by ${agency.name}. Requested staging: ${request.stagingLocation || "not provided"}. Current position has not been reported. No real dispatch or movement.`,
-              state: "unknown",
-              verification: "reported",
+              label: plan ? `SIMULATED staging: ${resource.displayName}` : resource.displayName,
+              summary: plan ? `SIMULATED ASSUMPTION — ${prefix} Planned staging for ${resource.displayName}: ${plan.staging.label}. This generated exercise point is not a reported unit position, verified address or arrival. ${plan.assumptions.join("; ")}` : `EXERCISE ${prefix} ${resource.displayName} committed by ${agency.name}. Requested staging: ${request.stagingLocation || "not provided"}. Current position has not been reported. No real dispatch or movement.`,
+              state: plan ? "unverified" : "unknown",
+              verification: plan ? "unverified" : "reported",
               confidence: null,
-              geographicPrecision: "unknown",
-              latitude: null,
-              longitude: null,
+              geographicPrecision: plan ? "approximate" : "unknown",
+              latitude: plan?.staging.latitude ?? null,
+              longitude: plan?.staging.longitude ?? null,
               staleAfterSeconds: 86400,
             }),
           });
@@ -150,7 +192,7 @@ export async function runAgencyCycle(input: {
           incidentId: room.id,
           requestId: request.id,
           status: decision.status,
-          message: `EXERCISE — ${decision.reason} ${committed.join("; ")}${committed.length ? ". " : ""}Requested staging: ${request.stagingLocation || "not provided"}. Locations and arrival times are not yet reported. ${agency.capability}. This is an automated exercise response, not a real dispatch.`,
+          message: plan ? `INTELLIGENT EXERCISE RESPONSE — ${decision.reason}\nCommitted: ${committed.join("; ") || "none"}.\nSimulation assumptions: ${plan.assumptions.join("; ") || "none"}.\nUnresolved needs: ${plan.unmetNeeds.join("; ") || "none identified by this agency"}.\nSimulated staging: ${plan.staging.label}. Follow-up updates use compressed exercise time. Commitment does not confirm arrival or resolve the incident. Guidance: ${EXERCISE_GUIDANCE.version}.` : `EXERCISE — ${decision.reason} ${committed.join("; ")}${committed.length ? ". " : ""}Requested staging: ${request.stagingLocation || "not provided"}. Locations and arrival times are not yet reported. ${agency.capability}. This is an automated exercise response, not a real dispatch.`,
         },
         meta,
       );

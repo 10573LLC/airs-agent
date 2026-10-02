@@ -40,6 +40,12 @@ export function stagingRuntime(cfg, production) {
     container.Environment=container.Environment.filter(e=>['NODE_ENV','DB_DRIVER','DATABASE_URL'].includes(e.Name));
     container.Environment.push({Name:'AUTH_DRIVER',Value:'local'});
     container.Secrets=[{Name:'PGPASSWORD',ValueFrom:{Ref:'AppPassword'}},{Name:'EXERCISE_SEED',ValueFrom:{Ref:'ExerciseSeed'}}];
+    if(cfg.exerciseModelSecretArn) {
+      if(!cfg.exerciseModelSecretArn.startsWith(`arn:aws:secretsmanager:${cfg.region}:${cfg.account}:secret:airs-agent-staging/exercise-model-`)) throw Error('Separate staging model secret required');
+      container.Environment.push({Name:'EXERCISE_INTELLIGENCE',Value:'openai'},{Name:'EXERCISE_MODEL',Value:'gpt-4.1-mini'});
+      container.Secrets.push({Name:'EXERCISE_OPENAI_API_KEY',ValueFrom:cfg.exerciseModelSecretArn});
+      r.ExerciseExecutionRole.Properties.Policies[0].PolicyDocument.Statement.find(s=>s.Action==='secretsmanager:GetSecretValue').Resource.push(cfg.exerciseModelSecretArn);
+    }
     container.LogConfiguration.Options['awslogs-group']='/ecs/airs-agent-staging-responders';
     r.ExerciseService={Type:'AWS::ECS::Service',DependsOn:['ExerciseLogs'],Properties:{ServiceName:'airs-agent-staging-responders',Cluster:cfg.foundation.Cluster,LaunchType:'FARGATE',DesiredCount:{Ref:'ExerciseAgentsEnabled'},TaskDefinition:{Ref:'ExerciseTask'},NetworkConfiguration:structuredClone(r.Service.Properties.NetworkConfiguration),DeploymentConfiguration:{MinimumHealthyPercent:0,MaximumPercent:100}}};
     const bootstrapStatements=r.BootstrapExecutionRole.Properties.Policies[0].PolicyDocument.Statement;
@@ -49,7 +55,7 @@ export function stagingRuntime(cfg, production) {
     const provision=r.ExerciseProvisionTask.Properties.ContainerDefinitions[0];
     provision.Command=['node','.exercise-agent/runner.mjs','--provision'];
     provision.Environment=structuredClone(container.Environment);
-    provision.Secrets=[...structuredClone(container.Secrets),{Name:'ADMIN_DB_PASSWORD',ValueFrom:`${cfg.foundation.MasterSecretArn}:password::`}];
+    provision.Secrets=[...structuredClone(container.Secrets).filter(s=>s.Name!=='EXERCISE_OPENAI_API_KEY'),{Name:'ADMIN_DB_PASSWORD',ValueFrom:`${cfg.foundation.MasterSecretArn}:password::`}];
     template.Outputs.ExerciseProvisionTask={Value:{Ref:'ExerciseProvisionTask'}};
     template.Outputs.ExerciseTask={Value:{Ref:'ExerciseTask'}};
   }

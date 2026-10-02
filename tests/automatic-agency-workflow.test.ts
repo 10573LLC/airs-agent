@@ -1,5 +1,5 @@
 import { Client } from "pg";
-import { beforeAll, afterAll, describe, expect, it } from "vitest";
+import { beforeAll, afterAll, describe, expect, it, vi } from "vitest";
 import { randomUUID } from "node:crypto";
 import { hashPassword } from "@/lib/auth/password";
 import { getAuthAdapter } from "@/lib/auth/index.server";
@@ -58,6 +58,29 @@ describe("agency capability decisions", () => {
   });
 });
 describe.skipIf(!enabled)("real automatic agency workflow", () => {
+  it("persists intelligent assumptions, plots labeled simulated staging and publishes timed updates once",async()=>{
+    let room=await createIncident(token,requesterOrgId,{name:"EXERCISE intelligent planning",incidentType:"training",description:"Fictional",geographicDescription:"Albany exercise",tempDataRetentionHours:1},{});
+    room=await activateIncident(token,requesterOrgId,room.id,room.version,{});
+    const agency=agents.find(a=>a.agency.key==='utilities')!;
+    await sendAgencyAidRequest(token,requesterOrgId,{incidentId:room.id,batchId:randomUUID(),recipients:[agency.orgId],description:"Assess fictional outage",resourceKind:"other",quantity:1,priority:"high",stagingLocation:""});
+    const plan={units:1,response:"Utility crew committed for a fictional assessment",assumptions:["Simulated Albany location"],unmetNeeds:["Command contact"],staging:{label:"Fictional staging",latitude:42.65,longitude:-73.75},updates:[{afterSeconds:15,message:"Simulated crew checks in; assessment still pending"}]};
+    vi.stubEnv('EXERCISE_INTELLIGENCE','openai');vi.stubEnv('EXERCISE_OPENAI_API_KEY','test-only');
+    const fetcher=vi.fn().mockResolvedValue(new Response(JSON.stringify({status:'completed',output:[{content:[{type:'output_text',text:JSON.stringify(plan)}]}]}),{status:200}));vi.stubGlobal('fetch',fetcher);
+    try {
+      await runAgencyCycle(agency);
+      let fw=await readFramework(token,room.id);
+      expect(fw.observations.some(o=>o.dataClass==='exercise_plan')).toBe(true);
+      expect(fw.observations.find(o=>o.latitude!==null)).toMatchObject({verification:'unverified',geographicPrecision:'approximate'});
+      expect((await readAgencyRequests(token,requesterOrgId,room.id)).exerciseUpdates).toHaveLength(0);
+      await db.query(`UPDATE airs.operational_observations SET observation=jsonb_set(observation,'{sourceTimestamp}',to_jsonb((now()-interval '30 seconds')::text)) WHERE incident_id=$1 AND observation->>'dataClass'='exercise_plan'`,[room.id]);
+      await runAgencyCycle(agency);await runAgencyCycle(agency);
+      expect((await readAgencyRequests(token,requesterOrgId,room.id)).exerciseUpdates).toHaveLength(1);
+      expect(fetcher).toHaveBeenCalledTimes(1);
+      await beginClosure(token,requesterOrgId,room.id,{reason:'Exercise completed',expectedVersion:room.version},{});
+      await runAgencyCycle(agency);
+      expect((await listResources(agency.adminToken,agency.orgId)).every(r=>r.readinessStatus==='available')).toBe(true);
+    } finally {vi.unstubAllGlobals();vi.unstubAllEnvs();}
+  },120000);
   it("routes to multiple agencies, accepts participation, assigns owned resources, reports back and enforces boundaries", async () => {
     let room = await createIncident(
       token,

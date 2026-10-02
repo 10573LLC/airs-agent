@@ -51,7 +51,7 @@ export interface SimOperationalProjection {
   resources: SimResource[];
   mapItems: SimMapItem[];
   actions: SimCoordinationAction[];
-  operationalPicture: OperationalPicture;
+  operationalPicture?: OperationalPicture;
 }
 
 const PORT: [number, number] = [-73.75611, 42.626389];

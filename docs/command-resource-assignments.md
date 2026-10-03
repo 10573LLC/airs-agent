@@ -15,3 +15,9 @@ Verification covers command-only issuance, owner-only reporting, acknowledgment 
 Command can set the incident address from the COP toolbar. New intelligent agency plans receive that address as incident context. Map tools accept known coordinates and an explicit sharing choice, allowing a geocoded incident feature to be labeled with its source and approximate precision.
 
 The requesting incident commander can place a point-of-interest point in their own active incident without general map-administration permission. Other feature types, global features and another agency's incident remain protected by their existing permissions. This boundary has integration coverage.
+
+Dropped resources now render a labeled draft assignment marker immediately while the task form is open. Closing the panel leaves that draft visible; Cancel draft placement removes it, and successful submission replaces it with the persisted assigned destination. A draft is not an observed resource position or a sent order.
+
+The map toolbar has an upper-right Layers control. Each operational category can be hidden independently; Fit visible data honors those choices. The same renderer provides these controls in the COP, map tools and Simulation Lab. Layer choices affect display only, not incident sharing or stored records.
+
+Incident command can correct its own active incident point from Map tools: select a working point, then Move to selected point on the existing point-of-interest feature. The existing feature is version-checked, retains its sharing and precision policy, and records correction provenance. Other agencies, closed incidents and non-point features are refused.

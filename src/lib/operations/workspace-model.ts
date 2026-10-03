@@ -28,6 +28,7 @@ export interface WorkspaceProjection {
     location: string;
   }[];
   mapItems: {
+    category?: string;
     id: string;
     label: string;
     geometry?: Geometry;

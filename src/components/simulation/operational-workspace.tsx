@@ -471,7 +471,7 @@ function DesktopMapPanel({
       </div>
       <div className="relative min-h-0 flex-1 p-2.5">
         <CopMap
-          items={mapItems}
+          items={[...mapItems, ...(controls.draftItems ?? [])]}
           styleUrl={mapStyleUrl}
           attribution={mapAttribution}
           className="h-full w-full overflow-hidden rounded-md border border-border"
@@ -515,7 +515,7 @@ function MapView({
           picking={controls.picking}
           onPickPoint={controls.onPickPoint}
           onDropResource={controls.onDropResource}
-          items={mapItems}
+          items={[...mapItems, ...(controls.draftItems ?? [])]}
           styleUrl={mapStyleUrl}
           attribution={mapAttribution}
           className={`${desktop ? "h-[44rem]" : "h-[34rem]"} overflow-hidden rounded-md border border-border`}

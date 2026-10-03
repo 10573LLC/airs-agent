@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Truck } from "lucide-react";
+import type { MapLayerItem } from "@/components/map/cop-map";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { issueResourceOrderFn, reportResourceOrderFn } from "@/lib/api/resource-orders.functions";
@@ -12,6 +13,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 export type CommandMapControls = {
+  draftItems?: MapLayerItem[];
   tray?: ReactNode;
   picking?: boolean;
   onPickPoint?: (point: [number, number]) => void;
@@ -62,6 +64,14 @@ export function ResourceTasking({
   return (
     <>
       {children({
+        draftItems: point && selected ? [{
+          id: `draft-${selected}`,
+          category: "Draft assignments",
+          label: `${board?.assignments.find(a => a.id === selected)?.label ?? "Resource"} · DRAFT assignment`,
+          geometry: { type: "Point", coordinates: point },
+          tone: "own",
+          detail: "Proposed assignment destination. Enter a task and send to notify the owning agency. Not a reported position.",
+        }] : [],
         picking,
         onDropResource: (id, p) => {
           if (!board?.canDirect || !awaiting.some((a) => a.id === id)) return;
@@ -159,6 +169,7 @@ export function ResourceTasking({
                             : `Assignment not sent: ${r.code}. Refresh and review the current order.`,
                         );
                         if (r.ok) {
+                          setPoint(null);
                           setPreviousOrderId(r.data.id);
                           setRequestId(crypto.randomUUID());
                           await refresh();
@@ -228,6 +239,7 @@ export function ResourceTasking({
                         ? `${point[1].toFixed(5)}, ${point[0].toFixed(5)} · assigned destination, not current position`
                         : "No point selected. A text-only destination will remain unplotted."}
                     </p>
+                    {point && <button type="button" className="rounded border p-2 text-sm" onClick={() => { setPoint(null); setDestination(""); setOpen(false); }}>Cancel draft placement</button>}
                     <button
                       disabled={busy || !selected}
                       className="rounded bg-primary p-2 font-semibold text-primary-foreground disabled:opacity-40"

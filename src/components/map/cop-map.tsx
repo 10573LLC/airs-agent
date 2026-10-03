@@ -19,6 +19,7 @@ import {
 } from "./layer-install";
 
 export interface MapLayerItem {
+  category?: string;
   id: string;
   label: string;
   geometry?: Geometry;
@@ -85,12 +86,16 @@ export function CopMap({
   const pickingRef = useRef(picking);
   pickingRef.current = picking;
   const [status, setStatus] = useState<string | null>(null);
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
+  const categoryOf = (item: MapLayerItem) => item.category ?? ({area:"Operating areas",position:"Resource positions",own:"Agency map features",partner:"Partner map features",muted:"Observations"}[item.tone]);
+  const categories = [...new Set(items.map(categoryOf))].sort();
+  const visibleItems = useMemo(() => items.filter(item => !hiddenCategories.includes(categoryOf(item))), [items, hiddenCategories]);
   const [info, setInfo] = useState<{ label: string; detail: string; layer: string } | null>(null);
 
   const collection = useMemo(
     () => ({
       type: "FeatureCollection" as const,
-      features: items
+      features: visibleItems
         .filter((i) => i.geometry)
         .map((i) => ({
           type: "Feature" as const,
@@ -104,7 +109,7 @@ export function CopMap({
           geometry: i.geometry as Geometry,
         })),
     }),
-    [items],
+    [visibleItems],
   );
 
   const workingCollection = useMemo(
@@ -140,7 +145,7 @@ export function CopMap({
   const fitVisible = useCallback(() => {
     const map = mapRef.current as import("maplibre-gl").Map | null;
     if (!map) return;
-    const box = bounds(items.filter((i) => i.geometry).map((i) => i.geometry));
+    const box = bounds(visibleItems.filter((i) => i.geometry).map((i) => i.geometry));
     if (!box) {
       setStatus("No visible AIRS geography to fit — the camera is unchanged.");
       return;
@@ -153,7 +158,7 @@ export function CopMap({
       ],
       { padding: 64, maxZoom: 15, duration: 600 },
     );
-  }, [items]);
+  }, [visibleItems]);
 
   // MapLibre touches window/document at import time, so it is imported after
   // hydration rather than at module scope.
@@ -331,6 +336,20 @@ export function CopMap({
               Selected working point
             </li>
           </ul>
+        </details>
+        <details className="relative ml-auto">
+          <summary className="cursor-pointer list-none rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold">Layers</summary>
+          <div className="absolute right-0 top-full z-20 mt-1 max-h-80 w-64 overflow-y-auto rounded-md border bg-background p-3 text-xs shadow-lg">
+            <p className="mb-2 font-semibold">Map categories</p>
+            {categories.length === 0 && <p>No operational items to display.</p>}
+            {categories.map(category => <label key={category} className="flex items-center gap-2 py-1.5">
+              <input type="checkbox" checked={!hiddenCategories.includes(category)} onChange={event => {
+                setInfo(null);
+                setHiddenCategories(current => event.target.checked ? current.filter(value => value !== category) : [...current, category]);
+              }}/>{category} ({items.filter(item => categoryOf(item) === category).length})
+            </label>)}
+            <p className="mt-2 text-muted-foreground">{visibleItems.filter(item => item.geometry).length} of {items.filter(item => item.geometry).length} items visible</p>
+          </div>
         </details>
       </div>
       <div className="relative h-full min-h-0 w-full flex-1">

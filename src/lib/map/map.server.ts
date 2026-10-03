@@ -565,6 +565,29 @@ async function readFeature(q: QueryRunner, orgId: string, id: string): Promise<M
   return toFeature(rows[0]);
 }
 
+/** Correct an incident point without granting general map administration. */
+export async function moveIncidentPoint(
+  token: string | null | undefined, orgId: string | null,
+  input: { featureId: string; expectedVersion: number; geometry: unknown; description: string },
+  meta?: RequestMeta,
+): Promise<MapFeatureView> {
+  const id = assertUuid(input.featureId, "feature id");
+  const geom = geometryOrThrow(input.geometry, "any");
+  if (geom.type !== "Point") throw new AccessError("forbidden");
+  const expected = integer(input.expectedVersion, "expected version", 1, 2_000_000_000);
+  const description = text(input.description, "description", 2000, true);
+  return withAuthorized({ token, orgId, permission: "incident.update", action: "map.feature.relocated", resourceType: "map_feature", resourceId: id, meta }, async (ctx, q) => {
+    const [feature] = await q.query<{ incidentId: string | null; featureType: string }>(
+      `SELECT incident_id AS "incidentId", feature_type AS "featureType" FROM airs.map_features WHERE id=$1 AND org_id=$2 AND status='active'`, [id, ctx.orgId]);
+    if (!feature?.incidentId || feature.featureType !== "point_of_interest") throw new AccessError("forbidden");
+    await assertOwnsRoom(ctx, q, feature.incidentId);
+    if (!(await q.query("SELECT * FROM airs.lock_framework_incident($1)", [feature.incidentId])).length) throw new AccessError("incident_state_invalid");
+    const changed = await q.query(`UPDATE airs.map_features SET geom=public.ST_SetSRID(public.ST_GeomFromGeoJSON($3),4326), description=$4, version=version+1, updated_by_account=$5 WHERE id=$1 AND org_id=$2 AND version=$6 AND status='active' RETURNING id`, [id, ctx.orgId, JSON.stringify(geom), description, ctx.accountId, expected]);
+    if (!changed.length) throw new AccessError("version_conflict");
+    return readFeature(q, ctx.orgId, id);
+  });
+}
+
 export async function updateMapFeature(
   token: string | null | undefined,
   orgId: string | null,

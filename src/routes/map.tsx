@@ -20,6 +20,7 @@ import { listIncidentsFn } from "@/lib/api/incidents.functions";
 import { listIncidentAssignmentsFn, listResourcesFn } from "@/lib/api/resources.functions";
 import {
   archiveMapFeatureFn,
+  moveIncidentPointFn,
   clearResourceLocationFn,
   createMapFeatureFn,
   createOperatingAreaFn,
@@ -157,6 +158,7 @@ function MapToolsPage() {
 
   const createFeature = useServerFn(createMapFeatureFn);
   const archiveFeature = useServerFn(archiveMapFeatureFn);
+  const movePoint = useServerFn(moveIncidentPointFn);
   const setPrecision = useServerFn(setFeaturePrecisionFn);
   const createArea = useServerFn(createOperatingAreaFn);
   const setAreaStatus = useServerFn(setOperatingAreaStatusFn);
@@ -261,6 +263,7 @@ function MapToolsPage() {
       for (const a of areaRows) {
         items.push({
           id: `area-${a.id}`,
+          category: "Operating areas",
           label: a.name,
           geometry: a.geometry,
           tone: "area",
@@ -271,6 +274,7 @@ function MapToolsPage() {
       for (const f of featureRows) {
         items.push({
           id: `feature-${f.id}`,
+          category: f.featureType === "point_of_interest" ? "Incident locations / points of interest" : MAP_FEATURE_LABELS[f.featureType],
           label: f.name,
           geometry: f.geometry,
           tone: f.relationship === "owner" ? "own" : "partner",
@@ -281,6 +285,7 @@ function MapToolsPage() {
       for (const l of displayedLocationRows) {
         items.push({
           id: `loc-${l.id}`,
+          category: "Resource positions",
           label: l.resourceName,
           geometry: l.geometry,
           tone: "position",
@@ -293,6 +298,7 @@ function MapToolsPage() {
       for (const o of observationRows) {
         items.push({
           id: `obs-${o.id}`,
+          category: OBSERVATION_TYPE_LABELS[o.observationType],
           label: o.title,
           geometry: o.geometry,
           tone: "muted",
@@ -767,6 +773,11 @@ function MapToolsPage() {
                   </div>
                   {f.relationship === "owner" ? (
                     <div className="flex items-center gap-2">
+                      {f.featureType === "point_of_interest" && incidentId && <button className={smallButton} disabled={!picked} onClick={async () => {
+                        if (!picked) return;
+                        report(await movePoint({data:{featureId:f.id, expectedVersion:f.version, geometry:{type:"Point",coordinates:picked}, description: featureDescription.trim() || "Incident command corrected this location by selecting a point on the map."}}), "Incident point moved to selected location.");
+                        refresh("map-features");
+                      }}>Move to selected point</button>}
                       <select
                         className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                         value={f.declaredPrecision ?? "generalized"}

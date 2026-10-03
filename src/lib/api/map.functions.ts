@@ -175,6 +175,14 @@ export const createMapFeatureFn = createServerFn({ method: "POST" })
     }),
   );
 
+export const moveIncidentPointFn = createServerFn({ method: "POST" })
+  .validator((d: unknown) => z.object({ orgId: orgIdField, featureId: uuid, expectedVersion: z.number().int().positive(), geometry: z.object({type:z.literal("Point"),coordinates:position}), description:z.string().min(1).max(2000) }).parse(d))
+  .handler(async ({data}) => guard(async () => {
+    const {moveIncidentPoint} = await map();
+    const {token,meta} = await serverCtx();
+    return moveIncidentPoint(token,data.orgId ?? null,data,meta);
+  }));
+
 export const updateMapFeatureFn = createServerFn({ method: "POST" })
   .validator((d: unknown) =>
     z

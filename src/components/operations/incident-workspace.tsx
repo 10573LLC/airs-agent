@@ -131,6 +131,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     if (a.geometry)
       mapItems.push({
         id: "area-" + a.id,
+        category: "Operating areas",
         label: a.name,
         geometry: a.geometry,
         tone: "area",
@@ -140,6 +141,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     if (f.geometry)
       mapItems.push({
         id: "feature-" + f.id,
+        category: f.featureType === "point_of_interest" ? "Incident locations / points of interest" : f.featureType.replaceAll("_", " "),
         label: f.name,
         geometry: f.geometry,
         tone: f.relationship === "owner" ? "own" : "partner",
@@ -149,6 +151,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     if (l.geometry)
       mapItems.push({
         id: "location-" + l.id,
+        category: "Resource positions",
         label: l.resourceName,
         geometry: l.geometry,
         tone: "position",
@@ -158,6 +161,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     if (o.geometry)
       mapItems.push({
         id: "observation-" + o.id,
+        category: o.observationType.replaceAll("_", " "),
         label: o.title,
         geometry: o.geometry,
         tone: "muted",
@@ -177,6 +181,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     )
       mapItems.push({
         id: "normalized-" + item.id,
+        category: item.latest.dataClass.replaceAll("_", " "),
         label: item.latest.label,
         geometry: { type: "Point", coordinates: [item.latest.longitude, item.latest.latitude] },
         tone: item.state === "known" ? "position" : "muted",
@@ -200,6 +205,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     if (order.latitude !== null && order.longitude !== null)
       mapItems.push({
         id: `destination-${order.id}`,
+        category: "Assigned destinations",
         label: `${assignment.label || "Resource"} · assigned destination`,
         geometry: { type: "Point", coordinates: [order.longitude, order.latitude] },
         tone: "own",

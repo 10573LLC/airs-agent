@@ -123,7 +123,7 @@ export async function invitePartner(
       const participationExpiresAt = input.participationExpiresAt
         ? futureTimestamp(input.participationExpiresAt, "participation expiration")
         : null;
-      // Eligibility is approved-trust only; there is no emergency bypass.
+      // Standing Partners and incident-only Associates may be invited; explicit restrictions still deny.
       const eligibility = await assertInvitationEligibility(q, ctx.orgId, partnerOrgId);
 
       const raw = randomToken(32);

@@ -38,3 +38,4 @@ dist-ssr
 
 # Local PostgreSQL data directories used for verification runs
 pgdata/
+.exercise-agent/

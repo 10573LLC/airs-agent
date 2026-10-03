@@ -1,0 +1,19 @@
+# Intelligent fictional agency responders
+
+Anconison responders can use a structured model-generated exercise plan instead of only canned capability replies. The human remains the requesting agency. Source: FEMA/USFA, NIMS resource management, reviewed 2026-10-02: https://www.usfa.fema.gov/a-z/nims/resource-management.html. The embedded guidance covers identifying needs, ordering, mobilization, tracking/reporting, demobilization and restoring readiness. It is versioned coordination guidance, not a claim to implement every discipline's current local SOP, tactical procedure or clinical protocol.
+
+When enabled, a responder reads the request and up to twelve authorized incident observations. It interprets prose within its own role, chooses a resource commitment within its actual available inventory, identifies unresolved needs, and fills missing exercise details with explicitly labeled assumptions. It generates a hypothetical staging point and up to three scheduled follow-up reports over compressed exercise time. These are invented simulation events, not historical facts, geocoded addresses, real positions, verified arrivals or actual dispatch. Staging map labels begin SIMULATED; provenance is unverified. The real agency authorization, participation, resource, assignment, observation and response services apply throughout.
+
+Plans are saved before allocation and reused on retries. Scheduled reports use persisted receipts and stop when the incident is no longer active, the request is cancelled/denied, or agency access ends. Reports appear under their request as simulated updates. A new request uses current incident context; an already-generated schedule does not continuously replan in response to every subsequent report. Existing pre-upgrade requests retain their original response history. Additional requests may encounter already-committed inventory.
+
+The model never receives credentials, account identities or database access. It proposes constrained JSON, not executable tool calls. The application rejects excess inventory, out-of-range coordinates, unknown fields, reversed timelines and oversized responses. Model failures leave a visible unresolved acknowledgment instead of silently claiming a successful allocation. Current limits: three attempts per request per worker lifetime, one-minute retry spacing, sixty model calls per hour per worker lifetime, 45-second call timeout and 1,500 output tokens. These are request controls, not a hard billing cap. The isolated worker uses a dedicated Secrets Manager record; the web and provisioning task cannot retrieve the model credential. OpenAI response storage is disabled.
+
+The chosen model is gpt-4.1-mini. AWS Bedrock probes were throttled by the account's daily token limit; the available OpenAI connection passed a live fictional planning test. Machine reasoning does not confer operational authority, resolve the requesting agency's objectives, or silently change source ownership. No real external dispatch or messages are sent.
+
+## Map restoration
+
+The earlier staging image omitted VITE_MAP_STYLE_URL during compilation. The map renderer was intact, but no basemap was configured. A separate AWS Location key now permits only geo-maps:GetTile from https://staging.airsagent.com/*. Production key restrictions remain unchanged. deploy/aws/build-staging-web.ps1 retrieves this staging key and refuses a mapless build. The browser-visible key is not committed. AWS/HERE attribution comes from the style.
+
+## Verification
+
+The model probe produced a role-specific plan with explicit assumptions, unmet needs, staging and timed updates. Automated tests cover rejection of invalid/excess allocations, strict model output, failure/backoff, persisted plans, unverified staging geometry, timed report visibility, duplicate suppression and closeout readiness release. See staging deployment notes for the final test count and cloud/browser evidence.

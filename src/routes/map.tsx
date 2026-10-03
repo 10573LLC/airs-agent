@@ -20,6 +20,7 @@ import { listIncidentsFn } from "@/lib/api/incidents.functions";
 import { listIncidentAssignmentsFn, listResourcesFn } from "@/lib/api/resources.functions";
 import {
   archiveMapFeatureFn,
+  moveIncidentPointFn,
   clearResourceLocationFn,
   createMapFeatureFn,
   createOperatingAreaFn,
@@ -157,6 +158,7 @@ function MapToolsPage() {
 
   const createFeature = useServerFn(createMapFeatureFn);
   const archiveFeature = useServerFn(archiveMapFeatureFn);
+  const movePoint = useServerFn(moveIncidentPointFn);
   const setPrecision = useServerFn(setFeaturePrecisionFn);
   const createArea = useServerFn(createOperatingAreaFn);
   const setAreaStatus = useServerFn(setOperatingAreaStatusFn);
@@ -168,6 +170,9 @@ function MapToolsPage() {
   const [incidentId, setIncidentId] = useState<string>(Route.useSearch().incident);
   const [featureType, setFeatureType] = useState<MapFeatureType>("staging_area");
   const [featureName, setFeatureName] = useState("");
+  const [featureDescription, setFeatureDescription] = useState("");
+  const [featureShared, setFeatureShared] = useState(false);
+  const [coordinateText, setCoordinateText] = useState({latitude:"",longitude:""});
   const [featurePrecision, setFeaturePrecision] = useState<PrecisionPolicy>("generalized");
   const [areaName, setAreaName] = useState("");
   const [areaFloor, setAreaFloor] = useState("0");
@@ -258,6 +263,7 @@ function MapToolsPage() {
       for (const a of areaRows) {
         items.push({
           id: `area-${a.id}`,
+          category: "Operating areas",
           label: a.name,
           geometry: a.geometry,
           tone: "area",
@@ -268,6 +274,7 @@ function MapToolsPage() {
       for (const f of featureRows) {
         items.push({
           id: `feature-${f.id}`,
+          category: f.featureType === "point_of_interest" ? "Incident locations / points of interest" : MAP_FEATURE_LABELS[f.featureType],
           label: f.name,
           geometry: f.geometry,
           tone: f.relationship === "owner" ? "own" : "partner",
@@ -278,6 +285,7 @@ function MapToolsPage() {
       for (const l of displayedLocationRows) {
         items.push({
           id: `loc-${l.id}`,
+          category: "Resource positions",
           label: l.resourceName,
           geometry: l.geometry,
           tone: "position",
@@ -290,6 +298,7 @@ function MapToolsPage() {
       for (const o of observationRows) {
         items.push({
           id: `obs-${o.id}`,
+          category: OBSERVATION_TYPE_LABELS[o.observationType],
           label: o.title,
           geometry: o.geometry,
           tone: "muted",
@@ -324,6 +333,8 @@ function MapToolsPage() {
           incidentId: incidentId || null,
           featureType,
           name: featureName,
+          description: featureDescription,
+          classification: featureShared ? "participating_orgs" : "originating_org_only",
           geometry: { type: "Point" as const, coordinates: picked as [number, number] },
           precisionPolicy: featurePrecision,
         },
@@ -519,6 +530,13 @@ function MapToolsPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         <SectionCard title="Place a map feature" description="Owned by your agency.">
           <div className="space-y-3">
+            <details><summary className="cursor-pointer text-sm">Enter a known coordinate</summary>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <Field label="Feature latitude"><input type="number" step="any" min="-90" max="90" className={inputClass} value={coordinateText.latitude} onChange={e=>setCoordinateText(v=>({...v,latitude:e.target.value}))}/></Field>
+                <Field label="Feature longitude"><input type="number" step="any" min="-180" max="180" className={inputClass} value={coordinateText.longitude} onChange={e=>setCoordinateText(v=>({...v,longitude:e.target.value}))}/></Field>
+              </div>
+              <button className={smallButton} disabled={!coordinateText.latitude||!coordinateText.longitude||!Number.isFinite(Number(coordinateText.latitude))||!Number.isFinite(Number(coordinateText.longitude))||Math.abs(Number(coordinateText.latitude))>90||Math.abs(Number(coordinateText.longitude))>180} onClick={()=>setPicked([Number(coordinateText.longitude),Number(coordinateText.latitude)])}>Use coordinate</button>
+            </details>
             <Field label="Type">
               <select
                 className={inputClass}
@@ -552,6 +570,8 @@ function MapToolsPage() {
                 ))}
               </select>
             </Field>
+            <Field label="Feature description / location source"><textarea className={inputClass} value={featureDescription} maxLength={2000} onChange={e=>setFeatureDescription(e.target.value)}/></Field>
+            <label className="flex gap-2 text-sm"><input type="checkbox" checked={featureShared} disabled={!incidentId} onChange={e=>setFeatureShared(e.target.checked)}/>Share feature with participating agencies in this incident</label>
             <button
               className={buttonClass}
               disabled={!picked || !featureName || addFeature.isPending}
@@ -753,6 +773,11 @@ function MapToolsPage() {
                   </div>
                   {f.relationship === "owner" ? (
                     <div className="flex items-center gap-2">
+                      {f.featureType === "point_of_interest" && incidentId && <button className={smallButton} disabled={!picked} onClick={async () => {
+                        if (!picked) return;
+                        report(await movePoint({data:{featureId:f.id, expectedVersion:f.version, geometry:{type:"Point",coordinates:picked}, description: featureDescription.trim() || "Incident command corrected this location by selecting a point on the map."}}), "Incident point moved to selected location.");
+                        refresh("map-features");
+                      }}>Move to selected point</button>}
                       <select
                         className="rounded-md border border-input bg-background px-2 py-1 text-xs"
                         value={f.declaredPrecision ?? "generalized"}
@@ -856,7 +881,7 @@ function ProductionMapPage() {
   const incidents=useQuery({queryKey:["incidents"],queryFn:()=>list({data:{}}),refetchInterval:3000,refetchIntervalInBackground:false});
   const rows=incidents.data?.ok?incidents.data.data:[];
   const incidentId=selected || (rows.length===1?rows[0].id:"");
-  return <PageShell width="full" viewport><div className="flex h-full min-h-0 flex-col gap-2">
+  return <PageShell width="full"><div className="flex flex-col gap-2">
     <div className="flex shrink-0 flex-wrap items-center gap-3"><h1 className="text-lg font-semibold">Common Operating Picture</h1><label className="text-xs">Incident <select className="ml-2 rounded border bg-background px-2 py-1" value={incidentId} onChange={e=>setSelected(e.target.value)}><option value="">Select incident</option>{rows.map(r=><option key={r.id} value={r.id}>{r.name}</option>)}</select></label></div>
     {incidents.data?.ok===false?<p role="alert">Select an authorized agency in the organization menu to load its incident workspace.</p>:incidentId?<div className="min-h-0 flex-1"><IncidentWorkspace key={incidentId} incidentId={incidentId}/></div>:<p>{incidents.isPending?"Loading incidents…":"Select an incident to view its command post, agencies, resources, map and decision log."}</p>}
   </div></PageShell>;

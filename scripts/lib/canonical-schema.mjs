@@ -61,6 +61,19 @@ const column = (t, c) =>
  * are neither present nor part of the same plan.
  */
 export const CANONICAL_OBJECTS = [
+  {version:'0022',id:'airs.incident_request_responses',label:'agency request responses',probe:table('incident_request_responses')},
+  {version:'0022',id:'rls:incident_request_responses',label:'response forced RLS',probe:forced('incident_request_responses'),requires:['airs.incident_request_responses']},
+  {version:'0022',id:'policy:incident_request_responses',label:'recipient-scoped response policies',probe:policy('incident_request_responses'),requires:['airs.incident_request_responses']},
+  {version:'0022',id:'column:request_recipient',label:'addressed request recipient',probe:column('incident_resource_requests','recipient_org_id')},
+  {version:'0022',id:'airs.lock_agency_request()',label:'recipient request lock',probe:fn('lock_agency_request')},
+  {version:'0021',id:'airs.lock_framework_incident()',label:'access-checked incident lock',probe:fn('lock_framework_incident')},
+  {version:'0021',id:'acl:lock_framework_incident',label:'incident lock privilege boundary',requires:['airs.lock_framework_incident()'],probe:`EXISTS (SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='airs' AND p.proname='lock_framework_incident' AND p.prosecdef AND p.provolatile='v' AND p.proconfig @> ARRAY['search_path=pg_catalog, airs'] AND has_function_privilege('airs_app',p.oid,'EXECUTE') AND NOT EXISTS(SELECT 1 FROM aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a WHERE a.grantee=0 AND a.privilege_type='EXECUTE'))`},
+  ...['entity_profiles','source_systems','partner_envelopes','incident_source_grants','operational_observations','supplemental_source_access','observation_correlations'].flatMap(name => [
+    {version:'0020',id:'airs.'+name,label:name,probe:table(name)},
+    {version:'0020',id:'rls:'+name,label:name+' forced RLS',probe:forced(name),requires:['airs.'+name]},
+    {version:'0020',id:'policy:'+name,label:name+' policies',probe:policy(name),requires:['airs.'+name]},
+  ]),
+  ...['framework_incident_active','framework_grant_valid','framework_closeout','expire_framework_state','activate_framework_partners','framework_activation_trigger','framework_entity_directory'].map(name=>({version:'0020',id:'airs.'+name+'()',label:name,probe:fn(name)})),
   {version: '0019', id:'airs.friend_briefings()', label:'reciprocal friend briefings', probe: fn('friend_briefings')},
   {version:'0019',id:'col:trusted_agencies.relationship_level',label:'Friend relationship level',probe:column('trusted_agencies','relationship_level')},
   // ---- 0001 tenancy foundation ------------------------------------------

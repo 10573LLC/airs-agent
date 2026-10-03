@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 // Input is public resource metadata only. Secret values must never enter this file.
-const cfg = JSON.parse(readFileSync(process.argv[2], 'utf8').replace(/^\uFEFF/, ''));
+export function runtimeTemplate(cfg) {
 if (cfg.account !== '578856792953' || cfg.region !== 'us-east-2') throw new Error('Unexpected deployment target');
 const o = cfg.foundation;
 const ref = Ref => ({ Ref });
@@ -46,4 +47,9 @@ add('MaintenanceFailures', 'AWS::CloudWatch::Alarm', {AlarmName:'airs-agent-prod
 for (const resource of Object.values(Resources)) if(resource.Type==='AWS::CloudWatch::Alarm'){resource.Properties.AlarmActions=[ref('AlertsTopic')];resource.Properties.OKActions=[ref('AlertsTopic')];}
 const Outputs = { LoadBalancerDns: { Value: att('LoadBalancer', 'DNSName') }, LoadBalancerArn: { Value: ref('LoadBalancer') }, TargetGroupArn: { Value: ref('TargetGroup') } };
 for (const id of ['BootstrapTask', 'MaintenanceTask', 'WebTask', 'AppPassword', 'MaintenancePassword', 'SessionSecret']) Outputs[id] = { Value: ref(id) };
-writeFileSync(new URL('./runtime.cloudformation.json', import.meta.url), JSON.stringify({ AWSTemplateFormatVersion: '2010-09-09', Description: 'AIRS Ohio runtime; start desired count at zero until database bootstrap passes.', Parameters: { DesiredCount: { Type: 'Number', Default: 0, AllowedValues: [0, 1, 2] }, ScheduleState: { Type: 'String', Default: 'DISABLED', AllowedValues: ['ENABLED', 'DISABLED'] } }, Resources, Outputs }, null, 2) + '\n');
+return { AWSTemplateFormatVersion: '2010-09-09', Description: 'AIRS Ohio runtime; start desired count at zero until database bootstrap passes.', Parameters: { DesiredCount: { Type: 'Number', Default: 0, AllowedValues: [0, 1, 2] }, ScheduleState: { Type: 'String', Default: 'DISABLED', AllowedValues: ['ENABLED', 'DISABLED'] } }, Resources, Outputs };
+}
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+ const cfg = JSON.parse(readFileSync(process.argv[2], 'utf8').replace(/^\uFEFF/, ''));
+ writeFileSync(new URL('./runtime.cloudformation.json', import.meta.url), JSON.stringify(runtimeTemplate(cfg), null, 2) + '\n');
+}

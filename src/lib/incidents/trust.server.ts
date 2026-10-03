@@ -6,8 +6,8 @@ import { AccessError } from "@/lib/auth/errors";
 import type { RequestMeta } from "@/lib/auth/types";
 
 import { TRUST_STATUSES, type TrustStatus } from "./lifecycle";
-import { friendProfileSchema, type FriendProfile } from './friend-profile';
-import { shapeAgencySystemProfile } from '@/lib/resources/agency-system-profile';
+import { friendProfileSchema, type FriendProfile } from "./friend-profile";
+import { shapeAgencySystemProfile } from "@/lib/resources/agency-system-profile";
 
 export interface TrustedAgencyRow {
   id: string;
@@ -19,7 +19,7 @@ export interface TrustedAgencyRow {
   createdAt: string;
   approvedAt: string | null;
   revokedAt: string | null;
-  relationshipLevel: 'associate' | 'friend';
+  relationshipLevel: "associate" | "friend";
   shareProfile: boolean;
   friendProfile: FriendProfile;
   profileValidUntil: string | null;
@@ -60,26 +60,96 @@ export async function listTrustedAgencies(
   );
 }
 
-export async function saveFriendProfile(token: string | null, orgId: string | null,
-  input: {partnerOrgId:string; relationshipLevel:'associate'|'friend'; shareProfile:boolean; profile:FriendProfile; validUntil:string | null}, meta:RequestMeta) {
-  const parsed=friendProfileSchema.safeParse(input.profile);
-  if(!parsed.success || !['associate','friend'].includes(input.relationshipLevel)) throw new AccessError('invalid_input');
-  const until=input.validUntil?Date.parse(input.validUntil):NaN;
-  if(input.shareProfile && (input.relationshipLevel!=='friend' || !Number.isFinite(until) || until<=Date.now() || until>Date.now()+366*86400000)) throw new AccessError('invalid_input','Sharing needs a future review date within one year');
-  return withAuthorized({token,orgId,permission:'org.manage',action:'trust.friend_profile.save',resourceType:'trusted_agency',resourceId:input.partnerOrgId,detail:{relationshipLevel:input.relationshipLevel,shareProfile:input.shareProfile},meta},async(ctx,q)=>{
-    const rows=await q.query(`UPDATE airs.trusted_agencies SET relationship_level=$3, share_profile=$4,
+export async function saveFriendProfile(
+  token: string | null,
+  orgId: string | null,
+  input: {
+    partnerOrgId: string;
+    relationshipLevel: "associate" | "friend";
+    shareProfile: boolean;
+    profile: FriendProfile;
+    validUntil: string | null;
+  },
+  meta: RequestMeta,
+) {
+  const parsed = friendProfileSchema.safeParse(input.profile);
+  if (!parsed.success || !["associate", "friend"].includes(input.relationshipLevel))
+    throw new AccessError("invalid_input");
+  const until = input.validUntil ? Date.parse(input.validUntil) : NaN;
+  if (
+    input.shareProfile &&
+    (input.relationshipLevel !== "friend" ||
+      !Number.isFinite(until) ||
+      until <= Date.now() ||
+      until > Date.now() + 366 * 86400000)
+  )
+    throw new AccessError("invalid_input", "Sharing needs a future review date within one year");
+  return withAuthorized(
+    {
+      token,
+      orgId,
+      permission: "org.manage",
+      action: "trust.friend_profile.save",
+      resourceType: "trusted_agency",
+      resourceId: input.partnerOrgId,
+      detail: { relationshipLevel: input.relationshipLevel, shareProfile: input.shareProfile },
+      meta,
+    },
+    async (ctx, q) => {
+      const rows = await q.query(
+        `UPDATE airs.trusted_agencies SET relationship_level=$3, share_profile=$4,
       friend_profile=$5::jsonb, profile_confirmed_at=now(), profile_valid_until=$6, updated_at=now()
-      WHERE org_id=$1 AND partner_org_id=$2 RETURNING id`,[ctx.orgId,input.partnerOrgId,input.relationshipLevel,input.shareProfile,JSON.stringify(parsed.data),Number.isFinite(until)?new Date(until).toISOString():null]);
-    if(!rows[0]) throw new AccessError('invalid_input','Create the Associate relationship first');
-    return {saved:true};
-  });
+      WHERE org_id=$1 AND partner_org_id=$2 RETURNING id`,
+        [
+          ctx.orgId,
+          input.partnerOrgId,
+          input.relationshipLevel,
+          input.shareProfile,
+          JSON.stringify(parsed.data),
+          Number.isFinite(until) ? new Date(until).toISOString() : null,
+        ],
+      );
+      if (!rows[0])
+        throw new AccessError("invalid_input", "Create the Associate relationship first");
+      return { saved: true };
+    },
+  );
 }
 
-export async function listFriendBriefings(token:string|null,orgId:string|null,meta:RequestMeta) {
-  return withAuthorized({token,orgId,permission:'incident.view_participants',action:'trust.friend_briefings.read',resourceType:'trusted_agency',audit:false,meta},async(_ctx,q)=>{
-    const rows=await q.query<{partnerOrgId:string;partnerOrgName:string;mutualFriend:boolean;profileState:string;profile:unknown;confirmedAt:string|null;validUntil:string|null;ecosystems:any[];components:any[]}>(`SELECT * FROM airs.friend_briefings()`);
-    return rows.map(({ecosystems,components,profile,...r})=>({...r,profile:friendProfileSchema.parse(profile),systems:shapeAgencySystemProfile({ecosystems,components})}));
-  });
+export async function listFriendBriefings(
+  token: string | null,
+  orgId: string | null,
+  meta: RequestMeta,
+) {
+  return withAuthorized(
+    {
+      token,
+      orgId,
+      permission: "incident.view_participants",
+      action: "trust.friend_briefings.read",
+      resourceType: "trusted_agency",
+      audit: false,
+      meta,
+    },
+    async (_ctx, q) => {
+      const rows = await q.query<{
+        partnerOrgId: string;
+        partnerOrgName: string;
+        mutualFriend: boolean;
+        profileState: string;
+        profile: unknown;
+        confirmedAt: string | null;
+        validUntil: string | null;
+        ecosystems: any[];
+        components: any[];
+      }>(`SELECT * FROM airs.friend_briefings()`);
+      return rows.map(({ ecosystems, components, profile, ...r }) => ({
+        ...r,
+        profile: friendProfileSchema.parse(profile),
+        systems: shapeAgencySystemProfile({ ecosystems, components }),
+      }));
+    },
+  );
 }
 
 /** Creates or re-states the caller organization's relationship to a partner. */
@@ -136,14 +206,21 @@ export async function assertInvitationEligibility(
   q: { query: <R>(sql: string, params?: unknown[]) => Promise<R[]> },
   orgId: string,
   partnerOrgId: string,
-): Promise<"trusted"> {
+): Promise<"trusted" | "incident_invitation"> {
   const rows = await q.query<{ status: TrustStatus }>(
     `SELECT status FROM airs.trusted_agencies WHERE org_id = $1 AND partner_org_id = $2`,
     [orgId, partnerOrgId],
   );
   const status = rows[0]?.status ?? null;
-  // Eligibility is APPROVED-only. There is no emergency bypass: an unapproved,
-  // pending, restricted, suspended or revoked relationship denies.
-  if (status !== "approved") throw new AccessError("partner_not_eligible");
+  // An invitation is not standing trust or source permission. Explicit blocks remain.
+  if (status !== null && status !== "approved") throw new AccessError("partner_not_eligible");
+  if (status === null) {
+    const entities = await q.query<{ id: string }>(
+      "SELECT id FROM airs.framework_entity_directory() WHERE id=$1",
+      [partnerOrgId],
+    );
+    if (!entities.length) throw new AccessError("partner_not_eligible");
+    return "incident_invitation";
+  }
   return "trusted";
 }

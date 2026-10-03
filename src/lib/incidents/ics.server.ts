@@ -109,7 +109,7 @@ export async function readIcsBoard(token: string | null, orgId: string | null, i
         FROM airs.incident_ics_positions WHERE incident_id=$1 ORDER BY created_at`, [incidentId]);
       const requests = await q.query<IncidentResourceRequest>(`SELECT id, incident_id AS "incidentId", request_number AS "requestNumber",
         requested_by AS "requestedBy", requested_from AS "requestedFrom", resource_kind AS "resourceKind", quantity,
-        description, priority, status, to_json(needed_at)#>>'{}' AS "neededAt", staging_location AS "stagingLocation",
+        description, priority, CASE WHEN status IN ('cancelled','filled','denied') THEN status ELSE COALESCE((SELECT a.status FROM airs.incident_request_responses a WHERE a.request_id=airs.incident_resource_requests.id ORDER BY a.created_at DESC,a.id DESC LIMIT 1),status) END AS status, to_json(needed_at)#>>'{}' AS "neededAt", staging_location AS "stagingLocation",
         notes, to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"
         FROM airs.incident_resource_requests WHERE incident_id=$1 ORDER BY created_at DESC`, [incidentId]);
       const coordinationPartners = await q.query<IncidentCoordinationPartner>(`SELECT id, incident_id AS "incidentId", partner_org_id AS "partnerOrgId",
@@ -277,7 +277,7 @@ export async function setIncidentResourceRequestStatus(token: string | null, org
       const rows = await q.query<IncidentResourceRequest>(`UPDATE airs.incident_resource_requests SET status=$3, updated_by_account=$4
         WHERE id=$1 AND incident_id=$2 RETURNING id, incident_id AS "incidentId", request_number AS "requestNumber",
           requested_by AS "requestedBy", requested_from AS "requestedFrom", resource_kind AS "resourceKind", quantity,
-          description, priority, status, to_json(needed_at)#>>'{}' AS "neededAt", staging_location AS "stagingLocation", notes,
+          description, priority, CASE WHEN status IN ('cancelled','filled','denied') THEN status ELSE COALESCE((SELECT a.status FROM airs.incident_request_responses a WHERE a.request_id=airs.incident_resource_requests.id ORDER BY a.created_at DESC,a.id DESC LIMIT 1),status) END AS status, to_json(needed_at)#>>'{}' AS "neededAt", staging_location AS "stagingLocation", notes,
           to_json(created_at)#>>'{}' AS "createdAt", to_json(updated_at)#>>'{}' AS "updatedAt"`,
         [assertUuid(input.requestId, "request id"), incidentId, status, ctx.accountId]);
       if (!rows[0]) throw new AccessError("resource_request_not_found");

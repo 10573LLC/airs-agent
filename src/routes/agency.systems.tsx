@@ -5,8 +5,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { PageHeading, PageShell } from "@/components/brand";
 import { getMe, getOrganization } from "@/lib/api/auth.functions";
 import { AgencySystemsIntegrationsPanel } from "@/lib/resources/agency-systems-integrations-panel";
-import { EmergencyDirectory } from '@/components/operations/emergency-directory';
-import { AgencyRelationships } from '@/components/operations/agency-relationships';
+import { EmergencyDirectory } from "@/components/operations/emergency-directory";
+import { FrameworkPanel } from "@/components/operations/framework-panel";
 
 export const Route = createFileRoute("/agency/systems")({
   head: () => ({
@@ -14,7 +14,8 @@ export const Route = createFileRoute("/agency/systems")({
       { title: "Systems & Integrations - AIRS Agent" },
       {
         name: "description",
-        content: "Agency-declared technology ecosystems, installed components, related-system suggestions, and AIRS connection status.",
+        content:
+          "Agency-declared technology ecosystems, installed components, related-system suggestions, and AIRS connection status.",
       },
     ],
   }),
@@ -49,13 +50,19 @@ function AgencySystemsPage() {
           title="Session required"
           description="Sign in to view your agency's Systems & Integrations profile."
         />
-        <Link to="/auth" className="mt-6 inline-block text-sm underline">Go to sign in</Link>
+        <Link to="/auth" className="mt-6 inline-block text-sm underline">
+          Go to sign in
+        </Link>
       </PageShell>
     );
   }
 
   if (organization.isLoading) {
-    return <PageShell width="narrow"><p className="text-sm text-muted-foreground">Loading agency context...</p></PageShell>;
+    return (
+      <PageShell width="narrow">
+        <p className="text-sm text-muted-foreground">Loading agency context...</p>
+      </PageShell>
+    );
   }
 
   const orgResult = organization.data;
@@ -67,7 +74,9 @@ function AgencySystemsPage() {
           title="Agency context required"
           description="Platform administration does not grant access to an agency's Systems & Integrations profile. Select an agency membership with appropriate authorization to continue."
         />
-        <Link to="/console" className="mt-6 inline-block text-sm underline">Return to Platform Console</Link>
+        <Link to="/console" className="mt-6 inline-block text-sm underline">
+          Return to Platform Console
+        </Link>
       </PageShell>
     );
   }
@@ -76,20 +85,28 @@ function AgencySystemsPage() {
   return (
     <PageShell>
       <div className="mb-5 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-        <Link to="/console" className="underline underline-offset-4">Agency Dashboard</Link>
+        <Link to="/console" className="underline underline-offset-4">
+          Agency Dashboard
+        </Link>
         <span aria-hidden="true">/</span>
         <span className="font-medium text-foreground">Systems & Integrations</span>
       </div>
       <PageHeading
         eyebrow="Agency configuration"
-        title="Systems & Integrations"
-        description="Define what technology your agency actually uses, distinguish installed systems from AIRS suggestions, and see exactly what is and is not connected to AIRS."
+        title="Entity profile and Source Systems"
+        description="Build your entity profile, identify source systems, authorize AIRS ingestion, and define incident sharing with Partners."
       />
       <div className="mt-8">
-        <AgencySystemsIntegrationsPanel canManage={canManage} />
+        {orgResult?.ok && <FrameworkPanel orgId={orgResult.data.orgId} />}
+        <details className="mt-6">
+          <summary>Technology reference catalog</summary>
+          <AgencySystemsIntegrationsPanel canManage={canManage} />
+        </details>
       </div>
-      {orgResult?.ok&&<div className="mt-8"><AgencyRelationships orgId={orgResult.data.orgId} canManage={canManage}/></div>}
-      <div className="mt-8"><EmergencyDirectory/></div>
+
+      <div className="mt-8">
+        <EmergencyDirectory />
+      </div>
     </PageShell>
   );
 }

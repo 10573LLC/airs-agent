@@ -11,6 +11,7 @@
 // anything the server withheld simply has no geometry and is not drawn.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bounds, type Geometry } from "@/lib/map/model";
+import { ICS_RESOURCE_COLORS, resourceColor, featureColor } from "@/lib/map/ics-colors";
 import {
   COP_INTERACTIVE_LAYER_IDS,
   installCopLayers,
@@ -19,6 +20,9 @@ import {
 } from "./layer-install";
 
 export interface MapLayerItem {
+  color?: string;
+  assignmentId?: string;
+  category?: string;
   id: string;
   label: string;
   geometry?: Geometry;
@@ -35,6 +39,8 @@ export interface CopMapProps {
   attribution?: string;
   className?: string;
   onPickPoint?: (lngLat: [number, number]) => void;
+  onDropResource?: (assignmentId: string, lngLat: [number, number]) => void;
+  onMoveResource?: (assignmentId: string, lngLat: [number, number]) => void;
   picking?: boolean;
   /** The coordinate the forms below the map are currently working with. */
   workingPoint?: [number, number] | null;
@@ -69,6 +75,8 @@ export function CopMap({
   attribution,
   className,
   onPickPoint,
+  onDropResource,
+  onMoveResource,
   picking,
   workingPoint,
 }: CopMapProps) {
@@ -80,29 +88,36 @@ export function CopMap({
   const workingCollectionRef = useRef<unknown>(null);
   const pickRef = useRef(onPickPoint);
   pickRef.current = onPickPoint;
+  const moveRef = useRef(onMoveResource);
+  moveRef.current = onMoveResource;
   const pickingRef = useRef(picking);
   pickingRef.current = picking;
   const [status, setStatus] = useState<string | null>(null);
+  const [hiddenCategories, setHiddenCategories] = useState<string[]>([]);
+  const categoryOf = (item: MapLayerItem) => item.category ?? ({area:"Operating areas",position:"Resource positions",own:"Agency map features",partner:"Partner map features",muted:"Observations"}[item.tone]);
+  const categories = [...new Set(items.map(categoryOf))].sort();
+  const visibleItems = useMemo(() => items.filter(item => !hiddenCategories.includes(categoryOf(item))), [items, hiddenCategories]);
   const [info, setInfo] = useState<{ label: string; detail: string; layer: string } | null>(null);
 
   const collection = useMemo(
     () => ({
       type: "FeatureCollection" as const,
-      features: items
+      features: visibleItems
         .filter((i) => i.geometry)
         .map((i) => ({
           type: "Feature" as const,
           id: i.id,
           properties: {
+            assignmentId: i.assignmentId ?? "",
             label: i.label,
-            color: TONE[i.tone],
+            color: i.color ?? (i.assignmentId || i.tone === "position" ? resourceColor(i.label) : featureColor(i.category)),
             detail: i.detail ?? "",
             layer: TONE_LEGEND.find((t) => t.tone === i.tone)?.label ?? "",
           },
           geometry: i.geometry as Geometry,
         })),
     }),
-    [items],
+    [visibleItems],
   );
 
   const workingCollection = useMemo(
@@ -138,7 +153,7 @@ export function CopMap({
   const fitVisible = useCallback(() => {
     const map = mapRef.current as import("maplibre-gl").Map | null;
     if (!map) return;
-    const box = bounds(items.filter((i) => i.geometry).map((i) => i.geometry));
+    const box = bounds(visibleItems.filter((i) => i.geometry).map((i) => i.geometry));
     if (!box) {
       setStatus("No visible AIRS geography to fit — the camera is unchanged.");
       return;
@@ -151,7 +166,7 @@ export function CopMap({
       ],
       { padding: 64, maxZoom: 15, duration: 600 },
     );
-  }, [items]);
+  }, [visibleItems]);
 
   // MapLibre touches window/document at import time, so it is imported after
   // hydration rather than at module scope.
@@ -168,9 +183,8 @@ export function CopMap({
       // worker is what schedules and parses vector tiles — the style, TileJSON
       // and sprites all load while no `.pbf` tile is ever requested. Handing
       // MapLibre a bundler-resolved worker URL fixes tile scheduling.
-      const { default: workerUrl } = await import(
-        "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url"
-      );
+      const { default: workerUrl } =
+        await import("maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url");
       maplibre.setWorkerUrl(workerUrl);
       if (disposed || !holder.current) return;
       map = new maplibre.Map({
@@ -202,15 +216,52 @@ export function CopMap({
       };
       m.on("load", install);
       m.on("styledata", install);
+      let dragging: { id: string; startX: number; startY: number; moved: boolean; panEnabled: boolean } | null = null;
+      let suppressClick = false;
+      const restorePan = () => {
+        if (dragging?.panEnabled) m.dragPan.enable();
+        dragging = null;
+        m.getCanvas().style.cursor = "";
+      };
+      m.on("mousedown", event => {
+        if (event.originalEvent.button !== 0 || !moveRef.current) return;
+        const hit = safeQuery(m as unknown as MinimalMap, event.point, ["cop-point"]).find(item => item.properties?.assignmentId);
+        const id = hit?.properties?.assignmentId;
+        if (typeof id !== "string" || !id) return;
+        event.preventDefault();
+        dragging = { id, startX:event.point.x, startY:event.point.y, moved:false, panEnabled:m.dragPan.isEnabled() };
+        m.dragPan.disable();
+        m.getCanvas().style.cursor = "grabbing";
+      });
+      m.on("mouseup", event => {
+        if (!dragging) return;
+        const {id,moved} = dragging;
+        restorePan();
+        if (moved) {
+          suppressClick = true;
+          moveRef.current?.(id,[event.lngLat.lng,event.lngLat.lat]);
+        }
+      });
+      m.on("mouseout", () => {
+        if (!dragging) return;
+        restorePan();
+        (m.getSource("cop") as import("maplibre-gl").GeoJSONSource | undefined)?.setData(collectionRef.current as import("geojson").FeatureCollection);
+      });
       m.on("mousemove", (event) => {
-        const hit = safeQuery(
-          m as unknown as MinimalMap,
-          event.point,
-          COP_INTERACTIVE_LAYER_IDS,
-        );
-        m.getCanvas().style.cursor = hit.length ? "pointer" : pickingRef.current ? "crosshair" : "";
+        if (dragging) {
+          dragging.moved ||= Math.hypot(event.point.x-dragging.startX,event.point.y-dragging.startY)>4;
+          if (dragging.moved) {
+            const data = collectionRef.current as GeoJSON.FeatureCollection;
+            const preview = {...data,features:data.features.map(feature => feature.properties?.assignmentId === dragging?.id ? {...feature,geometry:{type:"Point" as const,coordinates:[event.lngLat.lng,event.lngLat.lat]}} : feature)};
+            (m.getSource("cop") as import("maplibre-gl").GeoJSONSource | undefined)?.setData(preview);
+          }
+          return;
+        }
+        const hit = safeQuery(m as unknown as MinimalMap, event.point, COP_INTERACTIVE_LAYER_IDS);
+        m.getCanvas().style.cursor = moveRef.current && hit.some(item => item.properties?.assignmentId) ? "grab" : hit.length ? "pointer" : pickingRef.current ? "crosshair" : "";
       });
       m.on("click", (event) => {
+        if (suppressClick) { suppressClick = false; return; }
         const hit = safeQuery(
           m as unknown as MinimalMap,
           event.point,
@@ -315,16 +366,23 @@ export function CopMap({
             Legend
           </summary>
           <ul className="absolute left-0 top-full z-10 mt-1 w-56 max-w-[80vw] space-y-1 rounded-md border border-border bg-background p-2 text-xs shadow-md">
-            {TONE_LEGEND.map((entry) => (
-              <li key={entry.tone} className="flex items-center gap-2 text-muted-foreground">
+            <li className="font-semibold">ICS 219 resource types</li>
+            {Object.entries(ICS_RESOURCE_COLORS).map(([key,entry]) => (
+              <li key={key} className="flex items-center gap-2 text-muted-foreground">
                 <span
                   aria-hidden="true"
                   className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: TONE[entry.tone] }}
+                  style={{ backgroundColor: entry.color, border: "1px solid #111827" }}
                 />
                 {entry.label}
               </li>
             ))}
+            <li className="pt-2 font-semibold">ICS map features</li>
+            <li>Blue: command / staging / support facilities</li>
+            <li>Red: hazards / fire origin</li>
+            <li>Orange: fire spread prediction</li>
+            <li>Black: other geographic features</li>
+            <li className="pt-1">Draft and assignment status are labeled separately.</li>
             <li className="flex items-center gap-2 text-muted-foreground">
               <span
                 aria-hidden="true"
@@ -335,6 +393,20 @@ export function CopMap({
             </li>
           </ul>
         </details>
+        <details className="relative ml-auto">
+          <summary className="cursor-pointer list-none rounded-md border border-border bg-background px-2.5 py-1 text-xs font-semibold">Layers</summary>
+          <div className="absolute right-0 top-full z-20 mt-1 max-h-80 w-64 overflow-y-auto rounded-md border bg-background p-3 text-xs shadow-lg">
+            <p className="mb-2 font-semibold">Map categories</p>
+            {categories.length === 0 && <p>No operational items to display.</p>}
+            {categories.map(category => <label key={category} className="flex items-center gap-2 py-1.5">
+              <input type="checkbox" checked={!hiddenCategories.includes(category)} onChange={event => {
+                setInfo(null);
+                setHiddenCategories(current => event.target.checked ? current.filter(value => value !== category) : [...current, category]);
+              }}/>{category} ({items.filter(item => categoryOf(item) === category).length})
+            </label>)}
+            <p className="mt-2 text-muted-foreground">{visibleItems.filter(item => item.geometry).length} of {items.filter(item => item.geometry).length} items visible</p>
+          </div>
+        </details>
       </div>
       <div className="relative h-full min-h-0 w-full flex-1">
         <div
@@ -343,6 +415,25 @@ export function CopMap({
           style={{ cursor: picking ? "crosshair" : undefined }}
           role="application"
           aria-label="Common operating picture map"
+          onDragOver={(event) => {
+            if (
+              onDropResource &&
+              event.dataTransfer.types.includes("application/x-airs-resource-assignment")
+            ) {
+              event.preventDefault();
+              event.dataTransfer.dropEffect = "move";
+            }
+          }}
+          onDrop={(event) => {
+            if (!onDropResource) return;
+            const id = event.dataTransfer.getData("application/x-airs-resource-assignment");
+            const map = mapRef.current as import("maplibre-gl").Map | null;
+            if (!id || !map || !holder.current) return;
+            event.preventDefault();
+            const rect = holder.current.getBoundingClientRect();
+            const point = map.unproject([event.clientX - rect.left, event.clientY - rect.top]);
+            onDropResource(id, [point.lng, point.lat]);
+          }}
         />
         {info ? (
           <div className="absolute bottom-2 left-2 max-w-[18rem] rounded-md border border-border bg-background/95 p-2 text-xs shadow-sm">

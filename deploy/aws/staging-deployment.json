@@ -4,7 +4,7 @@
   "oidcSecretArn": "arn:aws:secretsmanager:us-east-2:578856792953:secret:airs-agent-staging/oidc-client-An5Wt3",
   "account": "578856792953",
   "region": "us-east-2",
-  "release": "map-layers-983a2a4-20261002",
+  "release": "map-reposition-a78d705-20261002",
   "foundation": {
     "EcsSecurityGroup": "sg-028e018926e8b504a",
     "OpsExecutionRoleArn": "arn:aws:iam::578856792953:role/airs-agent-staging-ops-execution-role",
@@ -24,7 +24,7 @@
     "DatabaseSecurityGroup": "sg-0c4b2dbb2246d214e"
   },
   "certificateArn": "arn:aws:acm:us-east-2:578856792953:certificate/63ad638f-3b65-48dd-baef-513b8dc46b2d",
-  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging@sha256:dd3039c290b56262c889e910c1ea5d5672d8a162dc8efd4448f8876e8e5c21e2",
+  "webImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging@sha256:144720c5537e450376c5e2379b5380853c66dd6645c1e9114da752a3cb61c2af",
   "opsImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging@sha256:991bd23400483cb662e9410dbee3af6c5a9a5e8200ff4b135a60818da1bc86e6",
   "exerciseImage": "578856792953.dkr.ecr.us-east-2.amazonaws.com/airs-agent-staging@sha256:ad450a2f1fd3c871855bddfe963369f5f82f0503df5a5eac02077b1c87923c7e",
   "runtime": {

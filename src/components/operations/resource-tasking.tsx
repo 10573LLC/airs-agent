@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { Truck } from "lucide-react";
+import { resourceColor } from "@/lib/map/ics-colors";
 import type { MapLayerItem } from "@/components/map/cop-map";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -18,6 +19,7 @@ export type CommandMapControls = {
   picking?: boolean;
   onPickPoint?: (point: [number, number]) => void;
   onDropResource?: (assignmentId: string, point: [number, number]) => void;
+  onMoveResource?: (assignmentId: string, point: [number, number]) => void;
 };
 type Board = Awaited<ReturnType<typeof readResourceOrders>>;
 const field = "w-full rounded border bg-background p-2 text-sm";
@@ -66,6 +68,7 @@ export function ResourceTasking({
       {children({
         draftItems: point && selected ? [{
           id: `draft-${selected}`,
+          assignmentId: selected,
           category: "Draft assignments",
           label: `${board?.assignments.find(a => a.id === selected)?.label ?? "Resource"} · DRAFT assignment`,
           geometry: { type: "Point", coordinates: point },
@@ -73,6 +76,19 @@ export function ResourceTasking({
           detail: "Proposed assignment destination. Enter a task and send to notify the owning agency. Not a reported position.",
         }] : [],
         picking,
+        onMoveResource: board?.canDirect ? (id, p) => {
+          if (busy || !board.assignments.some(a => a.id === id) || locatedAssignmentIds.includes(id)) return;
+          if (id !== selected || !point) {
+            const order = board.orders.find(o => o.assignmentId === id);
+            choose(id);
+            setMission(order?.mission ?? "");
+          }
+          setPoint(p);
+          setDestination(`Map destination: ${p[1].toFixed(5)}, ${p[0].toFixed(5)}`);
+          setPicking(false);
+          setNotice("");
+          setOpen(true);
+        } : undefined,
         onDropResource: (id, p) => {
           if (!board?.canDirect || !awaiting.some((a) => a.id === id)) return;
           choose(id);
@@ -107,7 +123,7 @@ export function ResourceTasking({
                   className="flex items-center gap-1 rounded border p-2 text-xs"
                   onClick={() => choose(a.id)}
                 >
-                  <Truck size={18} />
+                  <Truck size={18} style={{backgroundColor:resourceColor(a.label),color:"#111827",borderRadius:3,padding:1}} />
                   {a.label ?? "Resource"}
                 </button>
               ))}

@@ -11,6 +11,7 @@
 // anything the server withheld simply has no geometry and is not drawn.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { bounds, type Geometry } from "@/lib/map/model";
+import { ICS_RESOURCE_COLORS, resourceColor, featureColor } from "@/lib/map/ics-colors";
 import {
   COP_INTERACTIVE_LAYER_IDS,
   installCopLayers,
@@ -19,6 +20,8 @@ import {
 } from "./layer-install";
 
 export interface MapLayerItem {
+  color?: string;
+  assignmentId?: string;
   category?: string;
   id: string;
   label: string;
@@ -37,6 +40,7 @@ export interface CopMapProps {
   className?: string;
   onPickPoint?: (lngLat: [number, number]) => void;
   onDropResource?: (assignmentId: string, lngLat: [number, number]) => void;
+  onMoveResource?: (assignmentId: string, lngLat: [number, number]) => void;
   picking?: boolean;
   /** The coordinate the forms below the map are currently working with. */
   workingPoint?: [number, number] | null;
@@ -72,6 +76,7 @@ export function CopMap({
   className,
   onPickPoint,
   onDropResource,
+  onMoveResource,
   picking,
   workingPoint,
 }: CopMapProps) {
@@ -83,6 +88,8 @@ export function CopMap({
   const workingCollectionRef = useRef<unknown>(null);
   const pickRef = useRef(onPickPoint);
   pickRef.current = onPickPoint;
+  const moveRef = useRef(onMoveResource);
+  moveRef.current = onMoveResource;
   const pickingRef = useRef(picking);
   pickingRef.current = picking;
   const [status, setStatus] = useState<string | null>(null);
@@ -101,8 +108,9 @@ export function CopMap({
           type: "Feature" as const,
           id: i.id,
           properties: {
+            assignmentId: i.assignmentId ?? "",
             label: i.label,
-            color: TONE[i.tone],
+            color: i.color ?? (i.assignmentId || i.tone === "position" ? resourceColor(i.label) : featureColor(i.category)),
             detail: i.detail ?? "",
             layer: TONE_LEGEND.find((t) => t.tone === i.tone)?.label ?? "",
           },
@@ -208,11 +216,52 @@ export function CopMap({
       };
       m.on("load", install);
       m.on("styledata", install);
+      let dragging: { id: string; startX: number; startY: number; moved: boolean; panEnabled: boolean } | null = null;
+      let suppressClick = false;
+      const restorePan = () => {
+        if (dragging?.panEnabled) m.dragPan.enable();
+        dragging = null;
+        m.getCanvas().style.cursor = "";
+      };
+      m.on("mousedown", event => {
+        if (event.originalEvent.button !== 0 || !moveRef.current) return;
+        const hit = safeQuery(m as unknown as MinimalMap, event.point, ["cop-point"]).find(item => item.properties?.assignmentId);
+        const id = hit?.properties?.assignmentId;
+        if (typeof id !== "string" || !id) return;
+        event.preventDefault();
+        dragging = { id, startX:event.point.x, startY:event.point.y, moved:false, panEnabled:m.dragPan.isEnabled() };
+        m.dragPan.disable();
+        m.getCanvas().style.cursor = "grabbing";
+      });
+      m.on("mouseup", event => {
+        if (!dragging) return;
+        const {id,moved} = dragging;
+        restorePan();
+        if (moved) {
+          suppressClick = true;
+          moveRef.current?.(id,[event.lngLat.lng,event.lngLat.lat]);
+        }
+      });
+      m.on("mouseout", () => {
+        if (!dragging) return;
+        restorePan();
+        (m.getSource("cop") as import("maplibre-gl").GeoJSONSource | undefined)?.setData(collectionRef.current as import("geojson").FeatureCollection);
+      });
       m.on("mousemove", (event) => {
+        if (dragging) {
+          dragging.moved ||= Math.hypot(event.point.x-dragging.startX,event.point.y-dragging.startY)>4;
+          if (dragging.moved) {
+            const data = collectionRef.current as GeoJSON.FeatureCollection;
+            const preview = {...data,features:data.features.map(feature => feature.properties?.assignmentId === dragging?.id ? {...feature,geometry:{type:"Point" as const,coordinates:[event.lngLat.lng,event.lngLat.lat]}} : feature)};
+            (m.getSource("cop") as import("maplibre-gl").GeoJSONSource | undefined)?.setData(preview);
+          }
+          return;
+        }
         const hit = safeQuery(m as unknown as MinimalMap, event.point, COP_INTERACTIVE_LAYER_IDS);
-        m.getCanvas().style.cursor = hit.length ? "pointer" : pickingRef.current ? "crosshair" : "";
+        m.getCanvas().style.cursor = moveRef.current && hit.some(item => item.properties?.assignmentId) ? "grab" : hit.length ? "pointer" : pickingRef.current ? "crosshair" : "";
       });
       m.on("click", (event) => {
+        if (suppressClick) { suppressClick = false; return; }
         const hit = safeQuery(
           m as unknown as MinimalMap,
           event.point,
@@ -317,16 +366,23 @@ export function CopMap({
             Legend
           </summary>
           <ul className="absolute left-0 top-full z-10 mt-1 w-56 max-w-[80vw] space-y-1 rounded-md border border-border bg-background p-2 text-xs shadow-md">
-            {TONE_LEGEND.map((entry) => (
-              <li key={entry.tone} className="flex items-center gap-2 text-muted-foreground">
+            <li className="font-semibold">ICS 219 resource types</li>
+            {Object.entries(ICS_RESOURCE_COLORS).map(([key,entry]) => (
+              <li key={key} className="flex items-center gap-2 text-muted-foreground">
                 <span
                   aria-hidden="true"
                   className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: TONE[entry.tone] }}
+                  style={{ backgroundColor: entry.color, border: "1px solid #111827" }}
                 />
                 {entry.label}
               </li>
             ))}
+            <li className="pt-2 font-semibold">ICS map features</li>
+            <li>Blue: command / staging / support facilities</li>
+            <li>Red: hazards / fire origin</li>
+            <li>Orange: fire spread prediction</li>
+            <li>Black: other geographic features</li>
+            <li className="pt-1">Draft and assignment status are labeled separately.</li>
             <li className="flex items-center gap-2 text-muted-foreground">
               <span
                 aria-hidden="true"

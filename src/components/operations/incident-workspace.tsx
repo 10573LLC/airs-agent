@@ -205,6 +205,7 @@ export function IncidentWorkspace({ incidentId }: { incidentId: string }) {
     if (order.latitude !== null && order.longitude !== null)
       mapItems.push({
         id: `destination-${order.id}`,
+        assignmentId: order.assignmentId,
         category: "Assigned destinations",
         label: `${assignment.label || "Resource"} · assigned destination`,
         geometry: { type: "Point", coordinates: [order.longitude, order.latitude] },

@@ -113,6 +113,20 @@ describe("Cognito ID token validation", () => {
     expect(Date.parse(identity.expiresAt)).toBeLessThanOrEqual(Date.now() + 3600_000);
   });
   it.each([
+    { amr: ["pwd"], acr: "urn:aws:cognito:loa:1" },
+    { amr: ["pwd", "mfa"], acr: "urn:aws:cognito:loa:2", future_claim: { additive: true } },
+  ])("accepts additive Cognito claims without changing identity %j", async (claims) => {
+    const identity = await verifyCognitoIdToken(
+      await token(claims),
+      "expected-nonce",
+      (await keys).publicKey,
+    );
+    expect(identity.subject).toBe("immutable-subject");
+    expect(identity.email).toBe("admin@example.test");
+    expect(identity).not.toHaveProperty("amr");
+    expect(identity).not.toHaveProperty("future_claim");
+  });
+  it.each([
     { email_verified: false },
     { email_verified: "true" },
     { nonce: "wrong" },
